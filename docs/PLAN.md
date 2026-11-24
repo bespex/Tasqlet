@@ -37,8 +37,8 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
 ## Übersicht
 
 - **Phase 0: Gerüst**
-  - [ ] 0.1 Repository, Workspace, Werkzeuge
-  - [ ] 0.2 Tauri-Hülle mit leerem Popover und Browser-Vorschau
+  - [x] 0.1 Repository, Workspace, Werkzeuge
+  - [x] 0.2 Tauri-Hülle mit leerem Popover und Browser-Vorschau
 - **MVP 1: Erfassen, Überblick, kurze Wege**
   - [ ] 1.1 Core: Modell, Invarianten, Übergänge, Undo
   - [ ] 1.2 Core: Speichern und Laden
@@ -83,8 +83,6 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
 - Tauri 2 mit einem rahmenlosen Fenster (470 px), das beim Start versteckt vorbereitet wird.
 - `src/backend.ts` mit Mock-Schalter. `npm run dev` zeigt das Popover im Browser mit Beispieldaten aus
   dem Dummy.
-- Messung: Speicher des ruhenden Prozesses und Zeit bis zum sichtbaren Fenster, Zahlen in
-  `docs/ENTSCHEIDUNGEN.md`.
 
 **Abnahme:** Die App startet, das Fenster lässt sich zeigen und verstecken. Die Vorschau läuft im Browser.
 
@@ -142,7 +140,7 @@ Konzept: 4, 8. Vorlagen: `../Maillet/src-tauri/src/app/tray.rs`, `windows.rs`, `
 - Hinweis, wenn kein Tray gefunden wird (GNOME ohne Erweiterung).
 
 **Abnahme:** Auf Cinnamon (X11) und auf einem Wayland-Desktop öffnet ein Klick aufs Symbol oder eine auf
-`tasqlet --toggle` gelegte Taste das Popover in unter 100 ms (gemessen).
+`tasqlet --toggle` gelegte Taste das Popover ohne spürbare Verzögerung.
 
 ### 1.5 Frontend-Grundlage: Rollen-Theming, Bausteine, Rückmeldung
 

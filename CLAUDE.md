@@ -62,13 +62,21 @@ cargo test --workspace
 
 Dieselben Schritte laufen in der CI (`.github/workflows/ci.yml`). Vor einem Commit müssen alle grün sein.
 
+Ein lauffähiges Release-Binary nur über `npm run tauri build` (bzw. `-- --no-bundle`). Ein reines
+`cargo build --release` bettet das Frontend nicht ein und lädt stattdessen den Dev-Server (leeres Fenster).
+Die Versionen von `tauri` (Cargo) und `@tauri-apps/api` (npm) müssen in Major/Minor übereinstimmen.
+Keine Testfenster auf dem Desktop des Nutzers öffnen, ohne es vorher anzukündigen; Oberfläche lieber in der
+Browser-Vorschau prüfen.
+
 ## Karte
 
 | Pfad | Zuständig für |
 |---|---|
 | `crates/tasqlet-core/src/lib.rs` | Domäne (noch leer bis auf `SCHEMA_VERSION`) |
-| `src-tauri/src/lib.rs` | Tauri-Builder, Commands (`schema_version`) |
+| `src-tauri/src/lib.rs` | Tauri-Builder, Commands (`schema_version`, `snapshot`) |
+| `src-tauri/src/popover.rs` | Popover zeigen/verstecken (versteckt vorbereitet), Ereignis `popover-shown` |
 | `src-tauri/tauri.conf.json` | Fenster `popover` (470 px, rahmenlos), Bundle `.deb`/AppImage, Identifier `eu.spex.tasqlet` |
 | `src-tauri/icons/icon.svg` | Quelle der App-Symbole (`npx tauri icon src-tauri/icons/icon.svg -o src-tauri/icons`) |
 | `src/lib/backend.ts` | alle Aufrufe an Rust, mit Mock (`inTauri`, `mock`) |
+| `src/lib/types.ts`, `src/lib/mock-data.ts` | Datenmodell aus Sicht der UI, Beispieldaten aus dem Dummy |
 | `src/app.css` | Rollen-Variablen `--tq-*` (vollständig ab Schritt 1.5) |

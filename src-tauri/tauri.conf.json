@@ -19,7 +19,8 @@
         "height": 680,
         "resizable": false,
         "decorations": false,
-        "skipTaskbar": true
+        "skipTaskbar": true,
+        "visible": false
       }
     ],
     "security": {

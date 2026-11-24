@@ -2,8 +2,11 @@
 :root {
   color-scheme: light dark;
   --tq-bg: light-dark(#faf9f6, #1a1b1e);
+  --tq-card: light-dark(#ffffff, #222327);
+  --tq-line: light-dark(#e6e2da, #313338);
   --tq-ink: light-dark(#1d1b18, #ededeb);
   --tq-ink-2: light-dark(#57524b, #b1b3b8);
+  --tq-accent: light-dark(#b4410e, #ff9068);
 }
 
 * {

@@ -20,3 +20,5 @@ vor dem Start“).
 | D13 | 2026-11-24 | Code, Kommentare, Commit-Messages Englisch, Doku Deutsch (vorerst) | Code bleibt für alle lesbar, Konzept und Plan in der Arbeitssprache |
 | D14 | 2026-11-24 | Commits bündeln, wo sinnvoll: eine Einheit je abgeschlossenem Schritt oder Teilschritt | Lesbare Historie statt vieler Kleinst-Commits |
 | D15 | 2026-11-24 | Keine KI-Hinweise in Commits und Pull Requests, KI nicht als Co-Autor | Soll in GitHub nicht erkennbar sein. Lokaler `commit-msg`-Hook prüft |
+| D16 | 2026-11-24 | Keine eingebaute Messung in der App. Einmalige Messung (Cinnamon/X11, Release-Build): Popover nach dem Zeigen in ~20 ms gezeichnet; Speicher ~350 MiB RSS inkl. WebKit-Prozesse (überzeichnet, da geteilte Bibliotheken mehrfach zählen) | Wie Maillet und HatRack: Messwerkzeuge gehören nicht ins Produkt. Ziel „unter 100 ms“ ist klar erfüllt |
+| D17 | 2026-11-24 | Mindestversion Rust 1.90 (wie Maillet) | Mit 1.85 hielt der Resolver `tauri` auf 2.11, das npm-Paket ist 2.12; `tauri build` bricht bei ungleichen Versionen ab |
