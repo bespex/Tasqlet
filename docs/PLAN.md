@@ -44,7 +44,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 1.2 Core: Speichern und Laden
   - [x] 1.3 Core: Schnelleingabe-Parser, Smart-Labels, Rang der Arbeitsmittel
   - [ ] 1.4 Tray, Popover-Fenster, Einzelinstanz, `--toggle`
-  - [ ] 1.5 Frontend-Grundlage: Rollen-Theming, Bausteine, Rückmeldung
+  - [x] 1.5 Frontend-Grundlage: Rollen-Theming, Bausteine, Rückmeldung
   - [ ] 1.6 Schnelleingabe
   - [ ] 1.7 Arbeitskarte
   - [ ] 1.8 Queue und Tastatur
@@ -143,6 +143,10 @@ Konzept: 4, 8. Vorlagen: `../Maillet/src-tauri/src/app/tray.rs`, `windows.rs`, `
 **Abnahme:** Auf Cinnamon (X11) und auf einem Wayland-Desktop öffnet ein Klick aufs Symbol oder eine auf
 `tasqlet --toggle` gelegte Taste das Popover ohne spürbare Verzögerung.
 
+**Stand 2026-11-25:** umgesetzt (D24), Tests grün, Release-Binary baut. Offen: die Abnahme am Desktop
+(Cinnamon und Wayland) durch den Nutzer. Den sichtbaren Hinweis „kein Tray“ und die Anzeige eines
+Ladefehlers rendert das Popover erst mit 1.5 (`tray_missing`, `load_error` im Snapshot).
+
 ### 1.5 Frontend-Grundlage: Rollen-Theming, Bausteine, Rückmeldung
 
 Konzept: 6, 7.1. Vorlage: CSS des Dummys, `../CodeDeck/src/palette.ts`.
@@ -154,8 +158,13 @@ Konzept: 6, 7.1. Vorlage: CSS des Dummys, `../CodeDeck/src/palette.ts`.
 - Bausteine: Reiter, Chip, Zeile mit Werkzeugen beim Überfahren, Abschnitt mit Label und `+`, Toast mit
   „Rückgängig“, Symbole (Lucide).
 - i18n-Grundgerüst (de, en).
+- Hinweise aus dem Snapshot anzeigen: `tray_missing` (GNOME-Erweiterung nennen) und `load_error`
+  (Sicherung anbieten, `Storage::restore_backup`).
 
 **Abnahme:** Eine Bausteinseite in der Vorschau, hell und dunkel, entspricht dem Dummy.
+
+**Stand 2026-11-25:** Bausteinseite unter `http://localhost:1430/#bausteine` (Leitstand, Automatisch hell
+und dunkel, Papier, Graphit), Stile aus dem CSS des Dummys (D25).
 
 ### 1.6 Schnelleingabe
 
@@ -165,8 +174,13 @@ Konzept: 3.1, 3.2 (`Strg+V` ohne Ziel).
 - Live-Anzeige erkannter Kürzel über den Parser aus 1.3.
 - Die vier Tasten, die Rückmeldung mit Undo, `↓` in die Queue.
 - Solange MVP 2 fehlt, landen Ideen und Zwischendurch nur in den Daten (Zähler am Reiter sichtbar).
+- Jira-Keys lernen (`KONZEPT.md` 5, D26): Core lernt aus `…/browse/KEY-123` das Projekt und seine
+  Basis-URL (`~/.config/tasqlet/jira.json`, atomar geschrieben), der Parser macht bekannte nackte Keys
+  zu Arbeitsmitteln (Key bleibt im Titel). Tests: lernen, erkennen, unbekanntes Projekt bleibt Text,
+  zwei Jira-Instanzen mit verschiedenen Projekten.
 
-**Abnahme:** Alle vier Ziele, `@Name`, `!fr` und ein reiner Link funktionieren mit Tastatur allein.
+**Abnahme:** Alle vier Ziele, `@Name`, `!fr` und ein reiner Link funktionieren mit Tastatur allein. Nach
+einem Jira-Link wird ein nackter Key desselben Projekts zum Chip.
 
 ### 1.7 Arbeitskarte
 
@@ -278,7 +292,8 @@ Konzept: 7.
 - Theme-Dateien in `~/.config/tasqlet/themes/` mit `override`. Kontrastprüfung im Core, ablehnen mit
   Hinweis.
 - Einstellungsdialog: Palette, Achsen, Vorschläge, Vorschau. Dazu Popover-Position (Wayland),
-  Autostart, Sprache.
+  Autostart, Sprache. Abschnitt „Jira“: gelernte Projekte mit Basis-URL, je Eintrag
+  „Vergessen“ (D26).
 - Test: alle mitgelieferten Kombinationen erfüllen die Kontrasttabelle.
 
 **Abnahme:** Die sechs Vorschläge sehen aus wie im Dummy. Ein absichtlich schlechtes Thema wird

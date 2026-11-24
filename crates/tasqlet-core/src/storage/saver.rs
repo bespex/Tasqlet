@@ -80,6 +80,14 @@ impl Saver {
         self.shared.wake.notify_all();
     }
 
+    /// Drop what is pending without writing it, e.g. after the files were changed from outside
+    /// and loaded again: the pending state is older than that change.
+    pub fn discard(&self) {
+        let mut p = lock(&self.shared.pending);
+        p.store = None;
+        p.due = None;
+    }
+
     /// Write what is pending now, e.g. before quitting.
     pub fn flush(&self) -> io::Result<()> {
         write_pending(&self.shared)

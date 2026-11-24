@@ -315,6 +315,17 @@ fn saver_bundles_changes_and_flushes_on_drop() {
 }
 
 #[test]
+fn saver_discard_drops_what_is_pending() {
+    let (_dir, storage) = open();
+    let (store, _) = sample();
+    let saver = Saver::with_delay(storage.clone(), Duration::from_millis(100), |_| {});
+    saver.save(store);
+    saver.discard();
+    drop(saver);
+    assert!(!storage.items_path().exists());
+}
+
+#[test]
 fn saver_flush_writes_at_once() {
     let (_dir, storage) = open();
     let (store, _) = sample();

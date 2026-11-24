@@ -2,7 +2,7 @@
 
 Persönliches Fokus- und Notiz-Werkzeug im Linux-Tray: einfach erfassen, schnell überblicken, kurze
 Wege zu den Arbeitsmitteln. Tauri 2 (Rust, `src-tauri/`), Domäne in `crates/tasqlet-core/`, Frontend
-Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.3 fertig.
+Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.5 fertig, bei 1.4 steht die Abnahme am Desktop noch aus.
 
 ## Lesen, bevor gearbeitet wird
 
@@ -51,7 +51,7 @@ Port 1430). Voraussetzungen: Rust stable, Node.js 22, `libwebkit2gtk-4.1-dev`, `
 
 ```sh
 npm run dev                      # UI im Browser mit Mock-Daten (http://localhost:1430)
-npm run tauri dev                # Desktop-App
+npm run tauri dev                # Desktop-App (danach: tasqlet --toggle zeigt/versteckt das Popover)
 npm run check                    # svelte-check + prettier --check
 npm test                         # vitest
 npm run format                   # prettier --write
@@ -81,10 +81,20 @@ Browser-Vorschau prüfen.
 | `crates/tasqlet-core/src/resources.rs` | Arbeitsmittel erkennen, Smart-Labels, Rang mit fester `Alt+n`-Ziffer |
 | `crates/tasqlet-core/tests/crash.rs` | Abnahme 1.2: `kill -9` mitten im Schreiben, Daten bleiben ladbar und vollständig |
 | `crates/tasqlet-core/tests/invariants.rs` | `proptest`: beliebige Aktionsfolgen halten alle Invarianten |
-| `src-tauri/src/lib.rs` | Tauri-Builder, Commands (`schema_version`, `snapshot`) |
-| `src-tauri/src/popover.rs` | Popover zeigen/verstecken (versteckt vorbereitet), Ereignis `popover-shown` |
+| `crates/tasqlet-core/src/overview.rs` | Stand auf einen Blick (Modus, Zahl, aktuelle und nächste Aufgabe) für das Tray |
+| `src-tauri/src/lib.rs` | Start (Einzelinstanz, `--toggle`), Tauri-Builder, Commands (`schema_version`, `snapshot`) |
+| `src-tauri/src/data.rs` | `Session` der App, Speichern im Hintergrund, Neuladen bei Änderung von außen, Ereignis `store-changed` |
+| `src-tauri/src/tray.rs` | Tray (`ksni`): Symbol mit Zahl, Punkt, Tasse; Tooltip; Menü |
+| `src-tauri/src/popover.rs` | Popover zeigen/verstecken, Position am Symbol (X11) oder in der Ecke, Schließen bei Fokusverlust |
+| `src-tauri/src/instance.rs` | Einzelinstanz: Sperrdatei und Socket je Datenordner |
+| `src-tauri/src/platform.rs` | X11 oder Wayland, Fenster aktivieren (`x11rb`), Tray-Host vorhanden? |
+| `src-tauri/src/i18n.rs` | Texte der Hülle (Tray) auf Deutsch und Englisch |
 | `src-tauri/tauri.conf.json` | Fenster `popover` (470 px, rahmenlos), Bundle `.deb`/AppImage, Identifier `eu.spex.tasqlet` |
 | `src-tauri/icons/icon.svg` | Quelle der App-Symbole (`npx tauri icon src-tauri/icons/icon.svg -o src-tauri/icons`) |
 | `src/lib/backend.ts` | alle Aufrufe an Rust, mit Mock (`inTauri`, `mock`) |
 | `src/lib/types.ts`, `src/lib/mock-data.ts` | Datenmodell aus Sicht der UI, Beispieldaten aus dem Dummy |
-| `src/app.css` | Rollen-Variablen `--tq-*` (vollständig ab Schritt 1.5) |
+| `src/app.css` | Rollen-Variablen `--tq-*`, Paletten, Achsen, Zonen `.zone-focus` und `.zone-chrome` |
+| `src/lib/theme.ts` | Themen (Palette, zwei Achsen), Vorschläge, `applyTheme`; Standard Leitstand |
+| `src/lib/i18n.ts`, `src/lib/i18n.de.ts` | `t("English text")`, deutsches Wörterbuch |
+| `src/lib/toast.svelte.ts`, `src/lib/ui/` | Rückmeldung mit „Rückgängig“; Bausteine: Tabs, Chip, Row, Section, Notice, Toast |
+| `src/Gallery.svelte` | Bausteinseite, `http://localhost:1430/#bausteine` |

@@ -18,7 +18,7 @@ export async function schemaVersion(): Promise<number> {
   return inTauri() ? invoke<number>("schema_version") : mock.schemaVersion;
 }
 
-/** All open items plus global state. Until storage exists (plan 1.2) the app returns an empty list. */
+/** All items plus global state, loaded from the data folder by the core. */
 export async function loadSnapshot(): Promise<Snapshot> {
   return inTauri() ? invoke<Snapshot>("snapshot") : mock.snapshot();
 }
@@ -32,4 +32,21 @@ export async function hidePopover(): Promise<void> {
 export async function watchShown(onShown: () => void): Promise<() => void> {
   if (!inTauri()) return () => {};
   return listen("popover-shown", onShown);
+}
+
+/** Calls `onChanged` whenever the items changed (tray menu, another program, later every action). */
+export async function watchChanged(onChanged: () => void): Promise<() => void> {
+  if (!inTauri()) return () => {};
+  return listen("store-changed", onChanged);
+}
+
+/** Restores the previous version of a damaged data file and leaves read-only mode. */
+export async function restoreBackup(): Promise<void> {
+  if (inTauri()) await invoke("restore_backup");
+}
+
+/** Calls `onCapture` when the tray menu asks for quick capture. */
+export async function watchCapture(onCapture: () => void): Promise<() => void> {
+  if (!inTauri()) return () => {};
+  return listen("focus-capture", onCapture);
 }

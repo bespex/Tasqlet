@@ -211,6 +211,13 @@ bleibt rein lokal.
 - **Smart-Labels**: Jira `…/browse/CORE-418` → `CORE-418`, GitHub-PR → `PR #42`, GitHub-Issue →
   `repo#12`, Datei → Dateiname, `.eml` → `Mail: …`, sonst der Host. Beim Überfahren erscheint das
   volle Ziel.
+- **Jira-Keys lernen (D26)**: Taucht ein Link wie `https://jira.firma.de/browse/NMS-19465` auf
+  (Schnelleingabe, `Strg+V`, Ablegen), merkt sich Tasqlet das **Projekt**: `NMS` gehört zu
+  `https://jira.firma.de`. Danach wird ein nackter Key `NMS-19470` in der Schnelleingabe zum
+  Arbeitsmittel und bleibt im Titel stehen. In Titeln und Notizen, die als Text angezeigt werden
+  (Queue, Ideen, Delegiert, Suche), sind bekannte Keys klickbar. Unbekannte Projekte bleiben Text, so
+  werden `UTF-8` oder `SHA-256` nie zu Links. Die gelernten Projekte liegen in
+  `~/.config/tasqlet/jira.json`; der Einstellungsdialog zeigt sie und kann jedes wieder vergessen.
 
 ## 6. Oberfläche
 

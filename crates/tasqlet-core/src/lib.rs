@@ -6,6 +6,7 @@
 //! resources in [`resources`] (1.3). Themes (2.6) follow.
 
 mod model;
+pub mod overview;
 pub mod quick;
 pub mod resources;
 mod session;

@@ -1,0 +1,37 @@
+// German texts, keyed by the English text used in the code (see i18n.ts).
+
+export const de: Record<string, string> = {
+  Focus: "Fokus",
+  Ideas: "Ideen",
+  Delegated: "Delegiert",
+  Search: "Suche",
+  Undo: "Rückgängig",
+  "Nothing to undo": "Nichts rückgängig zu machen",
+  Resources: "Arbeitsmittel",
+  Checklist: "Checkliste",
+  Note: "Notiz",
+  Add: "Hinzufügen",
+  Remove: "Entfernen",
+  "All resources": "Alle Arbeitsmittel",
+  "Take over now (Enter)": "Jetzt übernehmen (Enter)",
+  "Up next (Alt+Home)": "Direkt als Nächstes (Alt+Pos1)",
+  "Drag to sort (Alt+↑/↓)": "Ziehen zum Sortieren (Alt+↑/↓)",
+  "↩ last worked on": "↩ zuletzt dran",
+  "Nothing urgent.": "Nichts Dringendes.",
+  "Ctrl ⏎ in the quick entry puts a task into focus.":
+    "Mit Strg ⏎ in der Schnelleingabe kommt eine Aufgabe in den Fokus.",
+  "No tray found": "Kein Tray gefunden",
+  "Tasqlet lives in the tray, but this desktop shows no tray icons. On GNOME, install the “AppIndicator and KStatusNotifierItem Support” extension; until then Tasqlet opens as a window.":
+    "Tasqlet lebt im Tray, aber dieser Desktop zeigt keine Tray-Symbole. Unter GNOME hilft die Erweiterung „AppIndicator and KStatusNotifierItem Support“; bis dahin öffnet sich Tasqlet als Fenster.",
+  "The data could not be loaded": "Die Daten ließen sich nicht laden",
+  "Tasqlet is read-only and changes nothing on disk.": "Tasqlet ist schreibgeschützt und ändert nichts auf der Platte.",
+  "Restore the previous version": "Vorige Fassung wiederherstellen",
+  "Restored the previous version": "Vorige Fassung wiederhergestellt",
+  "Restoring failed: {error}": "Wiederherstellen fehlgeschlagen: {error}",
+  "Browser preview with sample data": "Browser-Vorschau mit Beispieldaten",
+  "Esc hides the popover": "Esc versteckt das Popover",
+  Components: "Bausteine",
+  Theme: "Thema",
+  "Saved as idea": "Als Idee gespeichert",
+  "Marked as done": "Erledigt",
+};

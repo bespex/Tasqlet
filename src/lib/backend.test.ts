@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { inTauri, loadSnapshot, mock, schemaVersion } from "./backend";
+import { inTauri, loadSnapshot, mock, schemaVersion, watchChanged } from "./backend";
 import { mockSnapshot } from "./mock-data";
 
 describe("backend outside Tauri", () => {
@@ -10,6 +10,13 @@ describe("backend outside Tauri", () => {
   it("falls back to the mock", async () => {
     expect(await schemaVersion()).toBe(mock.schemaVersion);
     expect((await loadSnapshot()).items.length).toBeGreaterThan(0);
+  });
+
+  it("does not listen for changes in the browser", async () => {
+    const stop = await watchChanged(() => {
+      throw new Error("never called");
+    });
+    expect(typeof stop).toBe("function");
   });
 });
 

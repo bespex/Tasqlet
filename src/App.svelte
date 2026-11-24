@@ -1,20 +1,48 @@
 <script lang="ts">
+  // The popover. Plan 1.5 builds its frame from the components: tabs, notices, the focus list and the
+  // feedback line. The work card (1.7), quick entry (1.6) and keyboard (1.8) follow.
   import { onMount } from "svelte";
-  import { hidePopover, inTauri, loadSnapshot, watchShown } from "./lib/backend";
-  import type { Snapshot } from "./lib/types";
+  import { Play } from "@lucide/svelte";
+  import { hidePopover, inTauri, loadSnapshot, restoreBackup, watchChanged, watchShown } from "./lib/backend";
+  import { t } from "./lib/i18n";
+  import { showToast } from "./lib/toast.svelte";
+  import type { Item, Snapshot } from "./lib/types";
+  import Chip from "./lib/ui/Chip.svelte";
+  import Notice from "./lib/ui/Notice.svelte";
+  import Row from "./lib/ui/Row.svelte";
+  import Tabs from "./lib/ui/Tabs.svelte";
+  import Toast from "./lib/ui/Toast.svelte";
 
-  // Plan step 0.2: a plain popover shell with data. The real views follow from step 1.5 on.
   let snapshot = $state<Snapshot | null>(null);
+  let view = $state("focus");
   const preview = !inTauri();
 
-  const focus = $derived((snapshot?.items ?? []).filter((i) => i.state === "focus").sort((a, b) => a.order - b.order));
-  const count = (state: string) => (snapshot?.items ?? []).filter((i) => i.state === state).length;
+  const items = $derived(snapshot?.items ?? []);
+  const focus = $derived(items.filter((i) => i.state === "focus").sort((a, b) => a.order - b.order));
+  const count = (state: Item["state"]) => items.filter((i) => i.state === state).length;
+  const tabs = $derived([
+    { id: "focus", label: t("Focus"), count: count("focus") },
+    { id: "idea", label: t("Ideas"), count: count("idea") },
+    { id: "delegated", label: t("Delegated"), count: count("delegated") },
+  ]);
+
+  const reload = () => loadSnapshot().then((s) => (snapshot = s));
 
   onMount(() => {
-    loadSnapshot().then((s) => (snapshot = s));
-    const stop = watchShown(() => loadSnapshot().then((s) => (snapshot = s)));
-    return () => void stop.then((f) => f());
+    void reload();
+    const stops = [watchShown(reload), watchChanged(reload)];
+    return () => stops.forEach((stop) => void stop.then((f) => f()));
   });
+
+  async function restore() {
+    try {
+      await restoreBackup();
+      showToast({ text: t("Restored the previous version") });
+      await reload();
+    } catch (e) {
+      showToast({ text: t("Restoring failed: {error}", { error: String(e) }) });
+    }
+  }
 
   function onKey(e: KeyboardEvent) {
     if (e.key === "Escape") void hidePopover();
@@ -25,24 +53,63 @@
 
 <div class="stage" class:preview>
   <div class="pop">
-    <header>
-      <span class="tab on">Fokus <b>{count("focus")}</b></span>
-      <span class="tab">Ideen <b>{count("idea")}</b></span>
-      <span class="tab">Delegiert <b>{count("delegated")}</b></span>
-    </header>
-    <ol>
-      {#each focus as item (item.id)}
-        <li class:active={item.active}>
-          <span class="num">{item.order + 1}</span>
-          <span class="title">{item.title}</span>
-        </li>
+    <Tabs {tabs} active={view} onselect={(id) => (view = id)} />
+
+    {#if snapshot?.tray_missing}
+      <Notice
+        title={t("No tray found")}
+        text={t(
+          "Tasqlet lives in the tray, but this desktop shows no tray icons. On GNOME, install the “AppIndicator and KStatusNotifierItem Support” extension; until then Tasqlet opens as a window.",
+        )}
+      />
+    {/if}
+    {#if snapshot?.load_error}
+      <Notice
+        warn
+        title={t("The data could not be loaded")}
+        text={`${snapshot.load_error.message} ${t("Tasqlet is read-only and changes nothing on disk.")}`}
+        action={snapshot.load_error.backup ? t("Restore the previous version") : undefined}
+        onaction={restore}
+      />
+    {/if}
+
+    <div class="body">
+      {#if focus.length === 0}
+        <div class="empty">
+          <p><b>{t("Nothing urgent.")}</b><br />{t("Ctrl ⏎ in the quick entry puts a task into focus.")}</p>
+        </div>
       {:else}
-        <li class="empty">Noch keine Einträge.</li>
-      {/each}
-    </ol>
-    <footer>
-      {#if preview}Browser-Vorschau mit Beispieldaten{:else}Esc versteckt das Popover{/if}
+        {@const top = focus[0]}
+        <section class="card zone-focus" class:active={top.active}>
+          <h2>{top.title}</h2>
+          {#if top.resources.length}
+            <div class="chips">
+              {#each top.resources.slice(0, 3) as r, i (r.id)}
+                <Chip resource={r} digit={i + 1} />
+              {/each}
+              {#if top.resources.length > 3}<Chip />{/if}
+            </div>
+          {/if}
+        </section>
+        <div role="listbox" aria-label={t("Focus")}>
+          {#each focus.slice(1) as item, i (item.id)}
+            <Row num={i + 2} title={item.title}>
+              {#snippet indicators()}
+                {#if item.last_active}<span class="badge">{t("↩ last worked on")}</span>{/if}
+              {/snippet}
+              {#snippet tools()}
+                <button class="ib run" title={t("Take over now (Enter)")}><Play size={16} /></button>
+              {/snippet}
+            </Row>
+          {/each}
+        </div>
+      {/if}
+    </div>
+
+    <footer class="zone-chrome">
+      {preview ? t("Browser preview with sample data") : t("Esc hides the popover")}
     </footer>
+    <Toast />
   </div>
 </div>
 
@@ -53,73 +120,91 @@
   .stage.preview {
     display: grid;
     place-items: center;
-    background: #2e3b47;
-    height: 100vh;
+    background: radial-gradient(110% 80% at 18% 8%, #55697a 0, #2e3b47 45%, #1a2128 100%);
   }
   .pop {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
     background: var(--tq-bg);
+    color: var(--tq-ink);
   }
   .preview .pop {
     width: 470px;
     height: 680px;
+    border: 1px solid var(--tq-line);
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.38);
   }
-  header {
-    display: flex;
-    gap: 4px;
-    padding: 10px;
-    border-bottom: 1px solid var(--tq-line);
-  }
-  .tab {
-    padding: 7px 11px;
-    border-radius: 8px;
-    color: var(--tq-ink-2);
-    font-weight: 500;
-  }
-  .tab.on {
-    color: var(--tq-ink);
-    background: var(--tq-card);
-    box-shadow: 0 0 0 1px var(--tq-line);
-  }
-  .tab b {
-    font-size: 12px;
-    color: var(--tq-ink-2);
-  }
-  ol {
-    list-style: none;
-    margin: 0;
-    padding: 0;
+  .body {
     flex: 1;
     overflow: auto;
+    min-height: 0;
   }
-  li {
-    display: flex;
-    gap: 10px;
-    padding: 11px 14px;
-    border-bottom: 1px solid var(--tq-line);
+  .card {
+    margin: 14px;
+    padding: 14px 16px 16px;
+    background: var(--tq-card);
+    border: var(--tq-f-border-w) solid var(--tq-line);
+    border-radius: 12px;
+    box-shadow: var(--tq-f-shadow);
   }
-  li.active {
+  .card.active {
+    border-color: var(--tq-f-border);
+  }
+  h2 {
+    font-size: 17px;
+    line-height: 1.3;
+    margin: 0;
     font-weight: 600;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .badge {
+    white-space: nowrap;
+  }
+  .ib {
+    width: 30px;
+    height: 30px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid transparent;
+    background: none;
+    border-radius: 8px;
+    color: var(--tq-ink-2);
+  }
+  .ib:hover {
+    background: var(--tq-hover);
+    color: var(--tq-ink);
+  }
+  .ib.run {
     color: var(--tq-accent);
   }
-  .num {
-    width: 18px;
-    text-align: right;
+  .empty {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    padding: 48px 24px;
     color: var(--tq-ink-2);
   }
-  .empty {
-    color: var(--tq-ink-2);
+  .empty p {
+    margin: 0;
+    max-width: 34ch;
+  }
+  .empty b {
+    color: var(--tq-ink);
   }
   footer {
     padding: 10px 14px;
     font-size: 12px;
+    border-top: 1px solid var(--tq-c-divider);
     color: var(--tq-ink-2);
-    border-top: 1px solid var(--tq-line);
   }
 </style>

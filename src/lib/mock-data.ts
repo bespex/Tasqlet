@@ -126,12 +126,15 @@ export function mockSnapshot(now: Date = new Date()): Snapshot {
       text,
       done: !!done,
     }));
-    const resources: Resource[] = (s.resources ?? []).map(([type, target, label]) => ({
+    // The third value is what the chip shows; only "Mail: …" for a .eml is an own label here,
+    // the rest are smart labels the core would compute.
+    const resources: Resource[] = (s.resources ?? []).map(([type, target, shown]) => ({
       id: id("r"),
       type,
       target,
-      label,
+      label: type === "mail" ? shown : null,
       used_at: null,
+      shown,
     }));
     const created = at((s.created_hours_ago ?? 48) * 3_600_000);
     return {

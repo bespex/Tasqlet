@@ -8,9 +8,11 @@ export interface Resource {
   id: string;
   type: ResourceType;
   target: string;
-  /** null = smart label, computed by the core (plan step 1.3) */
+  /** null = smart label */
   label: string | null;
   used_at: string | null;
+  /** What the chip shows: the own label or the smart label, computed by the core (snapshot only). */
+  shown?: string;
 }
 
 export interface ChecklistItem {
@@ -43,4 +45,14 @@ export interface Snapshot {
   schema: number;
   on_break: boolean;
   items: Item[];
+  /** The data could not be loaded; the app runs read-only. */
+  load_error?: LoadError | null;
+  /** No tray host was found at startup (GNOME without the AppIndicator extension). */
+  tray_missing?: boolean;
+}
+
+export interface LoadError {
+  message: string;
+  /** A previous version exists and can be restored (`restoreBackup`). */
+  backup: boolean;
 }
