@@ -46,4 +46,29 @@ Svelte 5 + TypeScript (`src/`). Stand: Konzept fertig, Umsetzung beginnt mit Pha
 
 ## Bauen und prüfen
 
-Wird mit Phase 0 ergänzt (Befehle für `cargo`, `npm run dev`, `check`, `test`).
+Cargo-Workspace im Root (`crates/tasqlet-core`, `src-tauri`), Frontend im Root (`src/`, Vite auf
+Port 1430). Voraussetzungen: Rust stable, Node.js 22, `libwebkit2gtk-4.1-dev`, `librsvg2-dev`.
+
+```sh
+npm run dev                      # UI im Browser mit Mock-Daten (http://localhost:1430)
+npm run tauri dev                # Desktop-App
+npm run check                    # svelte-check + prettier --check
+npm test                         # vitest
+npm run format                   # prettier --write
+cargo fmt --all --check
+mkdir -p dist && cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+```
+
+Dieselben Schritte laufen in der CI (`.github/workflows/ci.yml`). Vor einem Commit müssen alle grün sein.
+
+## Karte
+
+| Pfad | Zuständig für |
+|---|---|
+| `crates/tasqlet-core/src/lib.rs` | Domäne (noch leer bis auf `SCHEMA_VERSION`) |
+| `src-tauri/src/lib.rs` | Tauri-Builder, Commands (`schema_version`) |
+| `src-tauri/tauri.conf.json` | Fenster `popover` (470 px, rahmenlos), Bundle `.deb`/AppImage, Identifier `eu.spex.tasqlet` |
+| `src-tauri/icons/icon.svg` | Quelle der App-Symbole (`npx tauri icon src-tauri/icons/icon.svg -o src-tauri/icons`) |
+| `src/lib/backend.ts` | alle Aufrufe an Rust, mit Mock (`inTauri`, `mock`) |
+| `src/app.css` | Rollen-Variablen `--tq-*` (vollständig ab Schritt 1.5) |

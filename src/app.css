@@ -1,0 +1,22 @@
+/* Colours come only from role tokens (docs/KONZEPT.md 7). The full set follows in plan step 1.5. */
+:root {
+  color-scheme: light dark;
+  --tq-bg: light-dark(#faf9f6, #1a1b1e);
+  --tq-ink: light-dark(#1d1b18, #ededeb);
+  --tq-ink-2: light-dark(#57524b, #b1b3b8);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--tq-bg);
+  color: var(--tq-ink);
+  font:
+    14px/1.45 Inter,
+    "Noto Sans",
+    system-ui,
+    sans-serif;
+}

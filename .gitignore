@@ -1,0 +1,11 @@
+node_modules
+/dist
+/target
+/src-tauri/gen
+/.scratch
+.DS_Store
+*.local
+vite.config.ts.timestamp-*
+.idea
+.vscode/*
+!.vscode/extensions.json

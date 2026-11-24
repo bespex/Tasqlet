@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Tasqlet",
+  "mainBinaryName": "tasqlet",
+  "version": "0.1.0",
+  "identifier": "eu.spex.tasqlet",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1430",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "popover",
+        "title": "Tasqlet",
+        "width": 470,
+        "height": 680,
+        "resizable": false,
+        "decorations": false,
+        "skipTaskbar": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["deb", "appimage"],
+    "category": "Productivity",
+    "shortDescription": "Focus and notes in your tray – be spex",
+    "longDescription": "Tasqlet lives in your tray and keeps one task in focus: capture a thought or a link in\nseconds, see what is next at a glance, and open the ticket, mail or file of the current\ntask with one click. Local, no cloud, no time tracking.\n\nPart of be spex – apps for the way you work: https://bespex.github.io",
+    "copyright": "Copyright (c) 2026 Bert Speckels, MIT License",
+    "license": "MIT",
+    "publisher": "Bert Speckels",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "homepage": "https://github.com/bespex/Tasqlet"
+  }
+}
