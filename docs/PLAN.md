@@ -40,7 +40,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 0.1 Repository, Workspace, Werkzeuge
   - [x] 0.2 Tauri-Hülle mit leerem Popover und Browser-Vorschau
 - **MVP 1: Erfassen, Überblick, kurze Wege**
-  - [ ] 1.1 Core: Modell, Invarianten, Übergänge, Undo
+  - [x] 1.1 Core: Modell, Invarianten, Übergänge, Undo
   - [ ] 1.2 Core: Speichern und Laden
   - [ ] 1.3 Core: Schnelleingabe-Parser, Smart-Labels, Rang der Arbeitsmittel
   - [ ] 1.4 Tray, Popover-Fenster, Einzelinstanz, `--toggle`
@@ -148,6 +148,8 @@ Konzept: 6, 7.1. Vorlage: CSS des Dummys, `../CodeDeck/src/palette.ts`.
 
 - CSS-Variablen `--tq-*` für alle Rollen inklusive `focus-*` und `chrome-*` (zunächst nur Stufe
   „ruhig“ / „eins mit Inhalt“). Paletten Papier und Graphit, „Automatisch“ folgt dem System.
+- Zusätzlich Fjord mit den Stufen „betont“ und „abgesetzt“: das ist der Vorschlag **Leitstand**, der
+  bevorzugte Stil (D19). Die Bausteinseite zeigt ihn mit.
 - Bausteine: Reiter, Chip, Zeile mit Werkzeugen beim Überfahren, Abschnitt mit Label und `+`, Toast mit
   „Rückgängig“, Symbole (Lucide).
 - i18n-Grundgerüst (de, en).
@@ -169,14 +171,21 @@ Konzept: 3.1, 3.2 (`Strg+V` ohne Ziel).
 
 Konzept: 6.1, 2.1 (Bereit, Pause).
 
-- Kopf mit Status, Datum, Tasse oder `▶`, `✓`, `➔` (einfaches Delegieren per Eingabe), `⤢` (zunächst
-  ohne Funktion oder versteckt bis 2.4).
+- Aufbau nach D20 (Entwurf K2, Vorlage `docs/entwuerfe/arbeitskarte-kopf.html`, weicht hier bewusst vom
+  Dummy ab): keine Kopfzeile, der Titel steht oben. Rechts oben ein runder Knopf, `✓` Erledigt, bei
+  „Bereit“ ausgefülltes `▶`. Beim Überfahren der Karte oder bei Tastaturfokus darin erscheinen
+  darunter kleine runde Knöpfe: Tasse (Pause; bei „Bereit“ stattdessen `✓`), `➔` (einfaches
+  Delegieren per Eingabe), `…` (zurück in die Queue, zu den Ideen).
+- Klick auf den Titel öffnet die Ausarbeitung (zunächst ohne Funktion bis 2.4); Umbenennen per
+  Doppelklick. Fußleiste: Status („In Arbeit“/„Bereit“), notiertes Datum, „Ausarbeiten“. Die Leiste
+  nimmt später weitere Funktionen auf.
 - Arbeitsmittel (drei wichtigste und `…`, siehe 1.9), Checkliste mit `+` unter dem Label, Notiz mit
   wachsender Höhe und Autosave.
 - Pausenansicht mit „Weiter“.
 
 **Abnahme:** Ein kompletter Durchlauf (übernehmen, Schritte abhaken, Notiz schreiben, Pause, weiter,
-erledigt, #2 steht auf „Bereit“) sieht aus und verhält sich wie im Dummy.
+erledigt, #2 steht auf „Bereit“) sieht aus und verhält sich wie im Dummy, die Karte selbst wie
+in D20.
 
 ### 1.8 Queue und Tastatur
 

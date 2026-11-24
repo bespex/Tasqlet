@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Tasqlet · Mehr Ruhe rechts oben</title>
+<style>
+:root{color-scheme:dark;
+ --tq-bg:#15202b;--tq-card:#1b2836;--tq-field:#111a23;--tq-hover:#223243;--tq-line:#2a3a4a;--tq-line-strong:#6a87a3;
+ --tq-ink:#e6edf3;--tq-ink-2:#a9bbcc;--tq-ink-3:#7f94a8;--tq-accent:#7cbcff;--tq-on-accent:#0c1620;--tq-accent-soft:#1c3449;
+ --f-bg:color-mix(in srgb,var(--tq-accent) 7%,var(--tq-card));--f-field:color-mix(in srgb,var(--tq-accent) 12%,var(--tq-card));
+ --f-hover:color-mix(in srgb,var(--tq-accent) 18%,var(--tq-card));--f-line:color-mix(in srgb,var(--tq-accent) 24%,var(--tq-card));
+ --f-shadow:0 10px 28px color-mix(in srgb,var(--tq-accent) 24%,transparent);
+ --c-bg:color-mix(in srgb,var(--tq-ink) 6%,var(--tq-bg));--c-line:color-mix(in srgb,var(--tq-ink) 14%,var(--tq-bg));
+ --ok:#7ad4a0}
+*{box-sizing:border-box}
+body{margin:0;background:#0b1118;color:var(--tq-ink);font:14px/1.45 system-ui,"Inter","Segoe UI",sans-serif;padding:28px 32px 60px}
+h1{font-size:22px;margin:0 0 6px}
+.lead{color:var(--tq-ink-2);max-width:1040px;margin:0 0 26px}.lead b{color:var(--tq-ink)}
+section.draft{margin-bottom:46px}
+section.draft>h2{font-size:16px;margin:0 0 4px;display:flex;gap:8px;align-items:baseline}
+section.draft>h2 .k{font:700 12px/1 ui-monospace,monospace;color:var(--tq-on-accent);background:var(--tq-accent);border-radius:5px;padding:3px 6px}
+section.draft>p{margin:0 0 14px;color:var(--tq-ink-2);font-size:13px;max-width:1040px}
+section.draft>p b{color:var(--tq-ink)}
+.pro{color:var(--ok)}.con{color:#e8a9a0}
+.pair{display:flex;gap:28px;flex-wrap:wrap}
+.cap{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tq-ink-3);margin:0 0 6px 4px}
+.cap em{font-style:normal;color:var(--tq-accent);text-transform:none;letter-spacing:0;font-weight:600}
+
+.pop{width:470px;background:var(--tq-bg);border:1px solid var(--tq-line);border-radius:14px;padding:0 0 12px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.tabs{display:flex;gap:2px;padding:8px 12px 0;background:var(--c-bg);border-bottom:1px solid var(--c-line);border-radius:12px 12px 0 0;font-size:13px}
+.tabs i{font-style:normal;padding:6px 10px;color:var(--tq-ink-3);border-bottom:2px solid transparent}
+.tabs i.on{color:var(--tq-ink);border-color:var(--tq-accent)}
+.row{margin:0 14px;padding:7px 10px;border-radius:8px;color:var(--tq-ink-2);display:flex;gap:10px;font-size:13px}
+.row .n{color:var(--tq-ink-3);width:14px;text-align:right}
+.badge{font-size:11px;color:var(--tq-accent);background:var(--tq-accent-soft);border-radius:6px;padding:1px 6px;margin-left:auto}
+
+.card{margin:14px;padding:14px 16px 16px;background:var(--f-bg);border:2px solid var(--tq-accent);border-radius:12px;box-shadow:var(--f-shadow);position:relative}
+.ch{display:flex;align-items:center;gap:10px;min-height:20px;padding-right:56px}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--tq-accent)}
+.st.ready{color:var(--tq-ink-2)}
+.st svg{width:11px;height:11px;fill:currentColor;stroke:none}
+.dt{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--tq-ink-3)}
+.dt svg{width:13px;height:13px}
+.ct{font-size:17px;line-height:1.3;margin:4px 0 10px;font-weight:600;padding-right:56px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 8px;border-radius:7px;background:var(--f-field);border:1px solid var(--f-line);color:var(--tq-ink-2)}
+.chip svg{width:12px;height:12px}
+.lab{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--tq-ink-3);margin:8px 0 4px;text-transform:uppercase}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px;padding:2px 0}
+.chk .b{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--tq-line-strong);display:grid;place-items:center;flex:none}
+.chk.d{color:var(--tq-ink-3);text-decoration:line-through}
+.chk.d .b{background:var(--tq-accent);border-color:var(--tq-accent)}
+.chk.d .b svg{width:10px;height:10px;stroke:var(--tq-on-accent);stroke-width:3}
+.note{font-size:13px;color:var(--tq-ink-2);background:var(--f-field);border-radius:8px;padding:7px 9px;border:1px solid var(--f-line)}
+svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* the round main button, top right */
+.dock{position:absolute;top:12px;right:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;z-index:3}
+.ok{width:42px;height:42px;border-radius:50%;border:2px solid var(--tq-accent);color:var(--tq-accent);background:var(--f-bg);display:grid;place-items:center;cursor:pointer;transition:background .15s,color .15s,transform .15s;padding:0}
+.ok svg{width:21px;height:21px;stroke-width:2.6}
+.ok:hover{background:var(--tq-accent);color:var(--tq-on-accent)}
+.ok.play svg{fill:currentColor;stroke:none;width:17px;height:17px;margin-left:3px}
+.ok.play{background:var(--tq-accent);color:var(--tq-on-accent)}
+.ok.play:hover{filter:brightness(1.1)}
+.tip{font-size:11px;color:var(--tq-ink-3);white-space:nowrap}
+
+/* hidden until hover; .show forces the hover state for the side-by-side view */
+.more{display:flex;flex-direction:column;align-items:flex-end;gap:5px;opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .16s,transform .16s}
+.card:hover .more,.card:focus-within .more,.card.show .more{opacity:1;transform:none;pointer-events:auto}
+
+/* --- 1: small round buttons, stacked --- */
+.d1 .sb{width:30px;height:30px;border-radius:50%;margin-right:6px;border:1px solid var(--f-line);background:var(--tq-field);color:var(--tq-ink-2);display:grid;place-items:center;cursor:pointer;padding:0}
+.d1 .sb:hover{color:var(--tq-ink);border-color:var(--tq-line-strong);background:var(--f-hover)}
+.d1 .sb svg{width:15px;height:15px}
+.d1 .card .body{padding-right:44px}
+
+/* --- 2: labelled pills, overlaying the content --- */
+.d2 .pl{display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 10px 0 9px;border-radius:999px;border:1px solid var(--f-line);background:var(--tq-card);color:var(--tq-ink-2);font:inherit;font-size:12.5px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:nowrap}
+.d2 .pl:hover{color:var(--tq-ink);background:var(--tq-hover);border-color:var(--tq-line-strong)}
+.d2 .pl svg{width:14px;height:14px}
+.d2 .pl kbd{font:600 10px ui-monospace,monospace;color:var(--tq-ink-3);margin-left:3px}
+
+/* --- 3: capsule, the round button grows into a column --- */
+.d3 .dock{gap:0}
+.d3 .caps{display:flex;flex-direction:column;align-items:center;width:42px;border-radius:21px;border:2px solid transparent;transition:border-color .16s,background .16s}
+.d3 .card:hover .caps,.d3 .card.show .caps,.d3 .card:focus-within .caps{border-color:var(--f-line);background:var(--tq-field)}
+.d3 .caps .ok{margin:-2px}
+.d3 .more{gap:2px;padding:6px 0 7px;align-items:center}
+.d3 .cb{width:30px;height:30px;border-radius:50%;border:0;background:none;color:var(--tq-ink-2);display:grid;place-items:center;cursor:pointer;padding:0}
+.d3 .cb:hover{background:var(--f-hover);color:var(--tq-ink)}
+.d3 .cb svg{width:15px;height:15px}
+.d3 .sep{width:16px;height:1px;background:var(--f-line);margin:3px 0}
+.d3 .card .body{padding-right:44px}
+
+/* tooltip-like label to the left of a hovered button (drafts 1 and 3) */
+.lbl{position:relative}
+.lbl:hover::after{content:attr(data-l);position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);background:var(--tq-card);border:1px solid var(--tq-line-strong);color:var(--tq-ink);font-size:12px;padding:3px 8px;border-radius:6px;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+
+/* pause card */
+.brk{margin:14px;padding:20px 16px;border:2px dashed var(--f-line);border-radius:12px;text-align:center;color:var(--tq-ink-2);position:relative}
+.brk svg.big{width:30px;height:30px;color:var(--tq-accent)}
+.brk h3{margin:6px 0 2px;color:var(--tq-ink);font-size:16px}
+.brk p{margin:0 0 12px;font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border-radius:999px;border:0;background:var(--tq-accent);color:var(--tq-on-accent);font:inherit;font-size:13px;font-weight:600}
+.btn svg{width:13px;height:13px;fill:currentColor;stroke:none}
+
+.note-box{max-width:1040px;color:var(--tq-ink-2);font-size:13px;border-top:1px solid var(--tq-line);padding-top:16px}
+.note-box b{color:var(--tq-ink)}
+.note-box ul{margin:6px 0 0;padding-left:18px}
+
+/* K: no header row; the top right belongs to the round button */
+.card.k{padding-top:16px}
+.k .ct{margin:2px 0 4px;padding-right:58px}
+.k .ct .t{cursor:pointer;border-radius:4px;transition:background .12s,box-shadow .12s}
+.k .ct .t:hover,.k .card.show-title .ct .t{background:var(--f-hover);box-shadow:0 0 0 3px var(--f-hover)}
+.k .ct .go{display:inline-grid;place-items:center;width:20px;height:20px;margin-left:4px;vertical-align:-3px;border-radius:5px;color:var(--tq-ink-3);opacity:0;transition:opacity .12s}
+.k .ct .go svg{width:14px;height:14px}
+.k .ct .t:hover+.go,.k .card.show-title .go{opacity:1;color:var(--tq-accent)}
+.meta{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--tq-ink-3);margin:0 0 12px;padding-right:58px}
+.meta span{display:inline-flex;gap:4px;align-items:center}
+.meta svg{width:13px;height:13px}
+.meta .ready{color:var(--tq-ink-2);font-weight:700;letter-spacing:.05em}
+.dpill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:500;color:var(--tq-ink-2);border:1px dashed var(--f-line);border-radius:999px;padding:1px 8px;margin-left:6px;vertical-align:2px;cursor:pointer;white-space:nowrap}
+.dpill svg{width:12px;height:12px}
+.dpill:hover{border-style:solid;color:var(--tq-ink)}
+.kfoot{display:flex;align-items:center;gap:10px;margin:14px -16px -16px;padding:8px 16px;border-top:1px solid var(--f-line);font-size:12px;color:var(--tq-ink-3);border-radius:0 0 10px 10px}
+.kfoot .dot{width:7px;height:7px;border-radius:50%;background:var(--tq-accent)}
+.kfoot .sp{flex:1}
+.kfoot a{color:var(--tq-ink-2);text-decoration:none;display:inline-flex;gap:5px;align-items:center;padding:3px 6px;border-radius:6px}
+.kfoot a:hover{background:var(--f-hover);color:var(--tq-ink)}
+.kfoot svg{width:13px;height:13px}
+.cursor{position:absolute;width:14px;height:20px;pointer-events:none}
+.d1 .more{gap:7px}
+</style>
+</head>
+<body>
+<h1>Mehr Ruhe rechts oben: drei Entwürfe</h1>
+<p class="lead">Die Ecke rechts oben gehört jetzt allein dem <b>runden Haken</b> und den kleinen Knöpfen darunter. Was dort bisher noch stand, zieht um:
+<b>Status</b>, <b>Datum</b> und <b>Ausarbeiten</b>. Der Status „In Arbeit“ braucht oft gar kein eigenes Etikett: Die betonte Karte <i>ist</i> die Arbeit, und der runde Knopf sagt, was geht (✓ = in Arbeit, ▶ = bereit).
+Da „Ausarbeiten“ an den Titel wandert, bleiben unter dem Haken nur noch <b>Pause, Delegieren, Mehr</b>.
+Links jeweils in Ruhe (live mit der Maus ausprobierbar), rechts beim Überfahren der Karte.</p>
+
+<div id="drafts"></div>
+
+<section class="draft d1">
+<h2><span class="k">+</span>Zustand „Bereit“ in allen drei</h2>
+<p>Ohne Status-Etikett muss „Bereit“ trotzdem erkennbar sein: Der runde Knopf wird zum ausgefüllten <b>▶</b>, und an der Stelle, wo sonst das Datum steht, steht <b>BEREIT</b> (in K2 in der Fußzeile).</p>
+<div class="pair" id="states"></div>
+</section>
+
+<div class="note-box">
+<b>Was sich gegenüber J ändert:</b>
+<ul>
+<li>Keine Kopfzeile mehr. Der Titel beginnt ganz oben, die Karte wird niedriger.</li>
+<li><b>Klick auf den Titel</b> öffnet „Ausarbeiten“ (Split-View). Beim Überfahren des Titels zeigt ein leiser Hintergrund und das Panel-Symbol, dass er klickbar ist. Umbenennen wäre dann Doppelklick oder in der Ausarbeitung, die Taste bleibt <kbd>Strg E</kbd>.</li>
+<li>Das <b>Datum</b> ist nur notiert (D2). Es braucht keinen prominenten Platz, nur einen festen.</li>
+<li>Unter dem Haken stehen nur noch drei kleine Knöpfe. Das ist ruhiger und lässt mehr Luft.</li>
+</ul>
+</div>
+
+<script>
+const P={
+ play:'<svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
+ cup:'<svg viewBox="0 0 24 24"><path d="M10 2v2M14 2v2M6 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/></svg>',
+ check:'<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+ fwd:'<svg viewBox="0 0 24 24"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>',
+ panel:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M14 3v18"/><path d="M17 8h1M17 12h1"/></svg>',
+ more:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>',
+ cal:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+ list:'<svg viewBox="0 0 24 24"><path d="m3 17 2 2 4-4M3 7l2 2 4-4M13 6h8M13 12h8M13 18h8"/></svg>',
+ link:'<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+ file:'<svg viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h6"/></svg>',
+};
+const T='CORE-418: Webhook-Authentifizierung umstellen';
+const title=(extra='')=>`<h2 class="ct"><span class="t" title="Klick: ausarbeiten (Strg+E)">${T}</span><span class="go">${P.panel}</span>${extra}</h2>`;
+const chips=`<div class="chips"><span class="chip">${P.link}CORE-418</span><span class="chip">${P.link}PR #42</span><span class="chip">${P.file}staging.env</span></div>`;
+const rest=`<div class="lab">Schritte 2/3</div>
+<div class="chk d"><span class="b">${P.check}</span>Alten Token-Flow prüfen</div>
+<div class="chk d"><span class="b">${P.check}</span>HMAC-Signatur einbauen</div>
+<div class="chk"><span class="b"></span>Staging umstellen</div>
+<div class="lab">Notiz</div><div class="note">Staging nutzt noch X-Legacy-Header, erst nach dem Release abschalten …</div>`;
+const frame=card=>`<div class="pop"><div class="tabs"><i class="on">Fokus</i><i>Ideen 4</i><i>Delegiert 2</i></div>${card}
+<div class="row"><span class="n">2</span>Release-Notes 3.4 schreiben<span class="badge">↩ zuletzt dran</span></div>
+<div class="row"><span class="n">3</span>Monitoring-Alarm für Queue-Länge</div></div>`;
+const dock=ready=>{
+ const ok=ready?`<button class="ok play" title="Starten (Enter)">${P.play}</button>`:`<button class="ok" title="Erledigt (Strg+⏎)">${P.check}</button>`;
+ const a=[...(ready?[['check','Erledigt']]:[['cup','Pause']]),['fwd','Delegieren'],['more','Mehr: zurück in die Queue, zu den Ideen']];
+ return `<div class="dock">${ok}<div class="more">${a.map(([i,l])=>`<button class="sb lbl" data-l="${l}">${P[i]}</button>`).join('')}</div></div>`};
+
+const D=[
+['K1','Metazeile unter dem Titel',
+ 'Keine Kopfzeile. Der Titel steht ganz oben, daneben der Haken. Direkt darunter eine <b>leise Metazeile</b>: notiertes Datum und Stand der Schritte. Das liest sich wie die Unterzeile einer Überschrift. <span class="pro">Klar, kompakt, Datum bleibt auf einen Blick da.</span> <span class="con">Eine Zeile mehr Text unter dem Titel.</span>',
+ ready=>`${title()}<div class="meta">${ready?'<span class="ready">BEREIT</span>':''}<span>${P.cal}Fr 27.11.</span><span>${P.list}2/3</span></div>${chips}${rest}`],
+['K2','Status und Datum in die Fußzeile',
+ 'Oben nur noch Titel und Haken. Status, Datum und ein zweiter Weg zum Ausarbeiten liegen in einer <b>schmalen Fußzeile</b>, wie die Statuszeile eines Fensters. <span class="pro">Der ruhigste Kopf, die Karte beginnt mit dem Wesentlichen.</span> <span class="con">Das Datum rutscht aus dem ersten Blick.</span>',
+ ready=>`${title()}<div style="height:6px"></div>${chips}${rest}<div class="kfoot">${ready?'<span class="dot" style="background:var(--tq-ink-3)"></span>Bereit':'<span class="dot"></span>In Arbeit'}<span>·</span><span style="display:inline-flex;gap:4px;align-items:center">${P.cal}notiert für Fr 27.11.</span><span class="sp"></span><a href="#">${P.panel}Ausarbeiten</a></div>`],
+['K3','Datum als Marke am Titel',
+ 'Das Datum hängt als <b>kleine, gestrichelte Marke direkt hinter dem Titel</b>, wie ein Etikett am Ordner. Ein Klick darauf ändert es (Aktion am Titel), ohne Datum erscheint die Marke nur beim Überfahren als „+ Datum“. <span class="pro">Alles Beschreibende sitzt am Titel, keine zusätzliche Zeile.</span> <span class="con">Bei langen Titeln bricht die Marke in die zweite Zeile.</span>',
+ ready=>`${title(`<span class="dpill">${P.cal}Fr 27.11.</span>`)}${ready?'<div class="meta" style="margin-top:2px"><span class="ready">BEREIT</span></div>':'<div style="height:8px"></div>'}${chips}${rest}`],
+];
+document.getElementById('drafts').innerHTML=D.map(([k,n,txt,inner])=>`<section class="draft d1 k"><h2><span class="k">${k}</span>${n}</h2><p>${txt}</p>
+<div class="pair"><div><div class="cap">In Ruhe <em>(Karte und Titel mit der Maus überfahren)</em></div>${frame(`<section class="card k" tabindex="0">${dock(false)}${inner(false)}</section>`)}</div>
+<div><div class="cap">Beim Überfahren <em>(Maus auf dem Titel)</em></div>${frame(`<section class="card k show show-title">${dock(false)}${inner(false)}</section>`)}</div></div></section>`).join('');
+document.getElementById('states').innerHTML=D.map(([k,,,inner])=>`<div class="k"><div class="cap">${k} · Bereit</div>${frame(`<section class="card k">${dock(true)}${inner(true)}</section>`)}</div>`).join('');
+</script>
+
+</body>
+</html>

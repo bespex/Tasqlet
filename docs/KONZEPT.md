@@ -200,9 +200,11 @@ Reiter (Fokus, Ideen, Delegiert) und die Suche (`🔍`, `Strg+F`).
 
 **Arbeitskarte (#1)**
 
-- Kopf: Status (`▶ IN ARBEIT` oder `BEREIT`), notiertes Datum (neutraler Chip), dann die Knöpfe Tasse
-  oder `▶`, `✓` Erledigt, `➔` Delegieren, `⤢` Ausarbeiten.
-- Titel.
+- Keine Kopfzeile (D20). Oben steht der **Titel**. Ein Klick darauf öffnet die Ausarbeitung,
+  ein Doppelklick benennt um.
+- Rechts oben ein **runder Knopf**: `✓` Erledigt, bei „Bereit“ ein ausgefülltes `▶`. Beim Überfahren
+  der Karte oder bei Tastaturfokus darin erscheinen darunter kleine runde Knöpfe: Tasse (Pause; bei
+  „Bereit“ stattdessen `✓`), `➔` Delegieren, `…` (zurück in die Queue, zu den Ideen).
 - Drei Abschnitte, getrennt durch Abstand und eine feine Linie. Das Label steht links:
   - **Arbeitsmittel**: drei Chips und `…` (Abschnitt 5).
   - **Checkliste**: Schritte zum Abhaken.
@@ -211,6 +213,8 @@ Reiter (Fokus, Ideen, Delegiert) und die Suche (`🔍`, `Strg+F`).
 - **Ergänzen über ein `+` unter dem Label** von Arbeitsmittel und Checkliste. Ein Klick öffnet die
   Eingabe, `⏎` speichert und lässt sie für den nächsten Eintrag offen, `Esc` schließt sie. Es gibt keine
   dauerhaften „+ hinzufügen“-Zeilen.
+- **Fußleiste** der Karte: Status („In Arbeit“ oder „Bereit“), notiertes Datum, „Ausarbeiten“. Sie
+  nimmt später weitere Funktionen auf.
 
 **Queue (#2 …)**
 
