@@ -2,7 +2,7 @@
 
 Persönliches Fokus- und Notiz-Werkzeug im Linux-Tray: einfach erfassen, schnell überblicken, kurze
 Wege zu den Arbeitsmitteln. Tauri 2 (Rust, `src-tauri/`), Domäne in `crates/tasqlet-core/`, Frontend
-Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.2 fertig.
+Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.3 fertig.
 
 ## Lesen, bevor gearbeitet wird
 
@@ -77,6 +77,8 @@ Browser-Vorschau prüfen.
 | `crates/tasqlet-core/src/store.rs` | `Store`: Übergänge (`Action`), Invarianten (`check_invariants`) |
 | `crates/tasqlet-core/src/session.rs` | `Session`: Store mit Undo-Verlauf (50 Schritte) |
 | `crates/tasqlet-core/src/storage/` | `Storage` (Laden, Speichern in zwei Phasen, Archiv je Jahr, `.bak`), `Saver` (300 ms gebündelt), `watch` (Änderungen von außen), `migrate` (`schema`) |
+| `crates/tasqlet-core/src/quick.rs` | Schnelleingabe-Parser (`@Name`, `!Datum`, Links und Pfade) |
+| `crates/tasqlet-core/src/resources.rs` | Arbeitsmittel erkennen, Smart-Labels, Rang mit fester `Alt+n`-Ziffer |
 | `crates/tasqlet-core/tests/crash.rs` | Abnahme 1.2: `kill -9` mitten im Schreiben, Daten bleiben ladbar und vollständig |
 | `crates/tasqlet-core/tests/invariants.rs` | `proptest`: beliebige Aktionsfolgen halten alle Invarianten |
 | `src-tauri/src/lib.rs` | Tauri-Builder, Commands (`schema_version`, `snapshot`) |

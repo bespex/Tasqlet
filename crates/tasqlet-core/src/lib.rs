@@ -2,9 +2,12 @@
 //!
 //! The specification lives in `docs/KONZEPT.md`; `docs/PLAN.md` says which part is built when.
 //! So far: the item model with its transitions, invariants and undo (plan step 1.1) and storage on
-//! disk in [`storage`] (1.2). The quick-entry parser and smart labels (1.3) and themes (2.6) follow.
+//! disk in [`storage`] (1.2), the quick-entry parser in [`quick`] and smart labels and rank of the
+//! resources in [`resources`] (1.3). Themes (2.6) follow.
 
 mod model;
+pub mod quick;
+pub mod resources;
 mod session;
 pub mod storage;
 mod store;

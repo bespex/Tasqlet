@@ -42,7 +42,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
 - **MVP 1: Erfassen, Überblick, kurze Wege**
   - [x] 1.1 Core: Modell, Invarianten, Übergänge, Undo
   - [x] 1.2 Core: Speichern und Laden
-  - [ ] 1.3 Core: Schnelleingabe-Parser, Smart-Labels, Rang der Arbeitsmittel
+  - [x] 1.3 Core: Schnelleingabe-Parser, Smart-Labels, Rang der Arbeitsmittel
   - [ ] 1.4 Tray, Popover-Fenster, Einzelinstanz, `--toggle`
   - [ ] 1.5 Frontend-Grundlage: Rollen-Theming, Bausteine, Rückmeldung
   - [ ] 1.6 Schnelleingabe
@@ -58,11 +58,12 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [ ] 2.4 Ausarbeitung (Split-View)
   - [ ] 2.5 Ablegen ins Popover, CLI `add`, `open`, `current`, `list`
   - [ ] 2.6 Themen: alle Paletten, beide Achsen, Theme-Dateien, Einstellungen
+  - [ ] 2.7 MCP-Server für KI-Assistenten
 - **MVP 3: Linux-Feinschliff**
   - [ ] 3.1 `tasqlet capture` (Markierung übernehmen)
   - [ ] 3.2 Globale Tastenkürzel (X11-Plugin, Portal *GlobalShortcuts*)
   - [ ] 3.3 Export, AUR, Flatpak prüfen
-  - [ ] 3.4 Übergaben: Maillet, HatRack (optional)
+  - [ ] 3.4 Übergabe aus Maillet
 
 ---
 
@@ -283,6 +284,22 @@ Konzept: 7.
 **Abnahme:** Die sechs Vorschläge sehen aus wie im Dummy. Ein absichtlich schlechtes Thema wird
 abgelehnt.
 
+### 2.7 MCP-Server für KI-Assistenten
+
+Konzept: 3.3, 9.
+
+- Unterbefehl `tasqlet mcp` (stdio, `rmcp`). Spricht über den Socket aus 2.5 mit der laufenden App,
+  sonst direkt mit der Datei (`flock`).
+- Werkzeuge und Prompt wie in `KONZEPT.md` 3.3. Lesen und Ergänzen, nicht übernehmen, erledigen,
+  umsortieren oder löschen.
+- Änderungen der KI laufen durch dieselbe `Session` (Undo) und erscheinen im Popover als Rückmeldung
+  mit Kennzeichen „KI“ und „Rückgängig“.
+- Kurze Anleitung im README: Eintrag für Claude Code (`claude mcp add tasqlet -- tasqlet mcp`) und
+  Claude Desktop.
+
+**Abnahme:** Ein KI-Assistent liest die aktuelle Aufgabe, zerlegt sie in Schritte und schreibt einen
+Befund in die Notiz; alles erscheint sofort im Popover und lässt sich rückgängig machen.
+
 ## MVP 3: Linux-Feinschliff
 
 ### 3.1 `tasqlet capture`
@@ -303,10 +320,14 @@ nicht.
 `tasqlet export --markdown`, AUR-Paket (`../aur`), Flatpak-Machbarkeit (Tray, `xdg-open`) prüfen und
 entscheiden.
 
-### 3.4 Übergaben (optional)
+### 3.4 Übergabe aus Maillet
 
-- Maillet: „An Tasqlet“ ruft `tasqlet add --link <eml>` auf.
-- HatRack: `tags` und Filter nach aktuellem Hut, ohne harte Abhängigkeit.
+Konzept: 10.
+
+- Maillet: „An Tasqlet“ ruft `tasqlet add "<Betreff>" --link <eml>` auf (Änderung in `../Maillet`).
+- HatRack spielt vorerst keine Rolle.
+
+**Abnahme:** Eine Mail aus Maillet erscheint als Aufgabe mit Betreff als Titel und der Mail als Chip.
 
 ## Testdesktops
 

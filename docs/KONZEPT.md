@@ -163,6 +163,27 @@ Jedes Speichern meldet sich kurz zurück, mit „Rückgängig“ (z. B. „Als I
 | CLI | `tasqlet add "…" [--focus|--now|--inter] [--link URL]` | MVP 2 |
 | Markierung übernehmen | `tasqlet capture`: markierter Text kommt in die Schnelleingabe (Enter bestätigt), eine markierte URL oder ein Pfad an die aktuelle Aufgabe | MVP 3 |
 
+### 3.3 KI-Assistenten über MCP
+
+Aufgaben werden zunehmend mit KI erledigt. Ein MCP-Server (`tasqlet mcp`, Transport stdio) gibt einem
+KI-Assistenten (Claude Code, Claude Desktop, …) Zugriff auf Tasqlet: Er kann eine Aufgabe **prüfen**,
+den Menschen dabei **unterstützen** und Ergebnisse zurückschreiben. Der Server ist ein Unterbefehl der
+App, spricht über den Socket mit der laufenden App (ohne App direkt mit der Datei, wie die CLI) und
+bleibt rein lokal.
+
+| Art | Werkzeuge | Wirkung |
+|---|---|---|
+| Lesen | `current_task`, `get_task`, `list_tasks`, `search` | aktuelle Aufgabe mit Checkliste, Notiz, Arbeitsmitteln; Listen nach Zustand; Suche inklusive Erledigtem |
+| Ergänzen | `add_task`, `add_checklist_items`, `append_note`, `add_resource`, `check_item` | neue Aufgabe (wie die Schnelleingabe), Aufgabe in Schritte zerlegen, Befund in die Notiz, Link oder Datei anhängen, Schritt abhaken |
+| Vorlage | Prompt `review_task` | „Prüfe diese Aufgabe: Ist sie klar, fehlen Schritte oder Arbeitsmittel?“ |
+
+- **Was die KI nicht darf:** Aufgaben übernehmen, erledigen, umsortieren, delegieren oder löschen. Was
+  als Nächstes dran ist und was fertig ist, entscheidet der Mensch (D4). Neue Aufgaben landen höchstens
+  am Ende der Fokus-Liste, nie auf #1.
+- **Sichtbar und umkehrbar:** Jede Änderung der KI erscheint im Popover als Rückmeldung mit Kennzeichen
+  „KI“ und „Rückgängig“ und liegt im normalen Undo-Verlauf.
+- Ohne Zeitbezug wie überall (D1, D2): Die KI bekommt keine Laufzeiten, Fristen werden nicht ausgewertet.
+
 ## 4. Überblick
 
 - **Ohne Öffnen.** Das Tray-Symbol zeigt die Zahl der Einträge im Fokus. Ein Punkt bedeutet „in
@@ -340,6 +361,7 @@ sie ab. Ein Thema darf jede Rolle direkt setzen. Auf invertierten Flächen erhal
 | Frontend | Svelte 5 + TypeScript + Vite, Notiz als `<textarea>`, Sortieren mit eigener Pointer-Logik |
 | Speicher | `serde_json`, `tempfile`, `notify` |
 | Einzelinstanz & CLI | Unix-Socket in `$XDG_RUNTIME_DIR` (Muster CodeDeck-Hub). Läuft die App nicht, schreibt die CLI direkt in die Datei (`flock`) |
+| MCP-Server | `tasqlet mcp` (stdio) mit `rmcp`, nutzt denselben Socket bzw. dieselbe Datei wie die CLI |
 | Öffnen | `xdg-open` (`tauri-plugin-opener`) |
 | i18n | Deutsch und Englisch |
 | Pakete | `.deb`, AppImage, AUR. Flatpak später prüfen (Sandbox gegen `xdg-open` beliebiger Pfade) |
@@ -358,11 +380,13 @@ Der Speicherverbrauch wird früh gemessen.
 
 ## 10. Abgrenzung
 
-- **Maillet** verwaltet eingehende Mails und hält die Inbox leer. Braucht eine Mail mehr, wird sie als
-  `.eml` oder Link Arbeitsmittel einer Tasqlet-Aufgabe (später per `tasqlet add --link`).
+- **Maillet** verwaltet eingehende Mails und hält die Inbox leer. Braucht eine Mail mehr, übergibt
+  Maillet sie an Tasqlet: Betreff als Titel, die Mail als `.eml` oder Link als Arbeitsmittel
+  (`tasqlet add --link`).
 - **HatRack** wechselt ganze Arbeitskontexte (Makro-Ebene). Tasqlet ist die Mikro-Ebene: nächster
-  Schritt, Checkliste, Gedanken. Eine spätere Kopplung über `tags` ist möglich, ohne harte
-  Abhängigkeit.
+  Schritt, Checkliste, Gedanken. Eine Kopplung über `tags` spielt vorerst keine Rolle.
+- **KI-Assistenten** prüfen und ergänzen Aufgaben über den MCP-Server (3.3), entscheiden aber nicht,
+  was dran ist.
 - **Sprint-Tray** zeigt den Team-Sprint. Tasqlet nimmt ein Ticket als Chip auf und zerlegt es
   persönlich.
 
