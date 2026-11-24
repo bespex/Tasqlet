@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tasqlet Click-Dummy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: ein ruhiges, fertiges Linux-Werkzeug, kein Marketing
+   IDEA: das echte Tray-Popover auf einem Desktop, unten die Panel-Leiste mit dem Tray-Symbol
+   PICTURE: das Popover selbst, bedienbar; daneben eine schmale Liste zum Ausprobieren
+   COLOUR and TYPE: Rollen-Farben (--tq-*), Themen setzen nur diese; Akzent nur für "in Arbeit" und Fokus; Inter wie Maillet
+   LAYOUT: Desktop-Bühne links, Erklärungen rechts; unter 1000px untereinander */
+:root{color-scheme:light dark;
+--page:light-dark(#e8e7e3,#111215);--sf:light-dark(#ffffff,#1c1e23);--sf2:light-dark(#f5f4f1,#25282e);--sf3:light-dark(#ebeae6,#30333a);
+--line:light-dark(#e3e1dc,#363a42);--ink:light-dark(#1d1f23,#ecebe8);--mut:light-dark(#696d74,#9ea3ab);
+--acc:light-dark(#d4432a,#ff7d60);--accs:light-dark(#fcebe6,#3b2520);--amb:light-dark(#9c600c,#eab762);--ambs:light-dark(#fbefd9,#3a2f1b)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 Inter,"Noto Sans",system-ui,sans-serif;overflow-x:clip}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+kbd{font:500 12px/1 Inter,sans-serif;background:var(--sf3);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:2px 5px;white-space:nowrap}
+.top{padding:24px max(3vw,16px) 16px;display:flex;flex-wrap:wrap;gap:6px 28px;align-items:baseline}
+.top h1{font-size:32px;line-height:1.05;margin:0;font-weight:700;letter-spacing:-.015em}
+.top p{margin:0;color:var(--mut);max-width:72ch;font-size:15px}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;align-items:start;gap:20px;padding:0 max(3vw,16px) 32px}
+@media(max-width:1000px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.desk{position:relative;height:clamp(640px,calc(100vh - 110px),860px);border-radius:14px;overflow:hidden;background:radial-gradient(110% 80% at 18% 8%,#55697a 0,#2e3b47 45%,#1a2128 100%)}
+.panel{position:absolute;left:0;right:0;bottom:0;height:42px;background:rgba(16,19,24,.94);display:flex;align-items:center;gap:4px;padding:0 8px;color:#d6dbe1;font-size:13px}
+.panel .task{padding:5px 10px;border-radius:6px;color:#aeb5bd;white-space:nowrap}
+.panel .task.lead{background:rgba(255,255,255,.08);color:#e6e9ec}
+.panel .sp{flex:1}
+.ti{width:34px;height:34px;display:grid;place-items:center;border-radius:6px;background:none;border:0;color:#cfd5db;position:relative}
+.ti:hover{background:rgba(255,255,255,.1)}
+#ticon .dot{position:absolute;top:6px;right:5px;width:8px;height:8px;border-radius:50%;background:#ff7d60;box-shadow:0 0 0 2px rgba(16,19,24,.94);display:none}
+#ticon.run .dot{display:block}
+#tbadge{position:absolute;bottom:3px;right:2px;font:700 10px/1 Inter,sans-serif;background:#e8eaed;color:#15181c;border-radius:6px;padding:2px 3px}
+.clock{padding:0 8px;color:#e6e9ec;font-variant-numeric:tabular-nums}
+.tip{position:absolute;bottom:50px;right:70px;max-width:340px;background:#15181c;color:#eef0f2;border:1px solid #33383f;border-radius:8px;padding:8px 11px;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.4);pointer-events:none;opacity:0;transition:opacity .12s}
+.tip span{color:#a9b0b8}.tip.on{opacity:1}
+.tmenu{position:absolute;bottom:50px;right:60px;background:#1d2127;border:1px solid #363b43;border-radius:8px;padding:4px;min-width:220px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.tmenu button{display:block;width:100%;text-align:left;background:none;border:0;color:#e6e9ec;padding:7px 10px;border-radius:5px}
+.tmenu button:hover{background:rgba(255,255,255,.08)}.tmenu hr{border:0;border-top:1px solid #363b43;margin:4px 0}
+[hidden]{display:none!important}
+.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.fill{fill:currentColor;stroke-width:1.5}.ic.big{width:30px;height:30px;stroke-width:1.5}
+/* Popover: jede Farbe ist eine Rolle. Ein Thema setzt nur diese Rollen. */
+.pop{
+ --tq-bg:light-dark(#faf9f6,#1a1b1e);--tq-card:light-dark(#ffffff,#222327);--tq-field:light-dark(#f2f0eb,#16171a);--tq-hover:light-dark(#efece6,#2b2c31);
+ --tq-line:light-dark(#e6e2da,#313338);--tq-line-strong:light-dark(#877f75,#7c7f88);
+ --tq-ink:light-dark(#1d1b18,#ededeb);--tq-ink-2:light-dark(#57524b,#b1b3b8);--tq-ink-3:light-dark(#857e74,#878a91);
+ --tq-accent:light-dark(#b4410e,#ff9068);--tq-on-accent:light-dark(#ffffff,#1a1b1e);--tq-accent-soft:light-dark(#fbeadf,#3d2b23);--tq-mark:light-dark(#fde7a6,#5c4b1a);--tq-accent-inv:light-dark(#ff9068,#b4410e);
+ position:absolute;right:12px;bottom:52px;width:470px;max-width:calc(100% - 24px);height:calc(100% - 64px);max-height:740px;display:flex;flex-direction:column;
+ background:var(--tq-bg);color:var(--tq-ink);border:1px solid var(--tq-line);border-radius:14px;box-shadow:0 24px 64px rgba(0,0,0,.38),0 2px 6px rgba(0,0,0,.12);overflow:hidden;transition:width .18s ease}
+.pop[data-tq=papier]{color-scheme:light;--tq-bg:#faf9f6;--tq-card:#ffffff;--tq-field:#f2f0eb;--tq-hover:#efece6;--tq-line:#e6e2da;--tq-line-strong:#877f75;--tq-ink:#1d1b18;--tq-ink-2:#57524b;--tq-ink-3:#857e74;--tq-accent:#b4410e;--tq-on-accent:#fff;--tq-accent-soft:#fbeadf;--tq-mark:#fde7a6;--tq-accent-inv:#ff9068}
+.pop[data-tq=graphit]{color-scheme:dark;--tq-bg:#1a1b1e;--tq-card:#222327;--tq-field:#16171a;--tq-hover:#2b2c31;--tq-line:#313338;--tq-line-strong:#7c7f88;--tq-ink:#ededeb;--tq-ink-2:#b1b3b8;--tq-ink-3:#878a91;--tq-accent:#ff9068;--tq-on-accent:#1a1b1e;--tq-accent-soft:#3d2b23;--tq-mark:#5c4b1a;--tq-accent-inv:#b4410e}
+.pop[data-tq=fjord]{color-scheme:dark;--tq-bg:#15202b;--tq-card:#1b2836;--tq-field:#111a23;--tq-hover:#223243;--tq-line:#2a3a4a;--tq-line-strong:#6a87a3;--tq-ink:#e6edf3;--tq-ink-2:#a9bbcc;--tq-ink-3:#7f94a8;--tq-accent:#7cbcff;--tq-on-accent:#0c1620;--tq-accent-soft:#1c3449;--tq-mark:#4d4520;--tq-accent-inv:#1d5ca8}
+.pop[data-tq=salbei]{color-scheme:light;--tq-bg:#f5f6f2;--tq-card:#ffffff;--tq-field:#ecefe7;--tq-hover:#e8ebe2;--tq-line:#dce1d4;--tq-line-strong:#7b8574;--tq-ink:#1b201b;--tq-ink-2:#4d564d;--tq-ink-3:#78817a;--tq-accent:#2e6948;--tq-on-accent:#fff;--tq-accent-soft:#e0ece4;--tq-mark:#f1e6a2;--tq-accent-inv:#8ed2aa}
+.pop[data-tq=kontrast]{color-scheme:light;--tq-bg:#ffffff;--tq-card:#ffffff;--tq-field:#f2f2f2;--tq-hover:#e8e8e8;--tq-line:#8a8a8a;--tq-line-strong:#1a1a1a;--tq-ink:#000000;--tq-ink-2:#262626;--tq-ink-3:#545454;--tq-accent:#0a47c9;--tq-on-accent:#fff;--tq-accent-soft:#e1e9ff;--tq-mark:#ffe45c;--tq-accent-inv:#9dbbff}
+
+/* Zwei Achsen, unabhängig von der Palette.
+   Fokus (--tq-f-*): wie stark die aktuelle Aufgabe hervortritt. Bedienung (--tq-c-*): wie deutlich
+   Tabs, Schnelleingabe und Fußleiste sich vom Inhalt abheben. Voreinstellung: beide folgen der Palette.
+   Ein Thema darf jede dieser Rollen auch direkt setzen. */
+.pop{
+ --tq-f-bg:var(--tq-card);--tq-f-ink:var(--tq-ink);--tq-f-ink-2:var(--tq-ink-2);--tq-f-ink-3:var(--tq-ink-3);--tq-f-line:var(--tq-line);--tq-f-line-strong:var(--tq-line-strong);
+ --tq-f-field:var(--tq-field);--tq-f-hover:var(--tq-hover);--tq-f-accent:var(--tq-accent);--tq-f-on-accent:var(--tq-on-accent);--tq-f-accent-soft:var(--tq-accent-soft);
+ --tq-f-border:color-mix(in srgb,var(--tq-accent) 40%,var(--tq-line));--tq-f-border-w:1px;--tq-f-shadow:0 1px 2px rgba(0,0,0,.05);--tq-row-ink:var(--tq-ink);
+ --tq-c-bg:var(--tq-bg);--tq-c-ink:var(--tq-ink);--tq-c-ink-2:var(--tq-ink-2);--tq-c-ink-3:var(--tq-ink-3);--tq-c-line:var(--tq-line);--tq-c-line-strong:var(--tq-line-strong);
+ --tq-c-field:var(--tq-card);--tq-c-field-2:var(--tq-field);--tq-c-hover:var(--tq-hover);--tq-c-accent:var(--tq-accent);--tq-c-on-accent:var(--tq-on-accent);--tq-c-accent-soft:var(--tq-accent-soft);--tq-c-divider:var(--tq-line)}
+.pop[data-focus=strong]{
+ --tq-f-bg:color-mix(in srgb,var(--tq-accent) 7%,var(--tq-card));--tq-f-field:color-mix(in srgb,var(--tq-accent) 12%,var(--tq-card));--tq-f-hover:color-mix(in srgb,var(--tq-accent) 16%,var(--tq-card));
+ --tq-f-line:color-mix(in srgb,var(--tq-accent) 24%,var(--tq-card));--tq-f-border:var(--tq-accent);--tq-f-border-w:2px;
+ --tq-f-shadow:0 10px 28px color-mix(in srgb,var(--tq-accent) 24%,transparent);--tq-row-ink:var(--tq-ink-2)}
+.pop[data-focus=stage]{
+ --tq-f-bg:var(--tq-ink);--tq-f-ink:var(--tq-bg);--tq-f-ink-2:color-mix(in srgb,var(--tq-bg) 74%,var(--tq-ink));--tq-f-ink-3:color-mix(in srgb,var(--tq-bg) 60%,var(--tq-ink));
+ --tq-f-line:color-mix(in srgb,var(--tq-bg) 16%,var(--tq-ink));--tq-f-line-strong:color-mix(in srgb,var(--tq-bg) 54%,var(--tq-ink));
+ --tq-f-field:color-mix(in srgb,var(--tq-bg) 9%,var(--tq-ink));--tq-f-hover:color-mix(in srgb,var(--tq-bg) 15%,var(--tq-ink));
+ --tq-f-accent:var(--tq-accent-inv);--tq-f-on-accent:var(--tq-ink);--tq-f-accent-soft:color-mix(in srgb,var(--tq-accent-inv) 22%,var(--tq-ink));
+ --tq-f-border:var(--tq-ink);--tq-f-shadow:0 14px 34px rgba(0,0,0,.3);--tq-row-ink:var(--tq-ink-2)}
+.pop[data-chrome=raised]{
+ --tq-c-bg:color-mix(in srgb,var(--tq-ink) 6%,var(--tq-bg));--tq-c-hover:color-mix(in srgb,var(--tq-ink) 11%,var(--tq-bg));
+ --tq-c-line:color-mix(in srgb,var(--tq-ink) 14%,var(--tq-bg));--tq-c-field-2:var(--tq-card);--tq-c-divider:var(--tq-line-strong)}
+.pop[data-chrome=solid]{
+ --tq-c-bg:var(--tq-ink);--tq-c-ink:var(--tq-bg);--tq-c-ink-2:color-mix(in srgb,var(--tq-bg) 74%,var(--tq-ink));--tq-c-ink-3:color-mix(in srgb,var(--tq-bg) 60%,var(--tq-ink));
+ --tq-c-line:color-mix(in srgb,var(--tq-bg) 16%,var(--tq-ink));--tq-c-line-strong:color-mix(in srgb,var(--tq-bg) 54%,var(--tq-ink));
+ --tq-c-field:color-mix(in srgb,var(--tq-bg) 11%,var(--tq-ink));--tq-c-field-2:color-mix(in srgb,var(--tq-bg) 17%,var(--tq-ink));--tq-c-hover:color-mix(in srgb,var(--tq-bg) 17%,var(--tq-ink));
+ --tq-c-accent:var(--tq-accent-inv);--tq-c-on-accent:var(--tq-ink);--tq-c-accent-soft:color-mix(in srgb,var(--tq-accent-inv) 25%,var(--tq-ink));--tq-c-divider:var(--tq-ink)}
+/* Invertierte Flächen brauchen das umgekehrte Farbschema für native Kontrollen (Checkbox, Datum) */
+.pop{--tq-scheme-inv:dark}@media(prefers-color-scheme:dark){.pop{--tq-scheme-inv:light}}
+:root[data-theme=light] .pop{--tq-scheme-inv:dark}:root[data-theme=dark] .pop{--tq-scheme-inv:light}
+.pop.pop[data-tq=papier],.pop.pop[data-tq=salbei],.pop.pop[data-tq=kontrast]{--tq-scheme-inv:dark}.pop.pop[data-tq=graphit],.pop.pop[data-tq=fjord]{--tq-scheme-inv:light}
+.pop[data-focus=stage] .card,.pop[data-chrome=solid] .tabs,.pop[data-chrome=solid] .qi,.pop[data-chrome=solid] .inter,.pop[data-chrome=solid] .sleft{color-scheme:var(--tq-scheme-inv)}
+/* Bereiche übernehmen ihre Achse, alle Bausteine darin passen sich von selbst an */
+.pop .card{--tq-card:var(--tq-f-bg);--tq-ink:var(--tq-f-ink);--tq-ink-2:var(--tq-f-ink-2);--tq-ink-3:var(--tq-f-ink-3);--tq-line:var(--tq-f-line);--tq-line-strong:var(--tq-f-line-strong);
+ --tq-field:var(--tq-f-field);--tq-hover:var(--tq-f-hover);--tq-accent:var(--tq-f-accent);--tq-on-accent:var(--tq-f-on-accent);--tq-accent-soft:var(--tq-f-accent-soft);
+ color:var(--tq-ink);background:var(--tq-card);border:var(--tq-f-border-w) solid var(--tq-line);box-shadow:var(--tq-f-shadow)}
+.pop .card.in_progress{border-color:var(--tq-f-border)}
+.pop .tabs,.pop .qi,.pop .inter,.pop .sleft{--tq-bg:var(--tq-c-bg);--tq-card:var(--tq-c-field);--tq-field:var(--tq-c-field-2);--tq-ink:var(--tq-c-ink);--tq-ink-2:var(--tq-c-ink-2);--tq-ink-3:var(--tq-c-ink-3);
+ --tq-line:var(--tq-c-line);--tq-line-strong:var(--tq-c-line-strong);--tq-hover:var(--tq-c-hover);--tq-accent:var(--tq-c-accent);--tq-on-accent:var(--tq-c-on-accent);--tq-accent-soft:var(--tq-c-accent-soft);
+ color:var(--tq-ink);background:var(--tq-c-bg)}
+.pop .tabs,.pop .qi{border-bottom-color:var(--tq-c-divider)}.pop .inter{border-top-color:var(--tq-c-divider)}.pop .sleft{border-right-color:var(--tq-c-divider)}
+.pop .row{color:var(--tq-row-ink)}.pop .row:hover,.pop .row.sel{color:var(--tq-ink)}
+.pop.split{width:940px}
+#pv{display:flex;flex-direction:column;flex:1;min-height:0}
+.pop :focus-visible{outline:2px solid var(--tq-accent);outline-offset:1px}
+.pop kbd{font-size:11px;padding:1px 4px;background:var(--tq-field);border-color:var(--tq-line);color:var(--tq-ink-2)}
+@media(prefers-reduced-motion:reduce){.pop{transition:none}}
+@media(max-width:600px){.f{grid-template-columns:minmax(0,1fr);gap:6px}.lbl{flex-direction:row!important;align-items:center}.pop{left:8px;right:8px;width:auto;max-width:none}.pop.split{width:auto}.desk{height:720px}}
+.tabs{display:flex;align-items:center;gap:2px;padding:10px 10px 8px;border-bottom:1px solid var(--tq-line)}
+.tab{display:flex;align-items:center;gap:7px;border:0;background:none;padding:7px 11px;border-radius:8px;color:var(--tq-ink-2);font-weight:500;white-space:nowrap}
+.tab:hover{background:var(--tq-hover);color:var(--tq-ink)}.tab.on{background:var(--tq-card);color:var(--tq-ink);box-shadow:0 0 0 1px var(--tq-line),0 1px 2px rgba(0,0,0,.06)}
+.n{font-size:12px;font-weight:600;color:var(--tq-ink-2);font-variant-numeric:tabular-nums}
+.sp{flex:1}
+.ib{width:30px;height:30px;display:inline-grid;place-items:center;border:1px solid transparent;background:none;border-radius:8px;color:var(--tq-ink-2);flex:none}
+.ib:hover{background:var(--tq-hover);color:var(--tq-ink)}
+.ib.run{color:var(--tq-accent)}
+.qi{padding:12px 14px 10px;border-bottom:1px solid var(--tq-line)}
+.qbox{display:flex;align-items:center;gap:8px;background:var(--tq-card);border:1px solid var(--tq-line-strong);border-radius:10px;padding:0 11px;color:var(--tq-ink-2)}
+.qbox:focus-within{border-color:var(--tq-accent);box-shadow:0 0 0 3px var(--tq-accent-soft)}
+.qbox input{flex:1;border:0;background:none;outline:0;padding:10px 0;font-size:15px;color:var(--tq-ink)}
+.qbox input::placeholder,.in::placeholder,.note::placeholder{color:var(--tq-ink-3)}
+.qhint{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px;font-size:12px;color:var(--tq-ink-2);align-items:center}
+.qhint .rec{display:flex;gap:6px;flex-wrap:wrap;width:100%;align-items:center}
+.leg{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.leg i{font-style:normal;color:var(--tq-ink-3)}
+.lg{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}.lg .ic{width:13px;height:13px}
+.lg.l1{color:var(--tq-accent);font-weight:600}
+.body{flex:1;overflow:auto;min-height:0}
+/* Arbeitskarte */
+.card{margin:14px;padding:14px 16px 16px;background:var(--tq-card);border:1px solid var(--tq-line);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.card.in_progress{border-color:color-mix(in srgb,var(--tq-accent) 40%,var(--tq-line))}
+.ch{display:flex;align-items:center;gap:4px}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;letter-spacing:.03em;color:var(--tq-ink-2)}
+.st.run{color:var(--tq-accent)}.st .ic{width:12px;height:12px}
+.ct{font-size:17px;line-height:1.3;margin:6px 0 0;font-weight:600}
+.f{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--tq-line);align-items:start}
+.lbl{display:flex;flex-direction:column;align-items:flex-start;gap:8px;color:var(--tq-ink-2);font-size:12.5px;font-weight:600;padding-top:3px}
+.plus{width:24px;height:24px;display:inline-grid;place-items:center;border:1px solid var(--tq-line);background:var(--tq-card);border-radius:50%;color:var(--tq-ink-2);padding:0}
+.plus .ic{width:13px;height:13px}.plus:hover{color:var(--tq-on-accent);background:var(--tq-accent);border-color:var(--tq-accent)}
+.hint{font-size:13px;color:var(--tq-ink-3);padding-top:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--tq-line);background:var(--tq-field);color:var(--tq-ink);border-radius:999px;padding:4px 10px;font-size:13px;max-width:100%;white-space:nowrap}
+.chip:hover{border-color:var(--tq-line-strong);background:var(--tq-hover)}.chip .ic{width:14px;height:14px;color:var(--tq-ink-2)}
+.chip .x{display:none;margin-left:2px}.chip:hover .x{display:inline-flex}.chip .x .ic{width:12px;height:12px}
+.chip.more{background:none;padding:4px 8px;color:var(--tq-ink-2)}
+.rwrap{position:relative}
+.rmenu{position:absolute;top:calc(100% + 6px);right:0;z-index:6;min-width:270px;background:var(--tq-card);border:1px solid var(--tq-line);border-radius:11px;padding:5px;box-shadow:0 14px 36px rgba(0,0,0,.22)}
+.rmenu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:0;background:none;color:var(--tq-ink);padding:7px 9px;border-radius:7px;font-size:13px}
+.rmenu button:hover{background:var(--tq-hover)}.rmenu .ic{width:14px;height:14px;color:var(--tq-ink-2)}
+.rmenu .lb{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rmenu .x{opacity:0;color:var(--tq-ink-2);display:inline-grid}.rmenu button:hover .x{opacity:1}
+.rmenu hr{border:0;border-top:1px solid var(--tq-line);margin:5px 4px}
+.rmenu .cap{font-size:11.5px;color:var(--tq-ink-3);padding:4px 9px 2px}
+.in{width:100%;border:1px solid var(--tq-line-strong);background:var(--tq-card);color:var(--tq-ink);border-radius:8px;padding:6px 9px;font-size:14px}
+.in:focus{outline:0;border-color:var(--tq-accent);box-shadow:0 0 0 3px var(--tq-accent-soft)}
+.chk{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.chk label{display:flex;gap:9px;align-items:flex-start;cursor:pointer;padding:2px 0}
+.chk input[type=checkbox]{width:16px;height:16px;margin:2px 0 0;accent-color:var(--tq-accent);flex:none}
+.chk li.done span{color:var(--tq-ink-2);text-decoration:line-through;text-decoration-color:var(--tq-ink-3)}
+.chk .add{margin-top:2px}
+.nw{position:relative}
+.note{display:block;width:100%;resize:none;overflow:hidden;min-height:60px;border:1px solid transparent;background:var(--tq-field);color:var(--tq-ink);border-radius:9px;padding:8px 10px;font-size:14px;line-height:1.55}
+.note:focus{outline:0;border-color:var(--tq-line-strong);background:var(--tq-card)}
+.saved{position:absolute;right:9px;bottom:6px;font-size:11.5px;color:var(--tq-ink-3)}
+.dt{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--tq-ink-2);border:1px solid var(--tq-line);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.dt .ic{width:13px;height:13px}
+.kn{font-size:10.5px;font-weight:700;color:var(--tq-ink-2);border:1px solid var(--tq-line);border-radius:4px;padding:0 4px}
+.brk{margin:14px;padding:30px 16px;border:1px dashed var(--tq-line-strong);border-radius:12px;text-align:center;display:grid;justify-items:center;gap:6px;color:var(--tq-ink-2)}
+.brk h2{margin:0;font-size:18px;color:var(--tq-ink)}.brk p{margin:0}.brk b{color:var(--tq-ink)}.brk .btn{margin-top:6px}
+.rl{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px 10px 52px;border-bottom:1px solid var(--tq-line);background:var(--tq-field)}
+button.mini{border:0;background:none;padding:3px;border-radius:6px;cursor:pointer;color:var(--tq-ink-2)}button.mini:hover{background:var(--tq-hover);color:var(--tq-ink)}
+#ticon .cup{display:none}#ticon.brk .cup{display:block}#ticon.brk .tbox{display:none}
+.tmenu .mh{font-size:12px;color:#8f979f;padding:6px 10px 2px}
+/* Queue */
+.queue{margin-top:2px;border-top:1px solid var(--tq-line)}
+.row{display:flex;align-items:center;gap:6px;padding:0 10px 0 6px;height:44px;border-bottom:1px solid var(--tq-line);outline:0}
+.row:hover,.row.sel{background:var(--tq-hover)}
+.row:focus-visible,.row.sel{box-shadow:inset 2px 0 0 var(--tq-accent)}
+.grip{color:var(--tq-ink-3);cursor:grab;display:grid;place-items:center;width:18px;opacity:0}
+.num{width:18px;text-align:right;color:var(--tq-ink-2);font-size:13px;font-variant-numeric:tabular-nums}
+.rt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:default}
+.ind{display:flex;gap:6px;align-items:center}
+.mini{display:inline-flex;align-items:center;gap:2px;font-size:12px;color:var(--tq-ink-2);font-variant-numeric:tabular-nums}
+.mini .ic{width:14px;height:14px}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:var(--tq-ink-2);white-space:nowrap}
+.tools{display:flex;opacity:0}
+.row:hover .tools,.row:hover .grip,.row.sel .tools,.row.sel .grip,.row:focus-within .tools,.row:focus-within .grip{opacity:1}
+.row.dragging{opacity:.4}.over{box-shadow:inset 0 2px 0 var(--tq-accent)!important}
+.card.over{box-shadow:0 0 0 2px var(--tq-accent)!important}
+.soft{margin:12px 14px;font-size:13px;color:var(--tq-ink-2)}
+.empty{display:grid;justify-items:center;text-align:center;gap:6px;padding:48px 24px;color:var(--tq-ink-2)}
+.empty p{margin:0;max-width:34ch}.empty b{color:var(--tq-ink)}
+/* Zwischendurch */
+.inter{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--tq-line);background:var(--tq-bg)}
+.il{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--tq-accent-soft);color:var(--tq-accent);flex:none}
+.il .ic{width:15px;height:15px}
+.pills{display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none}
+.pill{display:inline-flex;align-items:center;border:1px solid var(--tq-line);background:var(--tq-card);border-radius:999px;white-space:nowrap;flex:none}
+.pill .pb{border:0;background:none;color:var(--tq-ink);padding:4px 4px 4px 12px;font-size:13px}
+.pill .pd{border:0;background:none;padding:4px 9px 4px 4px;color:var(--tq-ink-3);display:inline-grid}
+.pill:hover{border-color:var(--tq-line-strong)}.pill .pd:hover{color:var(--tq-accent)}
+.pill.more{padding:4px 11px;font-size:13px;color:var(--tq-ink-2)}
+.mut{color:var(--tq-ink-2)}.sm{font-size:13px}
+/* Ideen */
+.ideas{padding:14px;display:grid;gap:10px}
+.idea,.dl{border:1px solid var(--tq-line);border-radius:12px;padding:12px 14px;background:var(--tq-card);box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.ih{display:flex;align-items:baseline;gap:8px}
+.ih h3{font-size:15px;margin:0;font-weight:600;flex:1}
+.age{font-size:12px;color:var(--tq-ink-3);white-space:nowrap}
+.lnk{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--tq-ink-2);font-size:13px;padding:2px 5px;border-radius:6px;white-space:nowrap}
+.lnk:hover{color:var(--tq-ink);background:var(--tq-hover)}.lnk .ic{width:14px;height:14px}
+.bul{margin:6px 0 0;padding-left:18px;display:grid;gap:2px}
+.bul li::marker{color:var(--tq-ink-3)}.bul .more{list-style:none;margin-left:-18px}
+.idea .chips{margin-top:8px}
+.if{display:flex;gap:6px;margin-top:10px;align-items:center}
+.if .in{flex:1;background:var(--tq-field);border-color:transparent}
+.if .in:focus{background:var(--tq-card);border-color:var(--tq-accent)}
+.if.end{justify-content:flex-end}
+.btn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--tq-line);background:var(--tq-card);color:var(--tq-ink);border-radius:8px;padding:5px 10px;font-size:13px;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--tq-line-strong);background:var(--tq-hover)}.btn .ic{width:14px;height:14px}
+/* Delegiert */
+.grp{padding:12px 14px 2px}
+.gh{font-weight:600;font-size:13px;margin:4px 2px 8px;display:flex;gap:6px}
+.dl{margin-bottom:10px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--tq-ink-2);margin-top:4px}
+.nt{margin:8px 0 0;font-size:14px;white-space:pre-wrap}
+.dl .chk{margin-top:8px}
+/* Suche */
+.sh{padding:12px 16px 4px;font-size:12px;font-weight:600;color:var(--tq-ink-2)}
+.sr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--tq-line);background:none;color:var(--tq-ink);padding:10px 16px}
+.sr:hover{background:var(--tq-hover)}
+.sb{grid-row:span 2;font-size:12px;font-weight:600;color:var(--tq-ink-2);border:1px solid var(--tq-line);border-radius:6px;padding:1px 6px;align-self:start;margin-top:1px;white-space:nowrap}
+.sb.done{text-decoration:line-through}
+.sn{font-size:13px;color:var(--tq-ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+mark{background:var(--tq-mark);color:inherit;border-radius:2px}
+/* Ausarbeitung */
+.sw{display:grid;grid-template-columns:250px minmax(0,1fr);flex:1;min-height:0}
+.sleft{border-right:1px solid var(--tq-line);overflow:auto;padding:14px 8px;background:var(--tq-field)}
+.sgt{font-size:12px;font-weight:700;color:var(--tq-ink-2);letter-spacing:.03em;padding:0 6px}
+.sgh{font-size:12px;color:var(--tq-ink-2);margin:14px 6px 4px}
+.sl{display:block;width:100%;text-align:left;border:0;background:none;color:var(--tq-ink);padding:6px 8px;border-radius:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl:hover{background:var(--tq-hover)}.sl.on{background:var(--tq-card);box-shadow:0 0 0 1px var(--tq-line);font-weight:600}
+.sl .ic{width:12px;height:12px;color:var(--tq-accent);vertical-align:-1px;margin-right:6px}
+.sright{overflow:auto;padding:14px 24px 28px;background:var(--tq-bg)}
+.tin{width:100%;border:0;border-bottom:1px solid transparent;background:none;color:var(--tq-ink);font-size:22px;font-weight:600;padding:8px 0;margin-top:4px}
+.tin:focus{outline:0;border-color:var(--tq-accent)}
+.srow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:4px 0 6px}
+.selb{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--tq-ink-2)}
+.selb select,.selb input{border:1px solid var(--tq-line-strong);background:var(--tq-card);border-radius:8px;padding:5px 8px;font-size:13px;color:var(--tq-ink)}
+.sright h4{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:700;color:var(--tq-ink-2);letter-spacing:.03em;margin:22px 0 10px;padding-top:16px;border-top:1px solid var(--tq-line)}
+@media(max-width:900px){.sw{grid-template-columns:minmax(0,1fr);grid-template-rows:150px minmax(0,1fr)}.sleft{border-right:0;border-bottom:1px solid var(--tq-line)}}
+/* Rückmeldung: invertiert, passt zu jedem Thema */
+.toast{position:absolute;left:14px;right:14px;bottom:60px;display:flex;align-items:center;gap:10px;background:var(--tq-ink);color:var(--tq-bg);border-radius:10px;padding:9px 10px 9px 14px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.3);z-index:7}
+.toast span{flex:1}
+.toast button{display:inline-flex;align-items:center;gap:5px;background:color-mix(in srgb,var(--tq-bg) 16%,transparent);border:0;color:var(--tq-bg);border-radius:7px;padding:5px 9px;font-weight:600;white-space:nowrap}
+/* Vorschläge (nicht im Konzept) */
+.marks .sug{outline:1.5px dashed var(--acc);outline-offset:2px;border-radius:5px}
+.themes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.themes button{display:grid;gap:5px;justify-items:start;border:1px solid var(--line);background:var(--sf);border-radius:9px;padding:7px 8px;font-size:12.5px;color:var(--ink)}
+.themes button[aria-pressed=true]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.axis{margin-top:12px;display:grid;gap:6px}.axis>span{font-size:12.5px;font-weight:600;color:var(--mut)}
+.seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}.seg button{flex:1;border:0;background:var(--sf);color:var(--ink);padding:7px 4px;font-size:12.5px}.seg button+button{border-left:1px solid var(--line)}.seg button[aria-pressed=true]{background:var(--ink);color:var(--sf)}
+.presets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.presets button{border:1px solid var(--line);background:var(--sf);color:var(--ink);border-radius:9px;padding:7px 9px;font-size:12.5px;text-align:left}.presets button b{display:block;font-size:13px}.presets button span{color:var(--mut)}.presets button:hover{border-color:var(--mut)}
+.sw3{display:flex;border-radius:5px;overflow:hidden;border:1px solid rgba(0,0,0,.15)}.sw3 i{width:14px;height:14px}
+/* Aside */
+.aside{display:grid;gap:14px;align-content:start}
+.box{background:var(--sf);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.box h2{font-size:15px;margin:0 0 8px;font-weight:700}
+.box ul{margin:0;padding-left:18px;display:grid;gap:6px;font-size:13.5px}
+.box p{margin:0 0 8px;font-size:13.5px;color:var(--mut)}
+.box .btn{width:100%;justify-content:flex-start;margin-top:6px;min-height:36px;font-size:13.5px;border:1px solid var(--line);background:var(--sf);color:var(--ink)}.box .btn:hover{border-color:var(--mut)}
+.box label{display:flex;gap:8px;align-items:center;font-size:13.5px;margin-top:8px}
+.drag{display:inline-block;margin-top:8px;font-size:13px;color:var(--acc);word-break:break-all}
+.legend{display:inline-block;width:22px;height:12px;border:1.5px dashed var(--acc);border-radius:3px;vertical-align:-1px;margin-right:4px}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Tasqlet</h1>
+  <p>Click-Dummy zu <code>docs/KONZEPT.md</code>: das Tray-Popover auf einem Linux-Desktop. Alles im Fenster ist klickbar, die Daten sind erfunden und leben nur in dieser Seite.</p>
+</header>
+<div class="wrap">
+  <div class="desk" id="desk">
+    <div class="pop" id="pop"><div id="pv"></div><div class="toast" id="toast" hidden></div></div>
+    <div class="tip" id="tip"></div>
+    <div class="tmenu" id="tmenu" hidden>
+    </div>
+    <div class="panel">
+      <span class="task lead">Terminal</span><span class="task">Firefox</span><span class="task">Maillet</span>
+      <span class="sp"></span>
+      <button class="ti" aria-label="Netzwerk" tabindex="-1"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0"/><circle cx="12" cy="19.5" r=".6"/></svg></button>
+      <button class="ti" aria-label="Lautstärke" tabindex="-1"><svg class="ic" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7"/></svg></button>
+      <button class="ti" id="ticon" aria-label="Tasqlet">
+        <svg class="ic tbox" viewBox="0 0 24 24" style="width:19px;height:19px"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="m8 12.5 2.6 2.6L16.5 9"/></svg><svg class="ic cup" viewBox="0 0 24 24" style="width:19px;height:19px"><path d="M10 2v2M14 2v2M6 2v2M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/></svg>
+        <span class="dot"></span><span id="tbadge">0</span>
+      </button>
+      <span class="clock" id="clock">--:--</span>
+    </div>
+  </div>
+  <aside class="aside">
+    <div class="box">
+      <h2>Probier das</h2>
+      <ul>
+        <li>Schnelleingabe, nach Dringlichkeit: <kbd>Strg ⇧ ⏎</kbd> jetzt (sofort Platz 1), <kbd>Strg ⏎</kbd> Fokus (hinten anstellen), <kbd>Alt ⏎</kbd> Zwischendurch, <kbd>⏎</kbd> Idee.</li>
+        <li>Kürzel beim Tippen: <code>!fr</code>, <code>!morgen</code>, <code>!28.11.</code> notiert ein Datum, <code>@Sarah</code> delegiert, eine URL wird Arbeitsmittel.</li>
+        <li>Über eine Zeile fahren: <b>▶</b> übernimmt, <b>⤒</b> reiht als Nächstes ein, am Griff ziehen sortiert.</li>
+        <li>Tastatur: <kbd>↓</kbd> aus der leeren Eingabe in die Liste, dann <kbd>↑</kbd><kbd>↓</kbd>, <kbd>⏎</kbd>, <kbd>Alt ↑/↓</kbd>, <kbd>Alt Pos1</kbd>.</li>
+        <li>Arbeitsmittel: Die wichtigsten drei stehen da, <b>…</b> zeigt alle und „Alle öffnen“. Was du öffnest, rückt nach vorn. <kbd>Alt 1</kbd> … <kbd>Alt 9</kbd> öffnet direkt.</li>
+        <li><b>+</b> unter „Arbeitsmittel“ und „Checkliste“ ergänzt. Die Notiz wächst mit ihrem Text.</li>
+        <li>Pille unten: Klick holt sie in Arbeit, Mittelklick hakt sie ab.</li>
+        <li>Tasse an der Arbeitskarte: bewusste Pause.</li>
+        <li><kbd>Strg E</kbd> Ausarbeitung, <kbd>Strg F</kbd> Suche, <kbd>Strg Z</kbd> rückgängig, <kbd>Esc</kbd> schließt.</li>
+        <li>Maus aufs Tray-Symbol: Tooltip. Rechtsklick: Menü mit den Arbeitsmitteln der aktuellen Aufgabe.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h2>Linux-Seite simulieren</h2>
+      <p>Was im echten Programm von außen kommt.</p>
+      <button class="btn" id="s-hot">Globaler Hotkey (z. B. Super+T)</button>
+      <button class="btn" id="s-selurl">Markierte URL übernehmen</button>
+      <button class="btn" id="s-seltxt">Markierten Text übernehmen</button>
+      <button class="btn" id="s-copy">Jira-Link in die Zwischenablage</button>
+      <p style="margin-top:10px">Danach über eine Aufgabe fahren und <kbd>Strg V</kbd> drücken. Oder diesen Link auf eine Zeile ziehen:</p>
+      <a class="drag" href="https://github.com/example/core/pull/42" draggable="true" onclick="return false">github.com/example/core/pull/42</a>
+    </div>
+    <div class="box">
+      <h2>Farbthemen</h2>
+      <p>Palette und zwei Achsen lassen sich frei kombinieren: wie stark die aktuelle Aufgabe hervortritt und wie deutlich die Bedienung vom Inhalt abgesetzt ist.</p>
+      <div class="themes" id="themes"></div>
+      <div class="axis"><span>Aktuelle Aufgabe</span><div class="seg" id="ax-focus"></div></div>
+      <div class="axis"><span>Bedienelemente</span><div class="seg" id="ax-chrome"></div></div>
+      <div class="axis"><span>Vorschläge</span><div class="presets" id="presets"></div></div>
+    </div>
+    <div class="box">
+      <h2>Herkunft</h2>
+      <p><span class="legend"></span>Auf Wunsch gestrichelt: was erst im Review dazukam und jetzt Teil von <code>docs/KONZEPT.md</code> ist: Kaffeetasse, „Bereit“ statt Auto-Start, „↩ zuletzt dran“, Ziffern an Chips, Arbeitsmittel an der Zeile, Abhaken-Haken an Pillen, Rückgängig-Knopf, Ausarbeiten aus der Zeile, Hinweis bei voller Queue. Keine Uhr, keine Fristfarben.</p>
+      <label><input type="checkbox" id="s-marks"> Vorschläge markieren</label>
+      <button class="btn" id="s-reset">Dummy zurücksetzen</button>
+    </div>
+  </aside>
+</div>
+<script>
+{
+const $=s=>document.querySelector(s);
+const pop=$('#pop'),pv=$('#pv'),tEl=$('#toast');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAY=864e5,WD=['So','Mo','Di','Mi','Do','Fr','Sa'];
+const t0=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const plus=n=>{const d=t0();d.setDate(d.getDate()+n);return iso(d)};
+const pIso=s=>{const[a,b,c]=s.split('-').map(Number);return new Date(a,b-1,c)};
+const diffD=s=>Math.round((pIso(s)-t0())/DAY);
+function dLabel(s){const n=diffD(s);if(n===0)return'Heute';if(n===1)return'Morgen';if(n===-1)return'Gestern';const d=pIso(s);return WD[d.getDay()]+', '+String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'}
+const dayAt=ms=>dLabel(iso(new Date(ms)));
+function ago(ms){const h=(Date.now()-ms)/36e5;if(h<1)return'gerade eben';if(h<24)return'vor '+Math.floor(h)+' Std.';const d=Math.floor(h/24);return d===1?'gestern':'vor '+d+' Tagen'}
+const SN={idea:'Idee',focus:'Fokus',intermezzo:'Zwischendurch',delegated:'Delegiert',done:'Erledigt'};
+
+const P={
+play:'<path d="M7 4.5v15l12-7.5z"/>',pause:'<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
+check:'<path d="M20 6 9 17l-5-5"/>',fwd:'<path d="m15 17 5-5-5-5"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/>',
+top:'<path d="M5 3h14"/><path d="m18 13-6-6-6 6"/><path d="M12 7v14"/>',
+grip:'<circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/>',
+link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+file:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>',
+mail:'<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-9 5.7a2 2 0 0 1-2 0L2 7"/>',
+cal:'<rect width="18" height="18" x="3" y="4" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+bulb:'<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6M10 22h4"/>',
+zap:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',max:'<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
+plus:'<path d="M5 12h14M12 5v14"/>',x:'<path d="M18 6 6 18M6 6l12 12"/>',
+undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',
+cup:'<path d="M10 2v2M14 2v2M6 2v2M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/>',
+ext:'<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+dots:'<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>',
+back:'<path d="m9 14-5-5 5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>'};
+const ic=(n,c='')=>`<svg class="ic ${c}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+
+function smartRes(raw){raw=String(raw||'').trim();let m;if(!raw||/\s/.test(raw))return null;
+ if(/^https?:\/\//i.test(raw)){
+  if(m=raw.match(/\/browse\/([A-Z][A-Z0-9]+-\d+)/))return{type:'url',label:m[1],target:raw};
+  if(m=raw.match(/github\.com\/[^/]+\/[^/]+\/pull\/(\d+)/))return{type:'url',label:'PR #'+m[1],target:raw};
+  if(m=raw.match(/github\.com\/[^/]+\/([^/]+)\/issues\/(\d+)/))return{type:'url',label:m[1]+'#'+m[2],target:raw};
+  try{const u=new URL(raw);return{type:'url',label:u.hostname.replace(/^www\./,''),target:raw}}catch(e){return null}}
+ if(/^(mailto:|mid:)|\.eml$/i.test(raw))return{type:'mail',label:'Mail: '+raw.replace(/^(mailto:|mid:)/,'').split('/').pop().replace(/\.eml$/i,''),target:raw};
+ if(/^(\/|~\/|file:\/\/)/.test(raw))return{type:'file',label:raw.replace(/\/$/,'').split('/').pop()||raw,target:raw};
+ return null}
+function parseDate(t){t=t.toLowerCase().replace(/[,;]$/,'');
+ if(t==='heute')return plus(0);if(t==='morgen')return plus(1);if(t==='übermorgen')return plus(2);
+ const wi=['so','mo','di','mi','do','fr','sa'].indexOf(t.slice(0,2));
+ if(wi>=0&&/^[a-zäöü]+$/.test(t))return plus((wi-t0().getDay()+7)%7);
+ const m=t.match(/^(\d{1,2})\.(\d{1,2})\.?(\d{2,4})?$/);
+ if(m){let y=m[3]?+m[3]:t0().getFullYear();if(y<100)y+=2000;const d=new Date(y,m[2]-1,+m[1]);if(!m[3]&&d<t0())d.setFullYear(y+1);return iso(d)}
+ return null}
+function parseQuick(raw){let t=' '+raw+' ',due=null,who=null;const res=[];
+ t=t.replace(/\s(https?:\/\/\S+)/g,(m,u)=>{const r=smartRes(u);if(r){res.push(r);return' '}return m});
+ t=t.replace(/\s!(\S+)/g,(m,a)=>{const d=parseDate(a);if(d){due=d;return' '}return m});
+ t=t.replace(/\s@([\p{L}\d._-]+)/gu,(m,a)=>{who=a;return' '});
+ return{title:t.replace(/\s+/g,' ').trim(),due,who,res}}
+
+let seq=1;const nid=()=>'i'+(seq++),cid=()=>'c'+(seq++);
+function mk(o){const base={id:nid(),title:'',state:'idea',exec:'none',order:0,note:'',due:null,delegatedTo:null,delegatedAt:null,startedAt:null,acc:0,created:Date.now(),doneAt:null};
+ const it=Object.assign(base,o);
+ it.checklist=(o.checklist||[]).map(([text,done])=>({id:cid(),text,done:!!done}));
+ it.resources=(o.resources||[]).map(r=>Object.assign({id:cid()},typeof r==='string'?smartRes(r):r));return it}
+const now=Date.now(),toFri=(5-t0().getDay()+7)%7||7;
+let items=[
+ mk({title:'CORE-418: Webhook-Authentifizierung umstellen',state:'focus',exec:'in_progress',order:0,acc:18*60,startedAt:now,due:plus(0),
+  resources:['https://jira.example.com/browse/CORE-418',{type:'mail',label:'Mail: Ops',target:'~/Mail/ops-webhook.eml'},'~/projekte/core/docs/spec.md','https://github.com/example/core/pull/57','~/projekte/core/gateway/'],
+  checklist:[['Alten Token-Flow im Staging prüfen',1],['Header-Validierung im Gateway anpassen'],['Deployment-Fenster abstimmen']],
+  note:'Staging nutzt noch X-Legacy. Bei Rückfragen an Sarah wenden (ab 14 Uhr erreichbar).'}),
+ mk({title:'Release-Notes für v2.4 finalisieren',state:'focus',order:1,checklist:[['Changelog aus Git ziehen',1],['Breaking Changes markieren',1],['Upgrade-Hinweise schreiben'],['Review durch Produkt']]}),
+ mk({title:'Angebot für Kunde X gegenlesen',state:'focus',order:2,due:plus(toFri)}),
+ mk({title:'Memory-Leak im Worker-Pool prüfen',state:'focus',order:3,resources:['https://github.com/example/worker/issues/212'],note:'Heap wächst nur unter Last über 200 req/s.'}),
+ mk({title:'TLS-Zertifikat für Staging verlängern',state:'focus',order:4,due:plus(-1)}),
+ mk({title:'VPN-Token erneuern',state:'intermezzo',order:0}),
+ mk({title:'Paketschein drucken',state:'intermezzo',order:1}),
+ mk({title:'Rückruf Hausverwaltung',state:'intermezzo',order:2}),
+ mk({title:'Kaffeemaschine entkalken',state:'intermezzo',order:3}),
+ mk({title:'CLI-Tool für Log-Analyse bauen',created:now-2*36e5,note:'- evtl. in Rust statt Python wegen Startzeit\n- Filter nach Trace-ID muss per Pipe funktionieren',resources:[{type:'url',label:'Vorbild: ripgrep',target:'https://github.com/BurntSushi/ripgrep'}]}),
+ mk({title:'Onboarding-Doku für neue Devs vereinfachen',created:now-26*36e5}),
+ mk({title:'Dark-Mode für Maillet',created:now-3*DAY,note:'- Farben aus dem System-Theme übernehmen\n- Kontrast der Code-Karte prüfen\n- Umschalter in den Einstellungen?\n- Screenshots fürs README neu machen',checklist:[['Farbrollen sammeln']]}),
+ mk({title:'Backup-Skript prüfen',created:now-6*DAY,note:'- läuft seit Oktober nicht mehr?'}),
+ mk({title:'Tasqlet mit HatRack koppeln: Filter nach Hut',created:now-9*DAY}),
+ mk({title:'Load-Test-Umgebung aufsetzen',state:'delegated',delegatedTo:'Jonas',delegatedAt:now-3*DAY,due:plus(2),checklist:[['k6-Skripte übernehmen',1],['Grafana-Board anlegen']],note:'Braucht Zugriff auf den Staging-Cluster.'}),
+ mk({title:'Rechnung Q3 klären',state:'delegated',delegatedTo:'Buchhaltung',delegatedAt:now-6*DAY,resources:[{type:'mail',label:'Mail: Rechnung 0931',target:'~/Mail/rechnung-0931.eml'}]}),
+ mk({title:'Nginx-Logrotation korrigieren',state:'done',doneAt:now-DAY,note:'copytruncate statt create, sonst schreibt der Worker ins Leere.'}),
+ mk({title:'Folien für Architektur-Review',state:'done',doneAt:now-5*DAY,resources:['~/Dokumente/arch-review.odp']})];
+
+const ui={rmenu:null,addChk:null,brk:false,rlist:null,open:true,view:'fokus',split:null,sel:null,hover:null,addRes:null,deleg:null,expand:{},pillsAll:false,q:'',qv:''};
+let undoStack=[];
+const get=id=>items.find(x=>x.id===id);
+const byState=s=>items.filter(x=>x.state===s);
+const focusList=()=>byState('focus').sort((a,b)=>a.order-b.order);
+const interList=()=>byState('intermezzo').sort((a,b)=>a.order-b.order);
+function renumber(){focusList().forEach((x,i)=>x.order=i);interList().forEach((x,i)=>x.order=i)}
+const secs=it=>it.acc+(it.exec==='in_progress'&&it.startedAt?Math.floor((Date.now()-it.startedAt)/1000):0);
+function dur(s){const m=Math.floor(s/60);if(m<1)return'<1m';if(m<60)return m+'m';return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'}
+function stopClock(it){if(it.exec==='in_progress'&&it.startedAt){it.acc=secs(it);it.startedAt=null}}
+const prog=it=>it.checklist.length?it.checklist.filter(c=>c.done).length+'/'+it.checklist.length:'';
+const short=(s,n=30)=>s.length>n?s.slice(0,n-1)+'…':s;
+
+/* domain */
+function start(it){ui.brk=false;const list=focusList(),top=list[0],disp=top&&top!==it?top:null;
+ items.forEach(x=>{if(x!==it&&x.exec==='paused')x.exec='none'});
+ items.forEach(x=>{if(x!==it&&x.exec==='in_progress'){stopClock(x);x.exec='paused'}});
+ it.state='focus';[it,...(disp?[disp]:[]),...list.filter(x=>x!==it&&x!==disp)].forEach((x,i)=>x.order=i);
+ if(it.exec!=='in_progress'){it.exec='in_progress';it.startedAt=Date.now()}}
+function finish(it){stopClock(it);it.exec='none';it.state='done';it.doneAt=Date.now()}
+function toNext(it){const l=focusList().filter(x=>x!==it);it.state='focus';l.splice(l.length?1:0,0,it);l.forEach((x,i)=>x.order=i)}
+function moveBy(it,d){const l=focusList(),i=l.indexOf(it),j=i+d;if(i<1||j<1||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];l.forEach((x,k)=>x.order=k)}
+function setState(it,st){if(it.state===st)return;stopClock(it);it.exec='none';
+ if(!it.title.trim())it.title=(it.note.split('\n')[0]||'Ohne Titel').replace(/^[-•]\s*/,'');
+ it.state=st;it.order=1e9;if(st==='delegated'&&!it.delegatedAt)it.delegatedAt=Date.now();if(st==='done')it.doneAt=Date.now()}
+function delegate(it,name){setState(it,'delegated');it.delegatedTo=name.replace(/^@/,'').trim()||'Jemand';it.delegatedAt=Date.now()}
+
+function mut(fn,undoable=true){if(undoable){undoStack.push(structuredClone(items));if(undoStack.length>60)undoStack.shift()}
+ const msg=fn();renumber();render();if(msg)toast(msg,undoable)}
+function undo(){const s=undoStack.pop();if(!s){toast('Nichts rückgängig zu machen');return}items=s;render();toast('Rückgängig gemacht')}
+let tT;
+function toast(msg,und=false){tEl.innerHTML=`<span>${esc(msg)}</span>${und?`<button class="sug" data-t="undo">${ic('undo')}Rückgängig</button>`:''}`;tEl.hidden=false;clearTimeout(tT);tT=setTimeout(()=>tEl.hidden=true,und?6000:3500)}
+
+/* views */
+const chipDate=s=>`<span class="dt" title="notiertes Datum">${ic('cal')}${dLabel(s)}</span>`;
+const rIcon=r=>ic(r.type==='url'?'link':r.type==='mail'?'mail':'file');
+const chip=(r,i,a,num)=>`<button class="chip" data-act="open" data-rid="${r.id}" title="${esc(r.target)}${num&&i<9?' (Alt+'+(i+1)+')':''}">${rIcon(r)}${esc(r.label)}${num&&i<9?`<span class="kn sug">${i+1}</span>`:''}<span class="x" data-act="rmres" data-rid="${r.id}" title="Entfernen">${ic('x')}</span></button>`;
+/* bare: false = Arbeitskarte (Label links, + darunter), 'split' = Überschrift mit +, true = nur der Inhalt */
+const sec=(l,add,addTitle,inner,bare)=>bare===true?inner:bare==='split'?`<h4>${l.toUpperCase()}${add?`<button class="plus" data-act="${add}" title="${addTitle}" aria-label="${addTitle}">${ic('plus')}</button>`:''}</h4>${inner}`:`<div class="f"><div class="lbl"><span>${l}</span>${add?`<button class="plus" data-act="${add}" title="${addTitle}" aria-label="${addTitle}">${ic('plus')}</button>`:''}</div><div>${inner}</div></div>`;
+/* Wichtigste zuerst: zuletzt aufgerufen, sonst in der Reihenfolge des Hinzufügens. Die Ziffer (Alt+n) bleibt am Arbeitsmittel. */
+const rank=it=>it.resources.map((r,i)=>({r,i})).sort((a,b)=>(b.r.used||0)-(a.r.used||0)||a.i-b.i).map(x=>x.r);
+function rmenuHTML(it,rs){return `<div class="rmenu" role="menu"><div class="cap">Alle Arbeitsmittel · zuletzt benutzt zuerst</div>${rs.map(r=>{const n=it.resources.indexOf(r);return `<button role="menuitem" data-act="open" data-rid="${r.id}" title="${esc(r.target)}">${rIcon(r)}<span class="lb">${esc(r.label)}</span>${n<9?`<kbd>Alt ${n+1}</kbd>`:''}<span class="x" data-act="rmres" data-rid="${r.id}" title="Entfernen">${ic('x')}</span></button>`}).join('')}<hr><button data-act="openall">${ic('ext')}Alle öffnen</button><button data-act="addres">${ic('plus')}Link oder Datei hinzufügen</button></div>`}
+function resHTML(it,bare,num){const rs=rank(it),top=rs.slice(0,3),more=rs.length-3;
+ return sec('Arbeitsmittel','addres','Link oder Datei hinzufügen',`<div class="chips">${top.map(r=>chip(r,it.resources.indexOf(r),null,num)).join('')}${rs.length>1?`<span class="rwrap"><button class="chip more" data-act="rmenu" title="Alle Arbeitsmittel, Alle öffnen" aria-label="Alle Arbeitsmittel">${ic('dots')}${more>0?'+'+more:''}</button>${ui.rmenu===it.id?rmenuHTML(it,rs):''}</span>`:''}${!rs.length?'<span class="hint">Noch keine. Link einfügen oder hierher ziehen.</span>':''}</div>${ui.addRes===it.id?`<input class="in" style="margin-top:8px" data-act="resin" data-k="resin-${it.id}" placeholder="URL oder Pfad einfügen, Enter">`:''}`,bare)}
+function chkHTML(it,bare,noAdd){return sec('Checkliste',noAdd?null:'addchk','Schritt hinzufügen',`<ul class="chk">${it.checklist.map(c=>`<li class="${c.done?'done':''}"><label><input type="checkbox" data-act="chk" data-cid="${c.id}" ${c.done?'checked':''}><span>${esc(c.text)}</span></label></li>`).join('')}${ui.addChk===it.id?`<li><input class="in add" data-act="chkadd" data-k="chkadd-${it.id}" placeholder="Neuer Schritt, Enter · Esc beendet"></li>`:''}</ul>${!it.checklist.length&&ui.addChk!==it.id?'<span class="hint">Noch keine Schritte.</span>':''}`,bare)}
+function noteHTML(it,bare){return sec('Notiz',null,'',`<div class="nw"><textarea class="note" data-act="note" data-k="note-${it.id}" data-max="${bare==='split'?520:300}" placeholder="Zwischenstände, Befehle, Gesprächsnotizen …">${esc(it.note)}</textarea><span class="saved" id="sv-${it.id}"></span></div>`,bare)}
+const fit=t=>{t.style.height='auto';t.style.height=Math.min(t.scrollHeight+2,+t.dataset.max||300)+'px';t.style.overflowY=t.scrollHeight+2>(+t.dataset.max||300)?'auto':'hidden'};
+const delegIn=it=>`<div class="f"><span class="lbl">Delegieren an</span><input class="in" data-act="delegin" data-k="delegin-${it.id}" list="people" placeholder="@Name, Enter"></div><datalist id="people">${[...new Set(items.map(x=>x.delegatedTo).filter(Boolean).concat(['Sarah']))].map(n=>`<option value="@${esc(n)}">`).join('')}</datalist>`;
+
+function headHTML(){const tab=(v,i,l,n)=>`<button class="tab ${ui.view===v?'on':''}" data-act="go" data-v="${v}" role="tab" aria-selected="${ui.view===v}">${ic(i)}${l}<span class="n">${n}</span></button>`;
+ return `<nav class="tabs" role="tablist">${tab('fokus','target','Fokus',byState('focus').length)}${tab('ideen','bulb','Ideen',byState('idea').length)}${tab('delegiert','fwd','Delegiert',byState('delegated').length)}<span class="sp"></span><button class="ib" data-act="go" data-v="suche" title="Suche (Strg+F)" aria-label="Suche">${ic('search')}</button></nav>`}
+function prevHTML(){const p=parseQuick(ui.qv);const rec=[];
+ if(p.due)rec.push(chipDate(p.due));if(p.who)rec.push(`<span class="dt">${ic('fwd')}@${esc(p.who)}</span>`);p.res.forEach(r=>rec.push(`<span class="dt">${ic(r.type==='url'?'link':'file')}${esc(r.label)}</span>`));
+ return (rec.length?`<span class="rec">erkannt: ${rec.join('')}</span>`:'')+(p.who?'<span><kbd>⏎</kbd> legt es unter Delegiert ab</span>':`<span class="leg" title="Von dringend nach später">
+ <span class="lg l1" title="Sofort auf Platz 1 und in Arbeit. Die bisherige Aufgabe rückt auf Platz 2."><kbd>Strg ⇧ ⏎</kbd>Jetzt</span><i>›</i>
+ <span class="lg" title="Hinten in die Fokus-Liste. Woran du gerade bist, bleibt."><kbd>Strg ⏎</kbd>Fokus</span><i>›</i>
+ <span class="lg" title="In die Leiste für kleine Dinge zwischendurch"><kbd>Alt ⏎</kbd>Zwischendurch</span><i>›</i>
+ <span class="lg" title="In die Ideen, ohne Dringlichkeit"><kbd>⏎</kbd>Idee</span></span>`)}
+const qiHTML=()=>`<div class="qi"><div class="qbox">${ic('plus')}<input id="qi" data-k="qi" autocomplete="off" aria-label="Schnelleingabe" value="${esc(ui.qv)}" placeholder="${ui.view==='ideen'?'Neue Idee als Stichwort festhalten …':'Schnelleingabe …'}"></div><div class="qhint" id="qprev">${prevHTML()}</div></div>`;
+
+function cardHTML(it){
+ const st=it.exec==='in_progress'?`<span class="st run">${ic('play','fill')}IN ARBEIT</span>`:`<span class="st sug">BEREIT</span>`;
+ const go=it.exec==='in_progress'?`<button class="ib sug" data-act="brk" title="Pause machen">${ic('cup')}</button>`:`<button class="ib run" data-act="start" title="Starten">${ic('play','fill')}</button>`;
+ return `<section class="card ${it.exec}" data-id="${it.id}"><div class="ch">${st}<span class="sp"></span>${it.due?chipDate(it.due):''}${go}<button class="ib" data-act="done" title="Erledigt">${ic('check')}</button><button class="ib" data-act="deleg" title="Delegieren">${ic('fwd')}</button><button class="ib" data-act="split" title="Ausarbeiten (Strg+E)">${ic('max')}</button></div>
+ <h2 class="ct">${esc(it.title)}</h2>${ui.deleg===it.id?delegIn(it):''}${resHTML(it,false,true)}${chkHTML(it)}${noteHTML(it)}</section>`}
+function rowHTML(it,n){return `<div class="row ${ui.sel===it.id?'sel':''}" role="listitem" tabindex="0" draggable="true" data-id="${it.id}" data-k="row-${it.id}">
+ <span class="grip" title="Ziehen zum Sortieren (Alt+↑/↓)">${ic('grip')}</span><span class="num">${n}</span><span class="rt" data-act="select" title="${esc(it.title)}">${esc(it.title)}</span>
+ <span class="ind">${it.exec==='paused'?`<span class="badge sug" title="Hier warst du zuletzt dran">↩ zuletzt dran</span>`:''}${prog(it)?`<span class="mini">${prog(it)}</span>`:''}${it.resources.length?`<button class="mini sug" data-act="rlist" title="${it.resources.length} Arbeitsmittel zeigen">${ic('link')}${it.resources.length>1?it.resources.length:''}</button>`:''}${it.due?chipDate(it.due):''}</span>
+ <span class="tools"><button class="ib sug" data-act="split" title="Ausarbeiten">${ic('max')}</button><button class="ib" data-act="next" title="Direkt als Nächstes (Alt+Pos1)">${ic('top')}</button><button class="ib run" data-act="start" title="Jetzt übernehmen (Enter)">${ic('play','fill')}</button></span></div>${ui.rlist===it.id?`<div class="rl" data-id="${it.id}">${it.resources.map(chip).join('')}</div>`:''}`}
+function fokusHTML(){const l=focusList();
+ if(!l.length)return `<div class="empty">${ic('target','big')}<p><b>Nichts Dringendes.</b><br>Mit <kbd>Strg ⏎</kbd> in der Schnelleingabe kommt eine Aufgabe in den Fokus.</p></div>`;
+ const head=ui.brk?`<section class="brk sug" data-id="${l[0].id}">${ic('cup','big')}<h2>Pause</h2><p>Danach weiter mit <b>${esc(l[0].title)}</b></p><button class="btn" data-act="unbrk">${ic('play','fill')}Weiter</button></section>`:cardHTML(l[0]);
+ return head+(l.length>1?`<div class="queue" role="list">${l.slice(1).map((it,i)=>rowHTML(it,i+2)).join('')}</div>`:'')+(l.length>7?`<p class="soft"><span class="sug">${l.length} Aufgaben im Fokus. Ist das alles dringend, oder gehört etwas zu den Ideen?</span></p>`:'')}
+function interHTML(){const l=interList(),max=ui.pillsAll?99:3;
+ return `<div class="inter"><span class="il" title="Zwischendurch: ${l.length}" aria-label="Zwischendurch, ${l.length}">${ic('zap')}</span><div class="pills">${l.slice(0,max).map(it=>`<span class="pill" data-id="${it.id}"><button class="pb" data-act="pill" title="Klick: jetzt erledigen · Mittelklick: abhaken">${esc(it.title)}</button><button class="pd sug" data-act="pilldone" title="Abhaken" aria-label="Abhaken">${ic('check')}</button></span>`).join('')}${l.length>max?`<button class="pill more" data-act="pillsall">+${l.length-max}</button>`:''}${!l.length?'<span class="mut sm">leer · Alt ⏎ legt hier etwas ab</span>':''}</div></div>`}
+function ideaHTML(it){const bl=it.note.split('\n').filter(s=>s.trim()),ex=ui.expand[it.id],shown=ex?bl:bl.slice(0,3);
+ return `<article class="idea" data-id="${it.id}"><div class="ih"><h3>${esc(it.title)}</h3><span class="age">${ago(it.created)}</span><button class="lnk" data-act="split">${ic('max')}Ausbau</button></div>
+ ${shown.length?`<ul class="bul">${shown.map(s=>`<li>${esc(s.replace(/^[-•]\s*/,''))}</li>`).join('')}${bl.length>3&&!ex?`<li class="more"><button class="lnk" data-act="expand">+${bl.length-3} weitere</button></li>`:''}</ul>`:''}
+ ${it.resources.length?`<div class="chips">${it.resources.map(chip).join('')}</div>`:''}${it.checklist.length?`<div class="mut sm" style="margin-top:4px">Checkliste ${prog(it)}</div>`:''}
+ <div class="if"><input class="in" data-act="brain" data-k="brain-${it.id}" placeholder="+ Brainstorm-Gedanke anfügen …"><button class="btn" data-act="tofocus">→ Fokus</button><button class="btn" data-act="tointer">${ic('zap')}Zw.</button></div></article>`}
+function ideenHTML(){const l=byState('idea').sort((a,b)=>b.created-a.created);
+ return l.length?`<div class="ideas">${l.map(ideaHTML).join('')}</div>`:`<div class="empty">${ic('bulb','big')}<p><b>Keine Ideen.</b><br>Ein Stichwort und <kbd>⏎</kbd> genügen.</p></div>`}
+function delegHTML(){const l=byState('delegated');if(!l.length)return `<div class="empty">${ic('fwd','big')}<p><b>Nichts delegiert.</b><br><code>@Name</code> in der Schnelleingabe oder der Knopf an der Arbeitskarte gibt etwas ab.</p></div>`;
+ const g={};l.forEach(it=>(g[it.delegatedTo||'?']??=[]).push(it));
+ return Object.keys(g).sort().map(n=>`<div class="grp"><div class="gh">@${esc(n)} <span class="n">${g[n].length}</span></div>${g[n].map(it=>`<article class="dl" data-id="${it.id}"><div class="ih"><h3>${esc(it.title)}</h3><button class="lnk" data-act="split" title="Ausarbeiten">${ic('max')}</button></div>
+ <div class="meta">übergeben ${dayAt(it.delegatedAt)}${it.due?` · <span class="sug">nachfassen</span> ${chipDate(it.due)}`:''}${it.resources.map(chip).join('')}</div>
+ ${it.note?`<p class="nt">${esc(it.note)}</p>`:''}${it.checklist.length?chkHTML(it,true,true):''}
+ <div class="if end"><button class="btn" data-act="back">${ic('back')}Zurück in Fokus</button><button class="btn" data-act="done">${ic('check')}Erledigt</button></div></article>`).join('')}</div>`).join('')}
+const hay=it=>[it.title,it.note,...it.checklist.map(c=>c.text),...it.resources.map(r=>r.label+' '+r.target),it.delegatedTo?'@'+it.delegatedTo:''].join('\n');
+function hl(t,q){if(!q)return esc(t);let o='',i=0;const lt=t.toLowerCase();for(;;){const j=lt.indexOf(q,i);if(j<0){o+=esc(t.slice(i));break}o+=esc(t.slice(i,j))+'<mark>'+esc(t.slice(j,j+q.length))+'</mark>';i=j+q.length}return o}
+function resultsHTML(){const q=ui.q.trim().toLowerCase();
+ const l=q?items.filter(it=>hay(it).toLowerCase().includes(q)):byState('done').sort((a,b)=>b.doneAt-a.doneAt);
+ const rows=l.map(it=>{let sn='';if(q&&!it.title.toLowerCase().includes(q)){const line=hay(it).split('\n').find(s=>s.toLowerCase().includes(q))||'';sn=hl(line,q)}else if(!q)sn='erledigt '+esc(dayAt(it.doneAt));
+  return `<button class="sr" data-act="split" data-id="${it.id}"><span class="sb ${it.state}">${SN[it.state]}</span><span>${hl(it.title,q)}</span><span class="sn">${sn}</span></button>`}).join('');
+ return `<div class="sh">${q?l.length+' Treffer':'Zuletzt erledigt'}</div>${rows||'<div class="empty"><p>Nichts gefunden.</p></div>'}`}
+const searchHTML=()=>`<div class="qi"><div class="qbox">${ic('search')}<input id="sq" data-k="sq" autocomplete="off" aria-label="Suche" value="${esc(ui.q)}" placeholder="Titel, Notizen, Checklisten, Arbeitsmittel, @Name …"></div><div class="qhint"><span>durchsucht auch Erledigtes</span><span><kbd>Esc</kbd> zurück</span></div></div><div class="body" id="sres">${resultsHTML()}</div>`;
+function splitHTML(){const it=get(ui.split);
+ const groups=[['Fokus',focusList()],['Zwischendurch',interList()],['Ideen',byState('idea')],['Delegiert',byState('delegated')]];
+ const left=groups.map(([l,arr])=>arr.length?`<div class="sgh">${l}</div>${arr.map(x=>`<button class="sl ${x.id===it.id?'on':''}" data-act="pick" data-id="${x.id}">${x.exec==='in_progress'?ic('play','fill'):''}${esc(x.title)}</button>`).join('')}`:'').join('');
+ return `<div class="sw"><aside class="sleft"><div class="sgt">IDEEN &amp; AUFGABEN</div>${left}</aside>
+ <section class="sright" data-id="${it.id}"><div class="ch"><span class="sgt">AUSARBEITUNG</span><span class="sp"></span><span class="mut sm"><kbd>Esc</kbd></span><button class="ib" data-act="close" title="Schließen (Strg+E)" aria-label="Schließen">${ic('x')}</button></div>
+ <input class="tin" data-act="title" data-k="title-${it.id}" value="${esc(it.title)}" placeholder="Titel" aria-label="Titel">
+ <div class="srow"><label class="selb">Status <select data-act="state">${Object.keys(SN).map(s=>`<option value="${s}" ${it.state===s?'selected':''}>${SN[s]}</option>`).join('')}</select></label>
+ <label class="selb">${ic('cal')}<input type="date" data-act="due" value="${it.due||''}" aria-label="Termin"></label>
+ ${it.state==='delegated'?`<label class="selb">an <input data-act="delegname" value="${esc(it.delegatedTo||'')}" aria-label="Empfänger"></label>`:`<button class="btn" data-act="deleg">${ic('fwd')}Delegieren</button>`}</div>
+ ${ui.deleg===it.id?delegIn(it):''}
+ ${resHTML(it,'split',true)}${chkHTML(it,'split')}${noteHTML(it,'split')}</section></div>`}
+
+function render(focusK){
+ const ae=document.activeElement,k=focusK||(ae&&pop.contains(ae)&&ae.dataset?ae.dataset.k:null);
+ const sc=pv.querySelector('.body')?.scrollTop||0;
+ if(ui.split&&!get(ui.split))ui.split=null;
+ pop.hidden=!ui.open;pop.classList.toggle('split',!!ui.split);
+ pv.innerHTML=ui.split?splitHTML():headHTML()+(ui.view==='suche'?searchHTML():qiHTML()+`<div class="body">${ui.view==='fokus'?fokusHTML():ui.view==='ideen'?ideenHTML():delegHTML()}</div>`+(ui.view==='fokus'?interHTML():''));
+ const b=pv.querySelector('.body');if(b)b.scrollTop=sc;
+ pv.querySelectorAll('.note').forEach(fit);
+ if(k){const el=pv.querySelector(`[data-k="${k}"]`);if(el)el.focus({preventScroll:false})}
+ tray()}
+function openSplit(it){if(!it)return;ui.split=it.id;ui.deleg=ui.addRes=null;render('note-'+it.id)}
+function closeSplit(){ui.split=null;ui.deleg=ui.addRes=null;render()}
+
+function quickAdd(mode){const p=parseQuick(ui.qv);if(!p.title&&!p.res.length)return;
+ const it=mk({title:p.title||p.res[0].label,due:p.due});it.resources=p.res.map(r=>({id:cid(),...r}));ui.qv='';
+ mut(()=>{items.push(it);
+  if(p.who){it.state='delegated';it.delegatedTo=p.who;it.delegatedAt=Date.now();return 'Delegiert an @'+p.who}
+  if(mode==='idea'){it.state='idea';return 'Als Idee gespeichert (Strg ⏎ hätte es in den Fokus gelegt)'}
+  if(mode==='inter'){it.state='intermezzo';it.order=1e9;return 'In „Zwischendurch“ gelegt'}
+  if(mode==='now'){start(it);return 'Sofort in Arbeit, die vorige steht auf #2'}
+  it.state='focus';it.order=1e9;return 'Im Fokus auf Platz '+focusList().length})}
+function openRes(r){r.used=Date.now();render();toast((r.type==='url'?'Öffnet im Browser: ':'xdg-open ')+r.target)}
+function attach(it,r){mut(()=>{it.resources.push({id:cid(),...r});return `${r.label} → „${short(it.title,26)}“`})}
+
+/* events */
+pop.addEventListener('click',e=>{
+ if(ui.rmenu&&!e.target.closest('.rmenu,[data-act=rmenu]')){ui.rmenu=null;if(!e.target.closest('[data-act]')){render();return}}
+ const a=e.target.closest('[data-act]');if(!a||!pv.contains(a))return;
+ const host=a.closest('[data-id]'),it=host?get(host.dataset.id):null,act=a.dataset.act;
+ if(act==='go'){ui.view=a.dataset.v;ui.split=null;render(ui.view==='suche'?'sq':'qi');return}
+ if(act==='close'){closeSplit();return}
+ if(!it)return;
+ switch(act){
+  case'start':case'pill':mut(()=>{const had=focusList().some(x=>x.exec==='in_progress'&&x!==it);start(it);return 'In Arbeit: '+short(it.title)+(had?' · die vorige steht auf #2':'')});break;
+  case'brk':ui.brk=true;render();toast('Gute Pause.');break;
+  case'unbrk':mut(()=>{start(it);return 'Weiter mit: '+short(it.title)},false);break;
+  case'rlist':ui.rlist=ui.rlist===it.id?null:it.id;render();break;
+  case'done':case'pilldone':mut(()=>{const top=focusList()[0]===it;finish(it);const n=focusList()[0];return 'Erledigt: '+short(it.title,26)+(top&&n?' · als Nächstes: '+short(n.title,24):'')});break;
+  case'deleg':ui.deleg=ui.deleg===it.id?null:it.id;render('delegin-'+it.id);break;
+  case'next':mut(()=>{toNext(it);return 'Als Nächstes eingereiht (#2)'});break;
+  case'select':ui.sel=it.id;render('row-'+it.id);break;
+  case'split':case'pick':openSplit(it);break;
+  case'addres':ui.rmenu=null;ui.addRes=ui.addRes===it.id?null:it.id;render('resin-'+it.id);break;
+  case'addchk':ui.addChk=ui.addChk===it.id?null:it.id;render('chkadd-'+it.id);break;
+  case'rmenu':ui.rmenu=ui.rmenu===it.id?null:it.id;render();break;
+  case'open':{const r=it.resources.find(r=>r.id===a.dataset.rid);ui.rmenu=null;if(r)openRes(r);break}
+  case'rmres':mut(()=>{it.resources=it.resources.filter(r=>r.id!==a.dataset.rid);return 'Arbeitsmittel entfernt'});break;
+  case'openall':ui.rmenu=null;it.resources.forEach(r=>r.used=Date.now()-it.resources.indexOf(r));render();toast(it.resources.length+' Arbeitsmittel geöffnet (xdg-open)');break;
+  case'pillsall':ui.pillsAll=!ui.pillsAll;render();break;
+  case'expand':ui.expand[it.id]=1;render();break;
+  case'tofocus':mut(()=>{setState(it,'focus');return 'In den Fokus, Platz '+focusList().length});break;
+  case'tointer':mut(()=>{setState(it,'intermezzo');return 'In „Zwischendurch“ gelegt'});break;
+  case'back':mut(()=>{setState(it,'focus');return 'Zurück im Fokus, Platz '+focusList().length});break;
+ }});
+pop.addEventListener('auxclick',e=>{if(e.button!==1)return;const p=e.target.closest('.pill[data-id]');if(!p)return;e.preventDefault();const it=get(p.dataset.id);mut(()=>{finish(it);return 'Abgehakt: '+short(it.title)})});
+pop.addEventListener('mousedown',e=>{if(e.button===1&&e.target.closest('.pill'))e.preventDefault()});
+pop.addEventListener('change',e=>{const a=e.target,it=get(a.closest('[data-id]')?.dataset.id);if(!it)return;
+ const act=a.dataset.act;
+ if(act==='chk')mut(()=>{const c=it.checklist.find(c=>c.id===a.dataset.cid);c.done=a.checked;return null});
+ else if(act==='state'){if(a.value==='delegated'){ui.deleg=it.id;render('delegin-'+it.id)}else{const st=a.value;mut(()=>{setState(it,st);return 'Status: '+SN[st]})}}
+ else if(act==='due')mut(()=>{it.due=a.value||null;return null});
+ else if(act==='title')mut(()=>{it.title=a.value.trim()||'Ohne Titel';return null},false);
+ else if(act==='delegname')mut(()=>{it.delegatedTo=a.value.replace(/^@/,'').trim()||it.delegatedTo;return null},false)});
+pop.addEventListener('input',e=>{const a=e.target;
+ if(a.id==='qi'){ui.qv=a.value;$('#qprev').innerHTML=prevHTML();return}
+ if(a.id==='sq'){ui.q=a.value;$('#sres').innerHTML=resultsHTML();return}
+ const it=get(a.closest('[data-id]')?.dataset.id);if(!it)return;
+ if(a.dataset.act==='title')it.title=a.value;
+ if(a.dataset.act==='note'){fit(a);it.note=a.value;const sv=document.getElementById('sv-'+it.id);if(sv){sv.textContent='…';clearTimeout(a._t);a._t=setTimeout(()=>{sv.textContent='gespeichert'},400)}}});
+pop.addEventListener('keydown',e=>{const a=e.target;
+ if(a.id==='qi'){
+  if(e.key==='Enter'&&!e.isComposing){e.preventDefault();quickAdd(e.ctrlKey&&e.shiftKey?'now':e.ctrlKey?'focus':e.altKey?'inter':'idea');return}
+  if(e.key==='ArrowDown'&&!a.value){const r=pv.querySelector('.row');if(r){e.preventDefault();ui.sel=r.dataset.id;render('row-'+r.dataset.id)}}
+  return}
+ if(e.key!=='Enter'||e.isComposing||!a.matches('input'))return;
+ const it=get(a.closest('[data-id]')?.dataset.id);if(!it)return;const v=a.value.trim(),act=a.dataset.act;
+ if(act==='chkadd'&&v){e.preventDefault();mut(()=>{it.checklist.push({id:cid(),text:v,done:false});return null})}
+ else if(act==='brain'&&v){e.preventDefault();mut(()=>{const r=smartRes(v);if(r){it.resources.push({id:cid(),...r});return 'Als Arbeitsmittel angehängt: '+r.label}it.note=(it.note.trim()?it.note.trimEnd()+'\n':'')+'- '+v;return null})}
+ else if(act==='resin'&&v){e.preventDefault();const r=smartRes(v);if(!r){toast('Das ist weder URL noch Pfad');return}ui.addRes=null;attach(it,r)}
+ else if(act==='delegin'&&v){e.preventDefault();ui.deleg=null;mut(()=>{delegate(it,v);return 'Delegiert an @'+it.delegatedTo})}});
+pop.addEventListener('mouseover',e=>{const h=e.target.closest('[data-id]');ui.hover=h?h.dataset.id:null});
+pop.addEventListener('mouseleave',()=>{ui.hover=null});
+
+document.addEventListener('keydown',e=>{
+ if(!ui.open)return;
+ const tx=!!e.target.matches?.('input,textarea,select'),k=e.key.toLowerCase();
+ if(e.altKey&&/^[1-9]$/.test(e.key)){const a=focusList()[0];const r=a&&a.resources[+e.key-1];e.preventDefault();if(r)openRes(r);else toast('Kein Arbeitsmittel Nr. '+e.key);return}
+ if(e.ctrlKey&&!e.shiftKey&&k==='f'){e.preventDefault();ui.view='suche';ui.split=null;render('sq');return}
+ if(e.ctrlKey&&k==='e'){e.preventDefault();ui.split?closeSplit():openSplit(get(ui.sel)||focusList()[0]||byState('idea')[0]);return}
+ if(e.key==='Escape'){
+  if(ui.deleg||ui.addRes||ui.rmenu||ui.addChk){ui.deleg=ui.addRes=ui.rmenu=ui.addChk=null;render();return}
+  if(ui.split){closeSplit();return}
+  if(ui.view==='suche'){ui.view='fokus';render('qi');return}
+  if(e.target.id==='qi'&&ui.qv){ui.qv='';render('qi');return}
+  ui.open=false;render();return}
+ if(tx)return;
+ if(e.ctrlKey&&k==='z'){e.preventDefault();undo();return}
+ if(ui.view!=='fokus'||ui.split)return;
+ const rows=focusList().slice(1);if(!rows.length)return;
+ let i=rows.findIndex(x=>x.id===ui.sel);
+ if(e.altKey&&(e.key==='ArrowUp'||e.key==='ArrowDown')){if(i<0)return;e.preventDefault();const it=rows[i];mut(()=>{moveBy(it,e.key==='ArrowUp'?-1:1);return null})}
+ else if(e.altKey&&e.key==='Home'){if(i<0)return;e.preventDefault();const it=rows[i];mut(()=>{toNext(it);return 'Als Nächstes eingereiht (#2)'})}
+ else if(e.key==='ArrowUp'&&i===0){e.preventDefault();ui.sel=null;render('qi')}
+ else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();i=e.key==='ArrowDown'?Math.min(rows.length-1,i+1):Math.max(0,i-1);ui.sel=rows[i].id;render('row-'+ui.sel)}
+ else if(e.key==='Enter'&&i>=0){e.preventDefault();const it=rows[i];mut(()=>{start(it);return 'In Arbeit: '+short(it.title)+' · die vorige steht auf #2'})}});
+document.addEventListener('paste',e=>{if(!ui.open||e.target.matches?.('input,textarea'))return;
+ const it=get(ui.hover)||get(ui.sel);if(!it){const t=(e.clipboardData?.getData('text')||'').trim();if(!t)return;e.preventDefault();ui.qv=t;if(ui.split||ui.view==='suche'){ui.split=null;ui.view='fokus'}render('qi');toast('In die Schnelleingabe übernommen');return}
+ e.preventDefault();const r=smartRes(e.clipboardData?.getData('text'));if(!r){toast('Zwischenablage: kein Link und kein Pfad');return}attach(it,r)});
+
+let dragId=null;
+pop.addEventListener('dragstart',e=>{const r=e.target.closest?.('.row');if(!r)return;dragId=r.dataset.id;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','');r.classList.add('dragging')});
+const clearOver=()=>pv.querySelectorAll('.over,.dragging').forEach(x=>x.classList.remove('over','dragging'));
+pop.addEventListener('dragend',()=>{dragId=null;clearOver()});
+pop.addEventListener('dragover',e=>{const t=e.target.closest?.('[data-id]');if(!t||!pv.contains(t))return;if(dragId&&!t.classList.contains('row'))return;e.preventDefault();pv.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));t.classList.add('over')});
+pop.addEventListener('drop',e=>{const t=e.target.closest?.('[data-id]');if(!t||!pv.contains(t))return;e.preventDefault();const it=get(t.dataset.id);
+ if(dragId){const d=get(dragId);dragId=null;clearOver();if(!d||d===it||it.state!=='focus')return;
+  mut(()=>{const down=d.order<it.order,l=focusList().filter(x=>x!==d);l.splice(Math.max(1,l.indexOf(it)+(down?1:0)),0,d);l.forEach((x,k)=>x.order=k);return null});return}
+ clearOver();const uri=(e.dataTransfer.getData('text/uri-list')||e.dataTransfer.getData('text/plain')||'').split('\n')[0];const f=e.dataTransfer.files&&e.dataTransfer.files[0];
+ const r=smartRes(uri)||(f?{type:'file',label:f.name,target:'~/Downloads/'+f.name}:null);if(r)attach(it,r)});
+
+/* tray */
+const ti=$('#ticon'),tip=$('#tip'),tm=$('#tmenu');
+function tray(){const l=focusList(),a=l.find(x=>x.exec==='in_progress'),nx=l.find(x=>x!==a);
+ $('#tbadge').textContent=l.length;$('#ticon').classList.toggle('run',!!a&&!ui.brk);$('#ticon').classList.toggle('brk',ui.brk);
+ $('#tip').innerHTML=ui.brk&&l[0]?`Pause<br><span>Danach: ${esc(short(l[0].title,34))}</span>`:a?`▶ <b>${esc(short(a.title,34))}</b>${a.checklist.length?' ('+prog(a)+')':''}<br><span>Danach: ${nx?esc(short(nx.title,30)):'nichts'}</span>`:`Nichts in Arbeit<br><span>${l.length} im Fokus · ${interList().length} zwischendurch</span>`}
+function trayMenu(){const a=focusList()[0];
+ tm.innerHTML=`<button data-m="open">Tasqlet öffnen</button><button data-m="capture">Schnell erfassen …</button>`+(a&&a.resources.length?`<hr><div class="mh">${esc(short(a.title,32))}</div>${rank(a).map((r,i)=>`<button class="sug" data-m="res" data-rid="${r.id}">${ic(r.type==='url'?'link':r.type==='mail'?'mail':'file')} ${esc(r.label)}</button>`).join('')}<button data-m="all">Alle öffnen</button>`:'')+`<hr>${ui.brk?'<button data-m="unbrk">Pause beenden</button>':'<button data-m="brk">Pause machen</button>'}<button data-m="done">Aktuelle Aufgabe erledigt</button><hr><button data-m="quit">Beenden</button>`}
+
+ti.addEventListener('mouseenter',()=>{if(tm.hidden)tip.classList.add('on')});ti.addEventListener('mouseleave',()=>tip.classList.remove('on'));
+ti.addEventListener('click',()=>{tm.hidden=true;ui.open=!ui.open;render(ui.open?'qi':null)});
+ti.addEventListener('contextmenu',e=>{e.preventDefault();tip.classList.remove('on');trayMenu();tm.hidden=!tm.hidden});
+document.addEventListener('click',e=>{if(!tm.hidden&&!e.target.closest('#tmenu,#ticon'))tm.hidden=true});
+tm.addEventListener('click',e=>{const b=e.target.closest('[data-m]'),m=b?.dataset.m;if(!m)return;tm.hidden=true;const a0=focusList()[0];
+ if(m==='res'){const r=a0.resources.find(r=>r.id===b.dataset.rid);ui.open=true;openRes(r);return}
+ if(m==='all'){ui.open=true;render();toast(a0.resources.length+' Arbeitsmittel geöffnet (xdg-open)');return}
+ if(m==='brk'){ui.brk=true;render();return}
+ if(m==='unbrk'){if(a0)mut(()=>{start(a0);return 'Weiter mit: '+short(a0.title)},false);return}
+ if(m==='open'||m==='capture'){ui.open=true;ui.view='fokus';ui.split=null;render('qi')}
+ if(m==='done'){const a=focusList().find(x=>x.exec==='in_progress');if(a){ui.open=true;mut(()=>{finish(a);return 'Erledigt: '+short(a.title)})}}
+ if(m==='quit'){ui.open=true;render();toast('Im Dummy bleibt Tasqlet an')}});
+tEl.addEventListener('click',e=>{if(e.target.closest('[data-t=undo]'))undo()});
+const clock=()=>{const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+setInterval(clock,10000);
+
+/* simulations */
+$('#s-hot').addEventListener('click',()=>{ui.open=true;ui.view='fokus';ui.split=null;render('qi');toast('Hotkey: Popover offen, Eingabe hat den Fokus')});
+$('#s-selurl').addEventListener('click',()=>{const a=focusList().find(x=>x.exec==='in_progress');ui.open=true;ui.split=null;ui.view='fokus';
+ if(a)attach(a,smartRes('https://jira.example.com/browse/CORE-422'));else{ui.qv='https://jira.example.com/browse/CORE-422';render('qi')}});
+$('#s-seltxt').addEventListener('click',()=>{ui.open=true;ui.split=null;ui.view='fokus';ui.qv='Retry-Strategie für fehlgeschlagene Webhooks überlegen';render('qi');toast('Markierung steht in der Eingabe. Enter speichert sie als Idee.')});
+$('#s-copy').addEventListener('click',()=>{const u='https://jira.example.com/browse/CORE-422';
+ (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast('Kopiert. Jetzt über eine Aufgabe fahren und Strg+V')).catch(()=>{ui.open=true;render();toast('Kopieren nicht erlaubt. Den Link unten ziehen geht auch.')})});
+$('#s-marks').addEventListener('change',e=>document.body.classList.toggle('marks',e.target.checked));
+$('#s-reset').addEventListener('click',()=>location.reload());
+const THEMES=[['auto','Automatisch',['#faf9f6','#1a1b1e','#b4410e']],['papier','Papier',['#faf9f6','#1d1b18','#b4410e']],['graphit','Graphit',['#1a1b1e','#ededeb','#ff9068']],['fjord','Fjord',['#15202b','#e6edf3','#7cbcff']],['salbei','Salbei',['#f5f6f2','#1b201b','#2e6948']],['kontrast','Kontrast',['#ffffff','#000000','#0a47c9']]];
+const thBox=$('#themes');
+const FOCUS=[['calm','ruhig'],['strong','betont'],['stage','Bühne']],CHROME=[['flat','eins mit Inhalt'],['raised','abgesetzt'],['solid','kontrastiert']];
+const PRESETS=[['Bühne','Papier · Aufgabe als dunkle Karte','papier','stage','flat'],['Scheinwerfer','Graphit · helle Karte im Dunkeln','graphit','stage','raised'],['Werkbank','Papier · dunkle Bedienleisten','papier','calm','solid'],['Leitstand','Fjord · Aufgabe betont, Leisten abgesetzt','fjord','strong','raised'],['Atelier','Salbei · helle Leisten auf grünem Grund','salbei','strong','solid'],['Klar','Kontrast · alles deutlich','kontrast','strong','solid']];
+const setAx=(k,v,def)=>{if(v===def)delete pop.dataset[k];else pop.dataset[k]=v};
+const paintThemes=()=>{const cur=pop.dataset.tq||'auto',f=pop.dataset.focus||'calm',c=pop.dataset.chrome||'flat';
+ thBox.innerHTML=THEMES.map(([k,l,col])=>`<button data-th="${k}" aria-pressed="${cur===k}"><span class="sw3">${col.map(x=>`<i style="background:${x}"></i>`).join('')}</span>${l}</button>`).join('');
+ $('#ax-focus').innerHTML=FOCUS.map(([k,l])=>`<button data-f="${k}" aria-pressed="${f===k}">${l}</button>`).join('');
+ $('#ax-chrome').innerHTML=CHROME.map(([k,l])=>`<button data-c="${k}" aria-pressed="${c===k}">${l}</button>`).join('');
+ $('#presets').innerHTML=PRESETS.map(([n,d,t,fo,ch])=>`<button data-p="${n}" title="${d}"><b>${n}</b><span>${d}</span></button>`).join('')};
+thBox.addEventListener('click',e=>{const b=e.target.closest('[data-th]');if(!b)return;setAx('tq',b.dataset.th,'auto');paintThemes()});
+$('#ax-focus').addEventListener('click',e=>{const b=e.target.closest('[data-f]');if(b){setAx('focus',b.dataset.f,'calm');paintThemes()}});
+$('#ax-chrome').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(b){setAx('chrome',b.dataset.c,'flat');paintThemes()}});
+$('#presets').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;const p=PRESETS.find(x=>x[0]===b.dataset.p);setAx('tq',p[2],'auto');setAx('focus',p[3],'calm');setAx('chrome',p[4],'flat');paintThemes()});
+paintThemes();
+
+clock();render('qi');
+}
+</script>
+</body>
+</html>
