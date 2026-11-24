@@ -2,7 +2,7 @@
 
 Persönliches Fokus- und Notiz-Werkzeug im Linux-Tray: einfach erfassen, schnell überblicken, kurze
 Wege zu den Arbeitsmitteln. Tauri 2 (Rust, `src-tauri/`), Domäne in `crates/tasqlet-core/`, Frontend
-Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritt 1.1 fertig.
+Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.2 fertig.
 
 ## Lesen, bevor gearbeitet wird
 
@@ -64,6 +64,7 @@ Dieselben Schritte laufen in der CI (`.github/workflows/ci.yml`). Vor einem Comm
 
 Ein lauffähiges Release-Binary nur über `npm run tauri build` (bzw. `-- --no-bundle`). Ein reines
 `cargo build --release` bettet das Frontend nicht ein und lädt stattdessen den Dev-Server (leeres Fenster).
+Datenordner: `~/.local/share/tasqlet`, für Entwicklung und Tests mit `TASQLET_DATA_DIR` umlenken.
 Die Versionen von `tauri` (Cargo) und `@tauri-apps/api` (npm) müssen in Major/Minor übereinstimmen.
 Keine Testfenster auf dem Desktop des Nutzers öffnen, ohne es vorher anzukündigen; Oberfläche lieber in der
 Browser-Vorschau prüfen.
@@ -75,6 +76,8 @@ Browser-Vorschau prüfen.
 | `crates/tasqlet-core/src/model.rs` | Typen `Item`, `State`, `Resource`, `ChecklistItem`, `NewItem`, `Target` |
 | `crates/tasqlet-core/src/store.rs` | `Store`: Übergänge (`Action`), Invarianten (`check_invariants`) |
 | `crates/tasqlet-core/src/session.rs` | `Session`: Store mit Undo-Verlauf (50 Schritte) |
+| `crates/tasqlet-core/src/storage/` | `Storage` (Laden, Speichern in zwei Phasen, Archiv je Jahr, `.bak`), `Saver` (300 ms gebündelt), `watch` (Änderungen von außen), `migrate` (`schema`) |
+| `crates/tasqlet-core/tests/crash.rs` | Abnahme 1.2: `kill -9` mitten im Schreiben, Daten bleiben ladbar und vollständig |
 | `crates/tasqlet-core/tests/invariants.rs` | `proptest`: beliebige Aktionsfolgen halten alle Invarianten |
 | `src-tauri/src/lib.rs` | Tauri-Builder, Commands (`schema_version`, `snapshot`) |
 | `src-tauri/src/popover.rs` | Popover zeigen/verstecken (versteckt vorbereitet), Ereignis `popover-shown` |

@@ -1,11 +1,12 @@
 //! Domain logic of Tasqlet, free of any GUI or desktop dependency.
 //!
 //! The specification lives in `docs/KONZEPT.md`; `docs/PLAN.md` says which part is built when.
-//! So far: the item model with its transitions, invariants and undo (plan step 1.1). Storage
-//! (1.2), the quick-entry parser and smart labels (1.3), and themes (2.6) follow.
+//! So far: the item model with its transitions, invariants and undo (plan step 1.1) and storage on
+//! disk in [`storage`] (1.2). The quick-entry parser and smart labels (1.3) and themes (2.6) follow.
 
 mod model;
 mod session;
+pub mod storage;
 mod store;
 
 pub use model::{

@@ -120,6 +120,49 @@ impl Store {
         Ok(store)
     }
 
+    /// A store from data that may have been edited by hand: whatever breaks an invariant is
+    /// repaired instead of refused. Duplicate ids keep their first item, the active item with the
+    /// lowest `order` stays active, flags outside focus are cleared and the lists renumbered.
+    /// Returns the store and whether anything had to be repaired.
+    pub fn repaired(on_break: bool, items: Vec<Item>) -> (Self, bool) {
+        let original = items.clone();
+        let mut seen = HashSet::new();
+        let mut items: Vec<Item> = items.into_iter().filter(|it| seen.insert(it.id)).collect();
+        for it in &mut items {
+            if it.state != State::Focus {
+                it.active = false;
+                it.last_active = false;
+            }
+            if !it.state.is_ordered() {
+                it.order = 0;
+            }
+        }
+        let active = items
+            .iter()
+            .filter(|it| it.active)
+            .min_by_key(|it| it.order)
+            .map(|it| it.id);
+        let last_active = items
+            .iter()
+            .find(|it| it.last_active && Some(it.id) != active)
+            .map(|it| it.id);
+        for it in &mut items {
+            it.active = Some(it.id) == active;
+            it.last_active = Some(it.id) == last_active;
+        }
+        let mut store = Self {
+            on_break: on_break && active.is_some(),
+            items,
+        };
+        let mut focus: Vec<&Item> = store.list(State::Focus);
+        focus.sort_by_key(|it| (!it.active, it.order));
+        let focus: Vec<Id> = focus.into_iter().map(|it| it.id).collect();
+        store.set_order(&focus);
+        store.renumber();
+        let changed = store.on_break != on_break || store.items != original;
+        (store, changed)
+    }
+
     /// Whether the coffee break is on.
     pub fn on_break(&self) -> bool {
         self.on_break

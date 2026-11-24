@@ -64,29 +64,40 @@ pub struct Resource {
 pub struct ChecklistItem {
     pub id: Id,
     pub text: String,
+    #[serde(default)]
     pub done: bool,
 }
 
 /// A task, idea or note.
+///
+/// Fields that may be left out of a hand-written file have serde defaults.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Item {
     pub id: Id,
     /// May be empty; promoting an item without title takes the first note line.
+    #[serde(default)]
     pub title: String,
     pub state: State,
     /// Only in focus, at most one, always at `order` 0.
+    #[serde(default)]
     pub active: bool,
     /// Only in focus, at most one: the task left when another one was taken over.
+    #[serde(default)]
     pub last_active: bool,
     /// Gap-free from 0 within focus and within intermezzo; 0 in the other states.
+    #[serde(default)]
     pub order: u32,
+    #[serde(default)]
     pub note: String,
+    #[serde(default)]
     pub checklist: Vec<ChecklistItem>,
+    #[serde(default)]
     pub resources: Vec<Resource>,
     /// Only noted, never evaluated (D2).
     pub date: Option<NaiveDate>,
     pub delegated_to: Option<String>,
     pub delegated_at: Option<DateTime<Utc>>,
+    #[serde(default)]
     pub tags: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

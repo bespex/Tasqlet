@@ -41,7 +41,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 0.2 Tauri-Hülle mit leerem Popover und Browser-Vorschau
 - **MVP 1: Erfassen, Überblick, kurze Wege**
   - [x] 1.1 Core: Modell, Invarianten, Übergänge, Undo
-  - [ ] 1.2 Core: Speichern und Laden
+  - [x] 1.2 Core: Speichern und Laden
   - [ ] 1.3 Core: Schnelleingabe-Parser, Smart-Labels, Rang der Arbeitsmittel
   - [ ] 1.4 Tray, Popover-Fenster, Einzelinstanz, `--toggle`
   - [ ] 1.5 Frontend-Grundlage: Rollen-Theming, Bausteine, Rückmeldung
