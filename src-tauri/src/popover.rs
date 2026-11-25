@@ -87,10 +87,27 @@ pub fn show(app: &AppHandle, at: Option<(i32, i32)>) {
     place(app, &w);
     let _ = w.show();
     place(app, &w);
+    settle(app, &w);
     let _ = w.set_always_on_top(true);
     let _ = w.set_focus();
     activate_x11(&w);
     let _ = app.emit_to(LABEL, "popover-shown", ());
+}
+
+/// The first time the window is mapped, its size (and the window manager's frame) is only known
+/// a moment later, so the first placement can be off. Place again once it has settled.
+fn settle(app: &AppHandle, w: &WebviewWindow) {
+    let (app, w) = (app.clone(), w.clone());
+    std::thread::spawn(move || {
+        for delay in [40, 120] {
+            std::thread::sleep(Duration::from_millis(delay));
+            if !w.is_visible().unwrap_or(false) {
+                return;
+            }
+            let (app, w) = (app.clone(), w.clone());
+            let _ = app.clone().run_on_main_thread(move || place(&app, &w));
+        }
+    });
 }
 
 pub fn hide(app: &AppHandle) {

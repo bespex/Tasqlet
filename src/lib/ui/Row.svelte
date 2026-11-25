@@ -1,38 +1,55 @@
 <script lang="ts">
   // One line of the queue (docs/KONZEPT.md 6.1): grip, number, title, indicators; the tools only
-  // appear on hover, selection or keyboard focus. The queue around it is a `listbox`; the keys
-  // (↑/↓, Enter, Alt+↑/↓) come with plan 1.8.
+  // appear on hover, selection or keyboard focus. The queue around it (`Queue.svelte`) is a `listbox`
+  // and handles the keys.
   import type { Snippet } from "svelte";
   import { GripVertical } from "@lucide/svelte";
   import { t } from "../i18n";
 
   let {
+    id,
     num,
     title,
     selected = false,
+    dragging = false,
+    line,
     indicators,
     tools,
     onselect,
+    ongrip,
   }: {
+    id: string;
     num: number;
     title: string;
     selected?: boolean;
+    /** This row is being dragged. */
+    dragging?: boolean;
+    /** Drop marker: a line above or below the row while another row is dragged over it. */
+    line?: "before" | "after";
     indicators?: Snippet;
     tools?: Snippet;
     onselect?: () => void;
+    /** Pointer went down on the grip (sorting by pointer, not by HTML5 drag and drop). */
+    ongrip?: (e: PointerEvent) => void;
   } = $props();
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
   class="row"
   class:sel={selected}
+  class:dragging
+  class:before={line === "before"}
+  class:after={line === "after"}
+  data-id={id}
   role="option"
   aria-selected={selected}
-  tabindex="0"
+  tabindex={selected ? 0 : -1}
   onclick={onselect}
-  onkeydown={() => {}}
+  onfocus={onselect}
 >
-  <span class="grip" title={t("Drag to sort (Alt+↑/↓)")}><GripVertical size={16} /></span>
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <span class="grip" title={t("Drag to sort (Alt+↑/↓)")} onpointerdown={ongrip}><GripVertical size={16} /></span>
   <span class="num">{num}</span>
   <span class="rt" {title}>{title}</span>
   {#if indicators}<span class="ind">{@render indicators()}</span>{/if}
@@ -59,7 +76,30 @@
   .row.sel {
     box-shadow: inset 2px 0 0 var(--tq-accent);
   }
+  .row {
+    position: relative;
+  }
+  .row.dragging {
+    opacity: 0.45;
+  }
+  .row.before::before,
+  .row.after::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    height: 2px;
+    background: var(--tq-accent);
+    border-radius: 1px;
+  }
+  .row.before::before {
+    top: -1px;
+  }
+  .row.after::after {
+    bottom: -1px;
+  }
   .grip {
+    touch-action: none;
     color: var(--tq-ink-3);
     cursor: grab;
     display: grid;
@@ -95,8 +135,8 @@
   .row:hover .grip,
   .row.sel .tools,
   .row.sel .grip,
-  .row:focus-within .tools,
-  .row:focus-within .grip {
+  .row:has(:focus-visible) .tools,
+  .row:has(:focus-visible) .grip {
     opacity: 1;
   }
 </style>

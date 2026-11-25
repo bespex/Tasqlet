@@ -181,6 +181,15 @@ pub fn apply(app: &AppHandle, action: Action) -> Result<(), Error> {
     Ok(())
 }
 
+/// Carry out a continuous edit (typing in the note): saved, but no undo step and no refresh.
+pub fn edit(app: &AppHandle, action: Action) -> Result<(), Error> {
+    let data = app.state::<Data>();
+    let mut session = data.session();
+    session.edit(action, Utc::now())?;
+    data.save(session.store());
+    Ok(())
+}
+
 /// Undo the last action.
 pub fn undo(app: &AppHandle) -> Result<(), Error> {
     let data = app.state::<Data>();

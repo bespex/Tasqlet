@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { mockSnapshot } from "./mock-data";
 import { mockParse } from "./mock-quick";
-import type { CaptureKey, Captured, Item, QuickEntry, Snapshot } from "./types";
+import type { Act, CaptureKey, Captured, Item, QuickEntry, Snapshot } from "./types";
 
 /** True inside the Tauri webview, false in the browser preview. */
 export const inTauri = (): boolean => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -128,5 +128,143 @@ export async function undo(): Promise<void> {
   const before = preview.history.pop();
   if (!before) throw new Error("nothing to undo");
   preview.snapshot = before;
+  preview.changed();
+}
+
+/** Closes the gaps in the order of focus and intermezzo, the active item first (preview only). */
+function renumber(items: Item[]): void {
+  for (const state of ["focus", "intermezzo"] as const) {
+    items
+      .filter((i) => i.state === state)
+      .sort((a, b) => Number(b.active) - Number(a.active) || a.order - b.order)
+      .forEach((i, n) => (i.order = n));
+  }
+}
+
+/** Carries out a change to one item. Rejects if the core would refuse it. */
+export async function act(change: Act): Promise<void> {
+  if (inTauri()) return invoke("act", { act: change });
+  const snap = preview.snapshot;
+  const items = snap.items;
+  const find = (id: string) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) throw new Error("unknown item");
+    return item;
+  };
+  const edit = change.kind === "set_note";
+  const before = structuredClone(snap);
+  const now = new Date().toISOString();
+  const move = (item: Item, state: Item["state"]) => {
+    item.state = state;
+    item.active = false;
+    item.last_active = false;
+    item.order = 9999;
+    item.updated_at = now;
+  };
+  switch (change.kind) {
+    case "start": {
+      const item = find(change.id);
+      const left = items.find((i) => i.active && i.id !== item.id);
+      items.forEach((i) => ((i.last_active = i === left), (i.active = false)));
+      item.state = "focus";
+      item.active = true;
+      item.last_active = false;
+      item.order = -1;
+      snap.on_break = false;
+      break;
+    }
+    case "finish": {
+      const item = find(change.id);
+      move(item, "done");
+      item.done_at = now;
+      break;
+    }
+    case "pause":
+      if (!items.some((i) => i.active)) throw new Error("no active item");
+      snap.on_break = true;
+      break;
+    case "resume":
+      snap.on_break = false;
+      break;
+    case "delegate": {
+      const to = change.to.trim().replace(/^@/, "");
+      if (!to) throw new Error("empty name");
+      const item = find(change.id);
+      move(item, "delegated");
+      item.delegated_to = to;
+      item.delegated_at = now;
+      break;
+    }
+    case "send_to":
+      move(find(change.id), change.to);
+      break;
+    case "to_back": {
+      const item = find(change.id);
+      const last = Math.max(...items.filter((i) => i.state === "focus").map((i) => i.order));
+      if (item.state !== "focus" || item.order === last) throw new Error("not applicable");
+      snap.on_break = snap.on_break && !item.active;
+      item.active = false;
+      item.last_active = false;
+      item.order = 9999;
+      break;
+    }
+    case "to_next": {
+      const item = find(change.id);
+      if (item.state === "focus" && item.order === 0) throw new Error("not applicable");
+      if (item.state === "focus" && item.order === 1) return;
+      const queue = items.filter((i) => i.state === "focus" && i !== item).sort((a, b) => a.order - b.order);
+      item.state = "focus";
+      item.active = false;
+      item.last_active = false;
+      queue.splice(Math.min(1, queue.length), 0, item);
+      queue.forEach((i, n) => (i.order = n));
+      break;
+    }
+    case "move_by": {
+      const item = find(change.id);
+      const queue = items.filter((i) => i.state === "focus").sort((a, b) => a.order - b.order);
+      const from = queue.indexOf(item);
+      const to = from + change.delta;
+      if (item.state !== "focus" || from < 1 || to < 1 || to >= queue.length || change.delta === 0)
+        throw new Error("not applicable");
+      queue.splice(to, 0, queue.splice(from, 1)[0]);
+      queue.forEach((i, n) => (i.order = n));
+      break;
+    }
+    case "rename": {
+      const title = change.title.trim();
+      const item = find(change.id);
+      if (!title && item.state !== "idea") throw new Error("empty name");
+      item.title = title;
+      break;
+    }
+    case "set_note":
+      find(change.id).note = change.note;
+      break;
+    case "add_check": {
+      const text = change.text.trim();
+      if (!text) throw new Error("empty name");
+      find(change.id).checklist.push({ id: `mc${Date.now()}`, text, done: false });
+      break;
+    }
+    case "toggle_check": {
+      const step = find(change.id).checklist.find((c) => c.id === change.check);
+      if (!step) throw new Error("unknown step");
+      step.done = !step.done;
+      break;
+    }
+    case "add_resource": {
+      const target = change.target.trim();
+      const entry = mockParse(target);
+      const found = entry.resources[0];
+      if (!found || found.target !== target) throw new Error("not a resource");
+      const item = find(change.id);
+      if (item.resources.some((r) => r.target === target)) return;
+      item.resources.push({ ...found, id: `mr${Date.now()}`, used_at: null });
+      break;
+    }
+  }
+  renumber(items);
+  if (!edit) preview.history.push(before);
   preview.changed();
 }

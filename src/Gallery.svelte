@@ -76,7 +76,13 @@
           </article>
           <div role="listbox" aria-label={t("Focus")}>
             {#each queue.slice(0, 3) as item, i (item.id)}
-              <Row num={i + 2} title={item.title} selected={item.id === selected} onselect={() => (selected = item.id)}>
+              <Row
+                id={item.id}
+                num={i + 2}
+                title={item.title}
+                selected={item.id === selected}
+                onselect={() => (selected = item.id)}
+              >
                 {#snippet indicators()}
                   {#if i === 0}<span>{t("↩ last worked on")}</span>{/if}
                   {#if item.checklist.length}

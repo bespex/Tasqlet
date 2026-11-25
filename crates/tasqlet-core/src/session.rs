@@ -45,6 +45,17 @@ impl Session {
         Ok(())
     }
 
+    /// Carry out a continuous edit such as the note's autosave: not a step of its own in the
+    /// history. The edit is also made in the remembered states, so undoing an earlier action
+    /// does not take the typed text away.
+    pub fn edit(&mut self, action: Action, now: DateTime<Utc>) -> Result<(), Error> {
+        self.store.apply(action.clone(), now)?;
+        for before in &mut self.history {
+            let _ = before.apply(action.clone(), now);
+        }
+        Ok(())
+    }
+
     /// Go back to the state before the last action.
     pub fn undo(&mut self) -> Result<(), Error> {
         self.store = self.history.pop_back().ok_or(Error::NothingToUndo)?;
@@ -105,6 +116,43 @@ mod tests {
         s.undo().unwrap();
         assert!(s.store().items().is_empty());
         assert_eq!(s.undo(), Err(Error::NothingToUndo));
+    }
+
+    #[test]
+    fn edits_leave_no_step_and_survive_undo() {
+        let mut s = Session::default();
+        let a = NewItem::new("a");
+        let id = a.id;
+        s.apply(
+            Action::Add {
+                item: a,
+                target: Target::Now,
+            },
+            now(),
+        )
+        .unwrap();
+        s.apply(
+            Action::Rename {
+                id,
+                title: "b".into(),
+            },
+            now(),
+        )
+        .unwrap();
+        s.edit(
+            Action::SetNote {
+                id,
+                note: "typed".into(),
+            },
+            now(),
+        )
+        .unwrap();
+        s.undo().unwrap();
+        let item = s.store().get(id).unwrap();
+        assert_eq!((item.title.as_str(), item.note.as_str()), ("a", "typed"));
+        s.undo().unwrap();
+        assert!(s.store().items().is_empty());
+        assert!(!s.can_undo());
     }
 
     #[test]

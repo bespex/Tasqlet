@@ -79,3 +79,20 @@ export interface Captured {
   replaced: boolean;
   delegated_to: string | null;
 }
+
+/** A change to one item (core: `Action`; shell: `act::Act`). */
+export type Act =
+  | { kind: "start"; id: string }
+  | { kind: "finish"; id: string }
+  | { kind: "pause" }
+  | { kind: "resume" }
+  | { kind: "delegate"; id: string; to: string }
+  | { kind: "send_to"; id: string; to: "focus" | "intermezzo" | "idea" }
+  | { kind: "to_back"; id: string }
+  | { kind: "to_next"; id: string }
+  | { kind: "move_by"; id: string; delta: number }
+  | { kind: "rename"; id: string; title: string }
+  | { kind: "set_note"; id: string; note: string }
+  | { kind: "add_check"; id: string; text: string }
+  | { kind: "toggle_check"; id: string; check: string }
+  | { kind: "add_resource"; id: string; target: string };

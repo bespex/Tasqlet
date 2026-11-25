@@ -33,6 +33,18 @@ pub enum Action {
     Pause,
     /// End the break and go on with the same task.
     Resume,
+    /// "Zurück in die Queue": a focus item goes to the end of the focus list, no longer active.
+    ToBack(Id),
+    /// Change the title.
+    Rename { id: Id, title: String },
+    /// Replace the note (autosave, see [`Session::edit`](crate::Session::edit)).
+    SetNote { id: Id, note: String },
+    /// Add a step to the checklist.
+    AddCheck { id: Id, text: String },
+    /// Tick or untick a step.
+    ToggleCheck { id: Id, check: Id },
+    /// Attach a link, file or mail; the kind is derived from the text.
+    AddResource { id: Id, target: String },
 }
 
 /// Destination of [`Action::SendTo`].
@@ -207,7 +219,111 @@ impl Store {
             Action::SendTo { id, list } => self.send_to(id, list, now),
             Action::Pause => self.pause(),
             Action::Resume => self.resume(),
+            Action::ToBack(id) => self.to_back(id, now),
+            Action::Rename { id, title } => self.rename(id, &title, now),
+            Action::SetNote { id, note } => self.set_note(id, note, now),
+            Action::AddCheck { id, text } => self.add_check(id, &text, now),
+            Action::ToggleCheck { id, check } => self.toggle_check(id, check, now),
+            Action::AddResource { id, target } => self.add_resource(id, &target, now),
         }
+    }
+
+    /// "Zurück in die Queue": to the end of the focus list. The next one stands on #1 as "Bereit".
+    pub fn to_back(&mut self, id: Id, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        if self.items[i].state != State::Focus {
+            return Err(Error::NotApplicable);
+        }
+        let mut ids = self.ordered_ids(State::Focus);
+        if ids.last() == Some(&id) {
+            return Err(Error::Unchanged);
+        }
+        ids.retain(|&x| x != id);
+        ids.push(id);
+        if self.items[i].active {
+            self.on_break = false;
+        }
+        let it = &mut self.items[i];
+        it.active = false;
+        it.last_active = false;
+        it.updated_at = now;
+        self.set_order(&ids);
+        Ok(())
+    }
+
+    /// Change the title. An item outside the ideas needs one, so a blank title is refused there.
+    pub fn rename(&mut self, id: Id, title: &str, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let title = title.trim();
+        if title.is_empty() && self.items[i].state != State::Idea {
+            return Err(Error::EmptyName);
+        }
+        if self.items[i].title == title {
+            return Err(Error::Unchanged);
+        }
+        self.items[i].title = title.to_string();
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Replace the note.
+    pub fn set_note(&mut self, id: Id, note: String, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        if self.items[i].note == note {
+            return Err(Error::Unchanged);
+        }
+        self.items[i].note = note;
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Add a step at the end of the checklist; blank text is refused.
+    pub fn add_check(&mut self, id: Id, text: &str, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let text = text.trim();
+        if text.is_empty() {
+            return Err(Error::EmptyName);
+        }
+        self.items[i].checklist.push(ChecklistItem {
+            id: Id::generate(),
+            text: text.to_string(),
+            done: false,
+        });
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Tick or untick a step.
+    pub fn toggle_check(&mut self, id: Id, check: Id, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let step = self.items[i]
+            .checklist
+            .iter_mut()
+            .find(|c| c.id == check)
+            .ok_or(Error::UnknownItem(check))?;
+        step.done = !step.done;
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Attach a resource; text that is no link, path or mail is refused. The same target twice
+    /// is `Unchanged`.
+    pub fn add_resource(&mut self, id: Id, target: &str, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let target = target.trim();
+        let kind = crate::resources::classify(target).ok_or(Error::NotApplicable)?;
+        if self.items[i].resources.iter().any(|r| r.target == target) {
+            return Err(Error::Unchanged);
+        }
+        self.items[i].resources.push(Resource {
+            id: Id::generate(),
+            kind,
+            target: target.to_string(),
+            label: None,
+            used_at: None,
+        });
+        self.items[i].updated_at = now;
+        Ok(())
     }
 
     /// Capture a new item at the given target (`docs/KONZEPT.md` 3.1).
@@ -913,6 +1029,63 @@ mod tests {
         assert!(
             Store::from_parts(true, Vec::new()).is_err(),
             "break without active"
+        );
+    }
+
+    #[test]
+    fn to_back_puts_the_next_one_on_ready() {
+        let mut s = Store::new();
+        let a = add(&mut s, "a", Target::Now);
+        add(&mut s, "b", Target::Focus);
+        s.pause().unwrap();
+        s.to_back(a, t(2)).unwrap();
+        assert_eq!(focus(&s), ["b", "a"]);
+        assert!(s.active().is_none() && !s.on_break());
+        assert_eq!(s.to_back(a, t(3)), Err(Error::Unchanged));
+        let z = add(&mut s, "z", Target::Idea);
+        assert_eq!(s.to_back(z, t(3)), Err(Error::NotApplicable));
+        s.check_invariants().unwrap();
+    }
+
+    #[test]
+    fn card_edits_change_one_item() {
+        let mut s = Store::new();
+        let a = add(&mut s, "a", Target::Now);
+        s.rename(a, "  new title ", t(1)).unwrap();
+        assert_eq!(s.get(a).unwrap().title, "new title");
+        assert_eq!(s.rename(a, "new title", t(2)), Err(Error::Unchanged));
+        assert_eq!(s.rename(a, "  ", t(2)), Err(Error::EmptyName));
+        s.set_note(a, "line".into(), t(3)).unwrap();
+        s.add_check(a, "step", t(4)).unwrap();
+        assert_eq!(s.add_check(a, " ", t(4)), Err(Error::EmptyName));
+        let step = s.get(a).unwrap().checklist[0].id;
+        s.toggle_check(a, step, t(5)).unwrap();
+        assert!(s.get(a).unwrap().checklist[0].done);
+        s.toggle_check(a, step, t(6)).unwrap();
+        assert!(!s.get(a).unwrap().checklist[0].done);
+        assert!(matches!(
+            s.toggle_check(a, Id::generate(), t(6)),
+            Err(Error::UnknownItem(_))
+        ));
+        s.check_invariants().unwrap();
+    }
+
+    #[test]
+    fn adding_a_resource_needs_a_link_path_or_mail() {
+        let mut s = Store::new();
+        let a = add(&mut s, "a", Target::Now);
+        s.add_resource(a, " https://example.com/x ", t(1)).unwrap();
+        assert_eq!(
+            s.get(a).unwrap().resources[0].target,
+            "https://example.com/x"
+        );
+        assert_eq!(
+            s.add_resource(a, "https://example.com/x", t(2)),
+            Err(Error::Unchanged)
+        );
+        assert_eq!(
+            s.add_resource(a, "just words", t(2)),
+            Err(Error::NotApplicable)
         );
     }
 }

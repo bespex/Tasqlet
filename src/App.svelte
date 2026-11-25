@@ -1,9 +1,9 @@
 <script lang="ts">
-  // The popover: tabs, quick entry (1.6), notices, the focus list and the feedback line. The work card
-  // (1.7) and the keyboard in the queue (1.8) follow.
+  // The popover: tabs, quick entry (1.6), notices, the work card (1.7), the focus list and the feedback
+  // line. The keyboard in the queue (1.8) follows.
   import { onMount } from "svelte";
-  import { Play } from "@lucide/svelte";
   import {
+    act,
     hidePopover,
     inTauri,
     loadSnapshot,
@@ -14,14 +14,15 @@
     watchShown,
   } from "./lib/backend";
   import { t } from "./lib/i18n";
+  import { MANY_IN_FOCUS } from "./lib/queue";
   import { showToast } from "./lib/toast.svelte";
-  import type { Item, Snapshot } from "./lib/types";
-  import Chip from "./lib/ui/Chip.svelte";
+  import type { Act, Item, Snapshot } from "./lib/types";
   import Notice from "./lib/ui/Notice.svelte";
   import QuickEntry from "./lib/ui/QuickEntry.svelte";
-  import Row from "./lib/ui/Row.svelte";
+  import Queue from "./lib/ui/Queue.svelte";
   import Tabs from "./lib/ui/Tabs.svelte";
   import Toast from "./lib/ui/Toast.svelte";
+  import WorkCard from "./lib/ui/WorkCard.svelte";
 
   let snapshot = $state<Snapshot | null>(null);
   let view = $state("focus");
@@ -37,7 +38,7 @@
   ]);
 
   let quick: QuickEntry;
-  let queue = $state<HTMLElement>();
+  let queue = $state<Queue>();
 
   const reload = () => loadSnapshot().then((s) => (snapshot = s));
 
@@ -65,14 +66,43 @@
     }
   }
 
-  // Pasting with no text field focused and no item as target puts the text into the quick entry
-  // (docs/KONZEPT.md 3.2). Pasting onto a hovered or selected item follows with plan 1.9.
-  function onPaste(e: ClipboardEvent) {
+  // Pasting with no text field focused: onto the selected line of the queue a link, file or mail becomes
+  // its resource; otherwise the text goes into the quick entry (docs/KONZEPT.md 3.2, 6.6).
+  async function onPaste(e: ClipboardEvent) {
     if (typing(e.target)) return;
     const text = e.clipboardData?.getData("text")?.trim();
     if (!text) return;
     e.preventDefault();
+    const id = queue?.target();
+    if (id) {
+      try {
+        await act({ kind: "add_resource", id, target: text });
+        showToast({ text: t("Added as resource"), undo: () => void undoLast() });
+        return;
+      } catch {
+        // No link, file or mail: fall through to the quick entry.
+      }
+    }
     quick.setText(text);
+  }
+
+  /** Carries out a change from the work card; with a message it is shown, with "Undo". */
+  async function run(change: Act, message?: string): Promise<boolean> {
+    try {
+      await act(change);
+    } catch (e) {
+      showToast({ text: failure(change, e) });
+      return false;
+    }
+    if (message) showToast({ text: message, undo: () => void undoLast() });
+    return true;
+  }
+
+  /** What went wrong, in words for the user. */
+  function failure(change: Act, e: unknown): string {
+    if (change.kind === "add_resource") return t("That is no link, file or mail");
+    if (change.kind === "delegate") return t("Delegating needs a name");
+    return t("Not possible: {error}", { error: String(e) });
   }
 
   async function restore() {
@@ -99,7 +129,7 @@
 <div class="stage" class:preview>
   <div class="pop">
     <Tabs {tabs} active={view} onselect={(id) => (view = id)} />
-    <QuickEntry bind:this={quick} ondown={() => queue?.querySelector<HTMLElement>("[role=option]")?.focus()} />
+    <QuickEntry bind:this={quick} ondown={() => queue?.enter()} />
 
     {#if snapshot?.tray_missing}
       <Notice
@@ -125,30 +155,11 @@
           <p><b>{t("Nothing urgent.")}</b><br />{t("Ctrl ⏎ in the quick entry puts a task into focus.")}</p>
         </div>
       {:else}
-        {@const top = focus[0]}
-        <section class="card zone-focus" class:active={top.active}>
-          <h2>{top.title}</h2>
-          {#if top.resources.length}
-            <div class="chips">
-              {#each top.resources.slice(0, 3) as r, i (r.id)}
-                <Chip resource={r} digit={i + 1} />
-              {/each}
-              {#if top.resources.length > 3}<Chip />{/if}
-            </div>
-          {/if}
-        </section>
-        <div role="listbox" aria-label={t("Focus")} bind:this={queue}>
-          {#each focus.slice(1) as item, i (item.id)}
-            <Row num={i + 2} title={item.title}>
-              {#snippet indicators()}
-                {#if item.last_active}<span class="badge">{t("↩ last worked on")}</span>{/if}
-              {/snippet}
-              {#snippet tools()}
-                <button class="ib run" title={t("Take over now (Enter)")}><Play size={16} /></button>
-              {/snippet}
-            </Row>
-          {/each}
-        </div>
+        <WorkCard item={focus[0]} onbreak={snapshot?.on_break ?? false} {run} />
+        <Queue bind:this={queue} items={focus.slice(1)} {run} onup={() => quick.focus()} />
+        {#if focus.length >= MANY_IN_FOCUS}
+          <p class="quiet">{t("Is all of this urgent?")}</p>
+        {/if}
       {/if}
     </div>
 
@@ -190,48 +201,11 @@
     overflow: auto;
     min-height: 0;
   }
-  .card {
-    margin: 14px;
-    padding: 14px 16px 16px;
-    background: var(--tq-card);
-    border: var(--tq-f-border-w) solid var(--tq-line);
-    border-radius: 12px;
-    box-shadow: var(--tq-f-shadow);
-  }
-  .card.active {
-    border-color: var(--tq-f-border);
-  }
-  h2 {
-    font-size: 17px;
-    line-height: 1.3;
-    margin: 0;
-    font-weight: 600;
-  }
-  .chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 12px;
-  }
-  .badge {
-    white-space: nowrap;
-  }
-  .ib {
-    width: 30px;
-    height: 30px;
-    display: inline-grid;
-    place-items: center;
-    border: 1px solid transparent;
-    background: none;
-    border-radius: 8px;
-    color: var(--tq-ink-2);
-  }
-  .ib:hover {
-    background: var(--tq-hover);
-    color: var(--tq-ink);
-  }
-  .ib.run {
-    color: var(--tq-accent);
+  .quiet {
+    margin: 12px 16px;
+    font-size: 12.5px;
+    color: var(--tq-ink-3);
+    text-align: center;
   }
   .empty {
     display: grid;

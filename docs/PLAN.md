@@ -46,8 +46,8 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [ ] 1.4 Tray, Popover-Fenster, Einzelinstanz, `--toggle`
   - [x] 1.5 Frontend-Grundlage: Rollen-Theming, Bausteine, Rückmeldung
   - [x] 1.6 Schnelleingabe
-  - [ ] 1.7 Arbeitskarte
-  - [ ] 1.8 Queue und Tastatur
+  - [x] 1.7 Arbeitskarte
+  - [x] 1.8 Queue und Tastatur
   - [ ] 1.9 Kurze Wege: Öffnen, `…`-Menü, `Alt+n`, `Strg+V`, Tray-Menü
   - [ ] 1.10 Suche
   - [ ] 1.11 Pakete, Autostart, Alltagstest
@@ -211,7 +211,8 @@ Konzept: 6.1, 6.6, 2.4.
 
 - Einzeilige Zeilen mit Indikatoren und Werkzeugen beim Überfahren.
 - Sortieren per Pointer am Griff (nicht HTML5-DnD), `Alt+↑/↓`, `Alt+Pos1`, `⏎`, `↑/↓`.
-- `Strg+F`, `Strg+Z`, `Esc` stufenweise.
+- `Strg+F`, `Strg+Z`, `Esc` stufenweise. (`Strg+Z` und `Esc` gebaut; `Strg+F` kommt mit 1.10, `Strg+E`
+  mit 2.4, ebenso das `⤢` der Zeile.)
 - Hinweis ab 8 Einträgen.
 
 **Abnahme:** Die ganze Tastatur-Tabelle 6.6 (ohne Ausarbeitung) funktioniert ohne Maus.
