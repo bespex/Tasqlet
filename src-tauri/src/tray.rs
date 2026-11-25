@@ -10,7 +10,8 @@ use std::sync::Mutex;
 use ksni::menu::StandardItem;
 use ksni::{Icon, MenuItem, ToolTip, TrayMethods};
 use tasqlet_core::overview::{Mode, Overview};
-use tasqlet_core::{Action, Item};
+use tasqlet_core::resources::ranked;
+use tasqlet_core::{Action, Id, Item};
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::data::{self, Data};
@@ -23,6 +24,9 @@ struct Shown {
     count: usize,
     mode: Option<Mode>,
     status: String,
+    /// The current task and its resources for the menu: most important first, with the digit.
+    current: Option<Id>,
+    resources: Vec<(Id, String, Option<u8>)>,
 }
 
 struct TasqletTray {
@@ -102,6 +106,16 @@ pub fn refresh(app: &AppHandle) {
         count: overview.focus_count,
         mode: Some(overview.mode),
         status: status_line(&overview),
+        current: overview.current.map(|it| it.id),
+        resources: overview
+            .current
+            .map(|it| {
+                ranked(&it.resources)
+                    .into_iter()
+                    .map(|r| (r.resource.id, r.resource.shown_label(), r.digit))
+                    .collect()
+            })
+            .unwrap_or_default(),
     };
     {
         let mut last = lock(&state.shown);
@@ -203,7 +217,7 @@ impl ksni::Tray for TasqletTray {
         } else {
             (t(Key::Pause), Action::Pause)
         };
-        vec![
+        let mut items: Vec<MenuItem<Self>> = vec![
             StandardItem {
                 label: self.shown.status.clone(),
                 enabled: false,
@@ -211,6 +225,42 @@ impl ksni::Tray for TasqletTray {
             }
             .into(),
             MenuItem::Separator,
+        ];
+        // The resources of the current task, straight from the menu without the popover (5).
+        if let Some(task) = self
+            .shown
+            .current
+            .filter(|_| !self.shown.resources.is_empty())
+        {
+            for (resource, label, digit) in self.shown.resources.clone() {
+                let label = match digit {
+                    Some(d) => format!("{label}  ({d})"),
+                    None => label,
+                };
+                items.push(
+                    StandardItem {
+                        label,
+                        activate: Box::new(move |t: &mut Self| {
+                            let _ = crate::open::open_one(&t.app, task, resource);
+                        }),
+                        ..Default::default()
+                    }
+                    .into(),
+                );
+            }
+            items.push(
+                StandardItem {
+                    label: t(Key::OpenAll).into(),
+                    activate: Box::new(move |t: &mut Self| {
+                        let _ = crate::open::open_all(t.app.clone(), task);
+                    }),
+                    ..Default::default()
+                }
+                .into(),
+            );
+            items.push(MenuItem::Separator);
+        }
+        items.extend([
             StandardItem {
                 label: t(Key::Open).into(),
                 activate: Box::new(|t: &mut Self| popover::show(&t.app, None)),
@@ -257,7 +307,8 @@ impl ksni::Tray for TasqletTray {
                 ..Default::default()
             }
             .into(),
-        ]
+        ]);
+        items
     }
 }
 

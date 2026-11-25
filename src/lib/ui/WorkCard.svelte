@@ -3,7 +3,7 @@
   // button at the top right (✓ done, ▶ when "ready"), small round tools below that show on hover or
   // keyboard focus, then resources, checklist and note, and a footer bar with status and date.
   import { onDestroy, tick } from "svelte";
-  import { ArrowRight, Check, Coffee, Ellipsis, Maximize2, Play } from "@lucide/svelte";
+  import { ArrowRight, Check, Coffee, Ellipsis, File, Link, Mail, Maximize2, Play, Plus } from "@lucide/svelte";
   import { dateLabel } from "../format";
   import { t } from "../i18n";
   import type { Act, Item } from "../types";
@@ -14,9 +14,15 @@
     item,
     onbreak = false,
     run,
+    open,
+    openAll,
   }: {
     item: Item;
     onbreak?: boolean;
+    /** Opens one resource (ranks it first). */
+    open: (resource: string) => void;
+    /** Opens all resources, most important first. */
+    openAll: () => void;
     /** Carries out a change; `message` is the feedback line (with "Undo") on success. Resolves to success. */
     run: (change: Act, message?: string) => Promise<boolean>;
   } = $props();
@@ -71,13 +77,15 @@
   }
 
   // --- adding resources and steps (a "+" under the label opens the entry) ---
+  let resMenu = $state(false);
   let addingResource = $state(false);
   let resourceText = $state("");
   let resourceInput = $state<HTMLInputElement>();
   let addingStep = $state(false);
   let stepText = $state("");
   let stepInput = $state<HTMLInputElement>();
-  async function openResource() {
+  async function openAdd() {
+    resMenu = false;
     addingResource = true;
     await tick();
     resourceInput?.focus();
@@ -258,12 +266,58 @@
       {/if}
     </div>
 
-    <Section label={t("Resources")} onadd={openResource}>
+    <Section label={t("Resources")} onadd={openAdd}>
       <div class="chips">
-        {#each item.resources.slice(0, 3) as r, i (r.id)}
-          <Chip resource={r} digit={i + 1} />
+        {#each item.resources.slice(0, 3) as r (r.id)}
+          <Chip
+            resource={r}
+            digit={r.digit}
+            onopen={() => open(r.id)}
+            onremove={() => run({ kind: "remove_resource", id: item.id, resource: r.id }, t("Resource removed"))}
+          />
         {/each}
-        {#if item.resources.length > 3}<Chip />{/if}
+        {#if item.resources.length > 3}
+          <span class="menuwrap">
+            <Chip onopen={() => (resMenu = !resMenu)} />
+            {#if resMenu}
+              <div
+                class="menu resmenu"
+                role="menu"
+                tabindex="-1"
+                onkeydown={(e) => closeOnEscape(e, () => (resMenu = false))}
+                onmouseleave={() => (resMenu = false)}
+              >
+                {#each item.resources as r (r.id)}
+                  <button
+                    role="menuitem"
+                    title={r.target}
+                    onclick={() => {
+                      resMenu = false;
+                      open(r.id);
+                    }}
+                  >
+                    {#if r.type === "url"}<Link size={14} />{:else if r.type === "mail"}<Mail size={14} />{:else}<File
+                        size={14}
+                      />{/if}
+                    <span class="rl">{r.shown ?? r.label ?? r.target}</span>
+                    {#if r.digit}<span class="rk">{r.digit}</span>{/if}
+                  </button>
+                {/each}
+                <hr />
+                <button
+                  role="menuitem"
+                  onclick={() => {
+                    resMenu = false;
+                    openAll();
+                  }}
+                >
+                  {t("Open all ({n})", { n: item.resources.length })}
+                </button>
+                <button role="menuitem" onclick={openAdd}><Plus size={14} />{t("Add link or file …")}</button>
+              </div>
+            {/if}
+          </span>
+        {/if}
         {#if !item.resources.length && !addingResource}<span class="none">{t("None yet")}</span>{/if}
       </div>
       {#if addingResource}
@@ -500,6 +554,7 @@
   }
   .menuwrap {
     position: relative;
+    display: inline-flex;
   }
   .menu {
     position: absolute;
@@ -522,6 +577,43 @@
     border-radius: 6px;
     color: var(--tq-ink);
     font-size: 13px;
+  }
+  .resmenu {
+    right: 0;
+    left: auto;
+    top: 34px;
+    min-width: 270px;
+    max-width: 300px;
+  }
+  .resmenu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .resmenu :global(svg) {
+    flex: none;
+    color: var(--tq-ink-2);
+  }
+  .resmenu .rl {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .resmenu .rk {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--tq-ink-2);
+    border: 1px solid var(--tq-line);
+    border-radius: 4px;
+    padding: 0 4px;
+  }
+  .resmenu hr {
+    border: 0;
+    border-top: 1px solid var(--tq-line);
+    margin: 4px 0;
   }
   .menu button:hover {
     background: var(--tq-hover);

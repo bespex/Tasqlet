@@ -33,6 +33,7 @@ pub enum Act {
     AddCheck { id: Id, text: String },
     ToggleCheck { id: Id, check: Id },
     AddResource { id: Id, target: String },
+    RemoveResource { id: Id, resource: Id },
 }
 
 impl Act {
@@ -57,6 +58,7 @@ impl Act {
             Act::AddCheck { id, text } => Action::AddCheck { id, text },
             Act::ToggleCheck { id, check } => Action::ToggleCheck { id, check },
             Act::AddResource { id, target } => Action::AddResource { id, target },
+            Act::RemoveResource { id, resource } => Action::RemoveResource { id, resource },
         }
     }
 

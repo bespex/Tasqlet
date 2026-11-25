@@ -3,24 +3,30 @@
   // line back to the quick entry), Enter takes over, Alt+↑/↓ move, Alt+Home next. Sorting by pointer
   // goes through the grip (no HTML5 drag and drop, which WebKitGTK handles badly).
   import { tick } from "svelte";
-  import { ListStart, Play } from "@lucide/svelte";
+  import { Link, ListStart, Play } from "@lucide/svelte";
   import { t } from "../i18n";
   import { dropIndex, moveDelta } from "../queue";
   import type { Act, Item } from "../types";
+  import Chip from "./Chip.svelte";
   import Row from "./Row.svelte";
 
   let {
     items,
     run,
+    open,
     onup,
   }: {
     items: Item[];
+    /** Opens one resource of a task (ranks it first). */
+    open: (id: string, resource: string) => void;
     run: (change: Act, message?: string) => Promise<boolean>;
     /** ↑ on the first line: back into the quick entry. */
     onup?: () => void;
   } = $props();
 
   let list: HTMLElement;
+  /** The task whose resources are unfolded below its line (the 🔗 on the line). */
+  let unfolded = $state<string | null>(null);
   let selected = $state<string | null>(null);
   let drag = $state<{ id: string; from: number; drop: number; y: number } | null>(null);
   /** The copy of the dragged line that follows the pointer: position, size and what it shows. */
@@ -33,8 +39,10 @@
     rows()[0]?.focus();
   }
 
-  /** The selected task if one of the lines has the focus, e.g. as target of pasting (6.6). */
+  /** The task a paste goes to: the line under the pointer, else the selected one if it has the focus. */
   export function target(): string | null {
+    const hovered = list.querySelector<HTMLElement>("[role=option]:hover")?.dataset.id;
+    if (hovered) return hovered;
     return selected && list.contains(document.activeElement) ? selected : null;
   }
 
@@ -141,6 +149,18 @@
     >
       {#snippet indicators()}
         {#if item.last_active}<span class="badge">{t("↩ last worked on")}</span>{/if}
+        {#if item.resources.length}
+          <button
+            class="links"
+            class:on={unfolded === item.id}
+            title={t("Show resources")}
+            aria-label={t("Show resources")}
+            aria-expanded={unfolded === item.id}
+            onclick={(e) => (e.stopPropagation(), (unfolded = unfolded === item.id ? null : item.id))}
+          >
+            <Link size={13} />{item.resources.length}
+          </button>
+        {/if}
       {/snippet}
       {#snippet tools()}
         {#if i > 0}
@@ -163,6 +183,13 @@
         </button>
       {/snippet}
     </Row>
+    {#if unfolded === item.id}
+      <div class="unfolded">
+        {#each item.resources as r (r.id)}
+          <Chip resource={r} onopen={() => open(item.id, r.id)} />
+        {/each}
+      </div>
+    {/if}
   {/each}
   {#if marked !== null}
     <div class="slot" style="top:{marked}px" aria-hidden="true"></div>
@@ -240,6 +267,29 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .links {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    border: 0;
+    background: none;
+    padding: 2px 4px;
+    border-radius: 6px;
+    color: var(--tq-ink-2);
+    font-size: 12px;
+  }
+  .links:hover,
+  .links.on {
+    color: var(--tq-ink);
+    background: var(--tq-hover);
+  }
+  .unfolded {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 12px 10px 36px;
+    border-bottom: 1px solid var(--tq-c-divider);
   }
   .badge {
     white-space: nowrap;

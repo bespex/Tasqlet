@@ -48,7 +48,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 1.6 Schnelleingabe
   - [x] 1.7 Arbeitskarte
   - [x] 1.8 Queue und Tastatur
-  - [ ] 1.9 Kurze Wege: Öffnen, `…`-Menü, `Alt+n`, `Strg+V`, Tray-Menü
+  - [x] 1.9 Kurze Wege: Öffnen, `…`-Menü, `Alt+n`, `Strg+V`, Tray-Menü
   - [ ] 1.10 Suche
   - [ ] 1.11 Pakete, Autostart, Alltagstest
 - **MVP 2: Drei Geschwindigkeiten, Delegation, Themen**
@@ -221,7 +221,7 @@ Konzept: 6.1, 6.6, 2.4.
 
 Konzept: 5.
 
-- Öffnen über `tauri-plugin-opener` (`xdg-open`), `used_at` setzen.
+- Öffnen über `xdg-open` (ohne Plugin, D30), `used_at` setzen.
 - Drei Chips, `…`-Menü mit allen, „Alle öffnen“, „Link oder Datei hinzufügen“. Ziffern am Chip,
   `Alt+1…9`.
 - `Strg+V` über einer Zeile oder der Karte hängt an.

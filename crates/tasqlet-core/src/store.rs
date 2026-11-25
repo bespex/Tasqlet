@@ -45,6 +45,10 @@ pub enum Action {
     ToggleCheck { id: Id, check: Id },
     /// Attach a link, file or mail; the kind is derived from the text.
     AddResource { id: Id, target: String },
+    /// Take a resource off an item.
+    RemoveResource { id: Id, resource: Id },
+    /// A resource was opened: it ranks first from now on (`used_at`).
+    MarkUsed { id: Id, resource: Id },
 }
 
 /// Destination of [`Action::SendTo`].
@@ -225,6 +229,8 @@ impl Store {
             Action::AddCheck { id, text } => self.add_check(id, &text, now),
             Action::ToggleCheck { id, check } => self.toggle_check(id, check, now),
             Action::AddResource { id, target } => self.add_resource(id, &target, now),
+            Action::RemoveResource { id, resource } => self.remove_resource(id, resource, now),
+            Action::MarkUsed { id, resource } => self.mark_used(id, resource, now),
         }
     }
 
@@ -303,6 +309,35 @@ impl Store {
             .ok_or(Error::UnknownItem(check))?;
         step.done = !step.done;
         self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Take a resource off an item.
+    pub fn remove_resource(
+        &mut self,
+        id: Id,
+        resource: Id,
+        now: DateTime<Utc>,
+    ) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let before = self.items[i].resources.len();
+        self.items[i].resources.retain(|r| r.id != resource);
+        if self.items[i].resources.len() == before {
+            return Err(Error::UnknownItem(resource));
+        }
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Note that a resource was opened now, so it ranks first (`docs/KONZEPT.md` 5).
+    pub fn mark_used(&mut self, id: Id, resource: Id, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let r = self.items[i]
+            .resources
+            .iter_mut()
+            .find(|r| r.id == resource)
+            .ok_or(Error::UnknownItem(resource))?;
+        r.used_at = Some(now);
         Ok(())
     }
 
@@ -1068,6 +1103,30 @@ mod tests {
             Err(Error::UnknownItem(_))
         ));
         s.check_invariants().unwrap();
+    }
+
+    #[test]
+    fn opening_a_resource_ranks_it_first_and_removing_takes_it_off() {
+        let mut s = Store::new();
+        let a = add(&mut s, "a", Target::Now);
+        s.add_resource(a, "https://example.com/1", t(1)).unwrap();
+        s.add_resource(a, "https://example.com/2", t(1)).unwrap();
+        let second = s.get(a).unwrap().resources[1].id;
+        s.mark_used(a, second, t(5)).unwrap();
+        let ranked = crate::resources::ranked(&s.get(a).unwrap().resources);
+        assert_eq!(ranked[0].resource.id, second);
+        // The digit stays with the order of adding.
+        assert_eq!(ranked[0].digit, Some(2));
+        s.remove_resource(a, second, t(6)).unwrap();
+        assert_eq!(s.get(a).unwrap().resources.len(), 1);
+        assert!(matches!(
+            s.remove_resource(a, second, t(7)),
+            Err(Error::UnknownItem(_))
+        ));
+        assert!(matches!(
+            s.mark_used(a, second, t(7)),
+            Err(Error::UnknownItem(_))
+        ));
     }
 
     #[test]

@@ -23,10 +23,24 @@ const preview = {
   },
 };
 
+/** Most important resource first (last opened, then order of adding), each with its fixed digit. */
+export function rankResources(items: Item[]): Item[] {
+  for (const item of items) {
+    const added = item.resources.map((r, index) => ({ ...r, digit: index < 9 ? index + 1 : null, index }));
+    added.sort((a, b) => (b.used_at ?? "").localeCompare(a.used_at ?? "") || a.index - b.index);
+    item.resources = added.map(({ index: _index, ...r }) => r);
+  }
+  return items;
+}
+
 /** Mock values for the browser preview and for tests. */
 export const mock = {
   schemaVersion: 1,
-  snapshot: () => structuredClone(preview.snapshot),
+  snapshot: () => {
+    const copy = structuredClone(preview.snapshot);
+    rankResources(copy.items);
+    return copy;
+  },
   /** Back to the sample data (tests). */
   reset() {
     preview.snapshot = mockSnapshot();
@@ -235,6 +249,13 @@ export async function act(change: Act): Promise<void> {
       queue.forEach((i, n) => (i.order = n));
       break;
     }
+    case "remove_resource": {
+      const item = find(change.id);
+      const before = item.resources.length;
+      item.resources = item.resources.filter((r) => r.id !== change.resource);
+      if (item.resources.length === before) throw new Error("unknown resource");
+      break;
+    }
     case "rename": {
       const title = change.title.trim();
       const item = find(change.id);
@@ -270,5 +291,24 @@ export async function act(change: Act): Promise<void> {
   }
   renumber(items);
   if (!edit) preview.history.push(before);
+  preview.changed();
+}
+
+/** Opens one resource of an item and ranks it first. The preview only marks it as used. */
+export async function openResource(id: string, resource: string): Promise<void> {
+  if (inTauri()) return invoke("open_resource", { id, resource });
+  const found = preview.snapshot.items.find((i) => i.id === id)?.resources.find((r) => r.id === resource);
+  if (!found) throw new Error("unknown resource");
+  found.used_at = new Date().toISOString();
+  preview.changed();
+}
+
+/** Opens all resources of an item, most important first. */
+export async function openAll(id: string): Promise<void> {
+  if (inTauri()) return invoke("open_all", { id });
+  const item = preview.snapshot.items.find((i) => i.id === id);
+  if (!item) throw new Error("unknown item");
+  const now = new Date().toISOString();
+  item.resources.forEach((r) => (r.used_at = now));
   preview.changed();
 }

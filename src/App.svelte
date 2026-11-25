@@ -7,6 +7,8 @@
     hidePopover,
     inTauri,
     loadSnapshot,
+    openAll,
+    openResource,
     restoreBackup,
     undo,
     watchCapture,
@@ -73,7 +75,8 @@
     const text = e.clipboardData?.getData("text")?.trim();
     if (!text) return;
     e.preventDefault();
-    const id = queue?.target();
+    // A line under the pointer or selected, else the work card under the pointer.
+    const id = queue?.target() ?? (document.querySelector(".card:hover") ? focus[0]?.id : undefined);
     if (id) {
       try {
         await act({ kind: "add_resource", id, target: text });
@@ -98,6 +101,18 @@
     return true;
   }
 
+  /** Opens a resource (or all of a task's), then leaves the way: the popover hides, the chips re-rank. */
+  async function openFor(id: string, resource: string | null) {
+    try {
+      await (resource ? openResource(id, resource) : openAll(id));
+    } catch (e) {
+      showToast({ text: t("Could not open: {error}", { error: String(e) }) });
+      return;
+    }
+    void reload();
+    void hidePopover();
+  }
+
   /** What went wrong, in words for the user. */
   function failure(change: Act, e: unknown): string {
     if (change.kind === "add_resource") return t("That is no link, file or mail");
@@ -116,6 +131,14 @@
   }
 
   function onKey(e: KeyboardEvent) {
+    // Alt+1 … Alt+9: the n-th resource of the current task, whatever has the focus (6.6).
+    if (e.altKey && !e.ctrlKey && !e.shiftKey && /^Digit[1-9]$/.test(e.code) && focus[0]) {
+      e.preventDefault();
+      const digit = Number(e.code.slice(5));
+      const found = focus[0].resources.find((r) => r.digit === digit);
+      if (found) void openFor(focus[0].id, found.id);
+      return;
+    }
     if (e.key === "Escape") void hidePopover();
     else if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "z" && !typing(e.target)) {
       e.preventDefault();
@@ -155,8 +178,20 @@
           <p><b>{t("Nothing urgent.")}</b><br />{t("Ctrl ⏎ in the quick entry puts a task into focus.")}</p>
         </div>
       {:else}
-        <WorkCard item={focus[0]} onbreak={snapshot?.on_break ?? false} {run} />
-        <Queue bind:this={queue} items={focus.slice(1)} {run} onup={() => quick.focus()} />
+        <WorkCard
+          item={focus[0]}
+          onbreak={snapshot?.on_break ?? false}
+          {run}
+          open={(resource) => void openFor(focus[0].id, resource)}
+          openAll={() => void openFor(focus[0].id, null)}
+        />
+        <Queue
+          bind:this={queue}
+          items={focus.slice(1)}
+          {run}
+          open={(id, resource) => void openFor(id, resource)}
+          onup={() => quick.focus()}
+        />
         {#if focus.length >= MANY_IN_FOCUS}
           <p class="quiet">{t("Is all of this urgent?")}</p>
         {/if}
@@ -198,7 +233,8 @@
   }
   .body {
     flex: 1;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     min-height: 0;
   }
   .quiet {

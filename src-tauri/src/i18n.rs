@@ -44,6 +44,7 @@ pub enum Key {
     After,
     BreakThen,
     ClickHint,
+    OpenAll,
 }
 
 fn text(lang: Lang, key: Key) -> &'static str {
@@ -69,6 +70,8 @@ fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, After) => "Next",
         (Lang::De, BreakThen) => "Pause. Danach weiter mit",
         (Lang::En, BreakThen) => "Break. Then back to",
+        (Lang::De, OpenAll) => "Alle Arbeitsmittel öffnen",
+        (Lang::En, OpenAll) => "Open all resources",
         (Lang::De, ClickHint) => "Klick öffnet Tasqlet",
         (Lang::En, ClickHint) => "Click to open Tasqlet",
     }
@@ -83,6 +86,7 @@ mod tests {
         use Key::*;
         for key in [
             Open, Capture, Pause, Resume, Finish, Quit, Idle, Ready, After, BreakThen, ClickHint,
+            OpenAll,
         ] {
             assert!(!text(Lang::De, key).is_empty());
             assert!(!text(Lang::En, key).is_empty());

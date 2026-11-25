@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { act, inTauri, loadSnapshot, mock, schemaVersion, undo, watchChanged } from "./backend";
+import { act, inTauri, loadSnapshot, mock, openAll, openResource, schemaVersion, undo, watchChanged } from "./backend";
 import { mockSnapshot } from "./mock-data";
 
 describe("backend outside Tauri", () => {
@@ -92,5 +92,40 @@ describe("act in the preview", () => {
     expect(snap.items.some((i) => i.active)).toBe(false);
     const top = snap.items.filter((i) => i.state === "focus").sort((a, b) => a.order - b.order)[0];
     expect(top.id).not.toBe(first.id);
+  });
+});
+
+describe("resources in the preview", () => {
+  const current = async () => (await loadSnapshot()).items.find((i) => i.active)!;
+
+  it("lists the most important first and keeps each digit fixed", async () => {
+    mock.reset();
+    const item = await current();
+    expect(item.resources.map((r) => r.digit)).toEqual([1, 2, 3, 4, 5]);
+    const fourth = item.resources[3];
+    await openResource(item.id, fourth.id);
+    const after = await current();
+    expect(after.resources[0].id).toBe(fourth.id); // opened last: first in the list
+    expect(after.resources[0].digit).toBe(4); // but still Alt+4
+    expect(after.resources.slice(1).map((r) => r.digit)).toEqual([1, 2, 3, 5]);
+  });
+
+  it("opening is no undo step; removing is", async () => {
+    mock.reset();
+    const item = await current();
+    await openResource(item.id, item.resources[1].id);
+    await expect(undo()).rejects.toThrow();
+    await act({ kind: "remove_resource", id: item.id, resource: item.resources[0].id });
+    expect((await current()).resources).toHaveLength(item.resources.length - 1);
+    await undo();
+    expect((await current()).resources).toHaveLength(item.resources.length);
+  });
+
+  it("refuses an unknown resource and opens all", async () => {
+    mock.reset();
+    const item = await current();
+    await expect(openResource(item.id, "nope")).rejects.toThrow();
+    await openAll(item.id);
+    expect((await current()).resources.every((r) => r.used_at)).toBe(true);
   });
 });

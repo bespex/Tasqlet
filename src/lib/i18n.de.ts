@@ -95,4 +95,9 @@ export const de: Record<string, string> = {
   "Take over now": "Jetzt übernehmen",
   "Is all of this urgent?": "Ist das alles dringend?",
   "Added as resource": "Als Arbeitsmittel hinzugefügt",
+  "Resource removed": "Arbeitsmittel entfernt",
+  "Open all ({n})": "Alle öffnen ({n})",
+  "Add link or file …": "Link oder Datei hinzufügen …",
+  "Show resources": "Arbeitsmittel zeigen",
+  "Could not open: {error}": "Öffnen fehlgeschlagen: {error}",
 };

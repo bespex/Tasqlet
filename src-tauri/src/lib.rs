@@ -10,6 +10,7 @@ mod capture;
 mod data;
 mod i18n;
 mod instance;
+mod open;
 mod platform;
 mod popover;
 mod tray;
@@ -77,7 +78,9 @@ pub fn run() {
             capture::parse_quick,
             capture::capture,
             capture::undo,
-            act::act
+            act::act,
+            open::open_resource,
+            open::open_all
         ])
         .setup(move |app| {
             let handle = app.handle().clone();

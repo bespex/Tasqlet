@@ -13,6 +13,8 @@ export interface Resource {
   used_at: string | null;
   /** What the chip shows: the own label or the smart label, computed by the core (snapshot only). */
   shown?: string;
+  /** The fixed `Alt+n` digit (order of adding, 1 to 9); the list comes most important first. */
+  digit?: number | null;
 }
 
 export interface ChecklistItem {
@@ -95,4 +97,5 @@ export type Act =
   | { kind: "set_note"; id: string; note: string }
   | { kind: "add_check"; id: string; text: string }
   | { kind: "toggle_check"; id: string; check: string }
-  | { kind: "add_resource"; id: string; target: string };
+  | { kind: "add_resource"; id: string; target: string }
+  | { kind: "remove_resource"; id: string; resource: string };

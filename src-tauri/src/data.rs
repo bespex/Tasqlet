@@ -11,6 +11,7 @@ use std::sync::{Mutex, MutexGuard};
 use chrono::Utc;
 use serde_json::{Value, json};
 use tasqlet_core::jira::{self, JiraProjects};
+use tasqlet_core::resources::ranked;
 use tasqlet_core::storage::{self, LoadError, Saver, Storage, Watcher};
 use tasqlet_core::{Action, Error, SCHEMA_VERSION, Session, Store};
 use tauri::{AppHandle, Emitter, Manager};
@@ -132,11 +133,16 @@ impl Data {
             .iter()
             .map(|it| {
                 let mut value = serde_json::to_value(it).unwrap_or(Value::Null);
-                if let Some(resources) = value["resources"].as_array_mut() {
-                    for (json, resource) in resources.iter_mut().zip(&it.resources) {
-                        json["shown"] = resource.shown_label().into();
-                    }
-                }
+                // Most important first, each with its fixed Alt+n digit (docs/KONZEPT.md 5).
+                value["resources"] = ranked(&it.resources)
+                    .into_iter()
+                    .map(|r| {
+                        let mut json = serde_json::to_value(r.resource).unwrap_or(Value::Null);
+                        json["shown"] = r.resource.shown_label().into();
+                        json["digit"] = r.digit.into();
+                        json
+                    })
+                    .collect();
                 value
             })
             .collect();
