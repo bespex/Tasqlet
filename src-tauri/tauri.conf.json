@@ -15,7 +15,7 @@
       {
         "label": "popover",
         "title": "Tasqlet",
-        "width": 470,
+        "width": 700,
         "height": 680,
         "resizable": false,
         "decorations": false,

@@ -23,7 +23,9 @@ describe("appearance (plan 2.6)", () => {
 
   it("makes stored values safe: unknown themes and steps fall back, a full preset is stored by name", () => {
     expect(appearanceOf({ theme: "nope", style: "calm" })).toEqual({ theme: "auto", style: "calm" });
-    expect(appearanceOf({ theme: "sage", style: { chrome: "wild" } })).toEqual({ theme: "sage", style: "calm" });
+    expect(appearanceOf({ theme: "fjord", style: { chrome: "wild" } })).toEqual({ theme: "fjord", style: "calm" });
+    // Themes and styles that left the kit move to the nearest one
+    expect(appearanceOf({ theme: "sage", style: "plastic" })).toEqual({ theme: "ink", style: "calm" });
   });
 
   it("puts theme and all seven axes on the element as attributes", () => {
@@ -31,13 +33,13 @@ describe("appearance (plan 2.6)", () => {
     applyAppearance({ theme: "paper", style: "stage" }, el);
     expect(Object.fromEntries(el.attrs)).toEqual({
       "data-sx-theme": "paper",
-      "data-sx-shape": "soft",
-      "data-sx-structure": "surfaces",
+      "data-sx-shape": "round",
+      "data-sx-structure": "lines",
       "data-sx-chrome": "contrast",
       "data-sx-emphasis": "stage",
-      "data-sx-density": "airy",
+      "data-sx-density": "normal",
       "data-sx-color": "colorful",
-      "data-sx-effects": "rich",
+      "data-sx-effects": "subtle",
     });
   });
 });

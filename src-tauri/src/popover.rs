@@ -136,8 +136,9 @@ pub fn hide(app: &AppHandle) {
     }
 }
 
-/// Width of the popover, normal and with the elaboration beside the lists (plan 2.4, `KONZEPT.md` 6.5).
-const WIDTH: f64 = 470.0;
+/// Width of the popover, normal (as wide as Maillet's window, D39) and with the elaboration beside the
+/// lists (plan 2.4, `KONZEPT.md` 6.5).
+const WIDTH: f64 = 700.0;
 const WIDTH_WIDE: f64 = 940.0;
 
 /// Height of the normal popover.
@@ -300,25 +301,25 @@ mod tests {
     use super::*;
 
     const AREA: (i32, i32, i32, i32) = (0, 0, 1920, 1080);
-    const SIZE: (i32, i32) = (470, 680);
+    const SIZE: (i32, i32) = (700, 680);
 
     #[test]
     fn above_an_icon_in_a_bottom_panel() {
-        assert_eq!(position(Some((1800, 1070)), AREA, SIZE, false), (1442, 382));
+        assert_eq!(position(Some((1800, 1070)), AREA, SIZE, false), (1212, 382));
     }
 
     #[test]
     fn below_an_icon_in_a_top_panel() {
-        assert_eq!(position(Some((1000, 10)), AREA, SIZE, false), (765, 18));
+        assert_eq!(position(Some((1000, 10)), AREA, SIZE, false), (650, 18));
     }
 
     #[test]
     fn top_right_corner_without_anchor() {
-        assert_eq!(position(None, AREA, SIZE, false), (1442, 8));
+        assert_eq!(position(None, AREA, SIZE, false), (1212, 8));
         // Second monitor to the right.
         assert_eq!(
             position(None, (1920, 0, 2560, 1440), SIZE, false),
-            (4002, 8)
+            (3772, 8)
         );
     }
 
@@ -335,9 +336,9 @@ mod tests {
 
     #[test]
     fn the_middle_of_the_screen_when_asked_for() {
-        assert_eq!(position(None, AREA, SIZE, true), (725, 200));
+        assert_eq!(position(None, AREA, SIZE, true), (610, 200));
         // An icon position still wins.
-        assert_eq!(position(Some((1000, 10)), AREA, SIZE, true), (765, 18));
+        assert_eq!(position(Some((1000, 10)), AREA, SIZE, true), (650, 18));
         // Small screens: still on screen.
         assert_eq!(position(None, (0, 0, 400, 600), SIZE, true), (8, 8));
     }

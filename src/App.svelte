@@ -443,7 +443,7 @@
     color: var(--sx-ink);
   }
   .preview .pop {
-    width: 470px;
+    width: 700px;
     height: 680px;
     border: 1px solid var(--sx-line);
     border-radius: var(--sx-radius-l);

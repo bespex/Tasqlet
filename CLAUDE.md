@@ -107,7 +107,7 @@ Browser-Vorschau prüfen.
 | `src-tauri/src/instance.rs` | Einzelinstanz: Sperrdatei und Socket je Datenordner, Befehle der CLI mit Antwort |
 | `src-tauri/src/platform.rs` | X11 oder Wayland, Fenster aktivieren (`x11rb`), Tray-Host vorhanden? |
 | `src-tauri/src/i18n.rs` | Texte der Hülle (Tray) auf Deutsch und Englisch |
-| `src-tauri/tauri.conf.json` | Fenster `popover` (470 px, rahmenlos), Bundle `.deb`/AppImage, Identifier `eu.spex.tasqlet` |
+| `src-tauri/tauri.conf.json` | Fenster `popover` (700 px wie Maillet, rahmenlos, D39), Bundle `.deb`/AppImage, Identifier `eu.spex.tasqlet` |
 | `src-tauri/tasqlet.desktop`, `.github/workflows/release.yml`, `release-notes/` | Vorlage des Menüeintrags; Release bei Tag `v*`; Text je Version |
 | `src-tauri/icons/icon.svg` | Quelle der App-Symbole (`npx tauri icon src-tauri/icons/icon.svg -o src-tauri/icons`) |
 | `src/lib/backend.ts` | alle Aufrufe an Rust, mit Mock (`inTauri`, `mock`) |

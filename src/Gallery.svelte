@@ -29,8 +29,8 @@
     { label: "Papier · Ruhig", look: { theme: "paper", style: "calm" } },
     { label: "Graphit · Werkzeug", look: { theme: "graphite", style: "tool" } },
     { label: "Papier · Bühne", look: { theme: "paper", style: "stage" } },
-    { label: "Salbei · Plastisch", look: { theme: "sage", style: "plastic" } },
-    { label: "Kontrast · Ruhig", look: { theme: "contrast", style: "calm" } },
+    { label: "Tinte · Ruhig", look: { theme: "ink", style: "calm" } },
+    { label: "Neon · Bühne", look: { theme: "neon", style: "stage" } },
   ];
   /** Theme and style as the attributes the kit's stylesheet reads, on the frame itself. */
   const attrs = (look: Appearance) => ({
@@ -125,7 +125,7 @@
     align-items: flex-start;
   }
   .frame {
-    width: 470px;
+    width: 700px;
     background: none;
   }
   h2 {

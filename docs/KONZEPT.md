@@ -221,7 +221,7 @@ bleibt rein lokal.
 
 ## 6. Oberfläche
 
-Das Popover ist rahmenlos, etwa 470 px breit, und in der Ausarbeitung doppelt so breit. Es gibt drei
+Das Popover ist rahmenlos, 700 px breit wie Maillets Fenster (D39), und in der Ausarbeitung breiter. Es gibt drei
 Reiter (Fokus, Ideen, Delegiert) und die Suche (`🔍`, `Strg+F`).
 
 ### 6.1 Fokus
