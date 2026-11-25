@@ -20,6 +20,8 @@
   import { showToast } from "./lib/toast.svelte";
   import type { Act, Item, Snapshot } from "./lib/types";
   import Notice from "./lib/ui/Notice.svelte";
+  import DelegatedView from "./lib/ui/DelegatedView.svelte";
+  import IdeasView from "./lib/ui/IdeasView.svelte";
   import QuickEntry from "./lib/ui/QuickEntry.svelte";
   import SearchView from "./lib/ui/SearchView.svelte";
   import Queue from "./lib/ui/Queue.svelte";
@@ -40,6 +42,9 @@
     { id: "idea", label: t("Ideas"), count: count("idea") },
     { id: "delegated", label: t("Delegated"), count: count("delegated") },
   ]);
+
+  /** Everyone a task was handed to so far, for the suggestions when delegating (plan 2.3). */
+  const people = $derived([...new Set(items.map((i) => i.delegated_to).filter((n): n is string => !!n))].sort());
 
   let quick: QuickEntry;
   let queue = $state<Queue>();
@@ -200,6 +205,10 @@
           open={(id, resource) => void openFor(id, resource)}
           onclose={closeSearch}
         />
+      {:else if view === "idea"}
+        <IdeasView {items} {run} open={(id, resource) => void openFor(id, resource)} />
+      {:else if view === "delegated"}
+        <DelegatedView {items} {run} open={(id, resource) => void openFor(id, resource)} />
       {:else if focus.length === 0}
         <div class="empty">
           <p><b>{t("Nothing urgent.")}</b><br />{t("Ctrl ⏎ in the quick entry puts a task into focus.")}</p>
@@ -209,6 +218,7 @@
           item={focus[0]}
           onbreak={snapshot?.on_break ?? false}
           {run}
+          {people}
           open={(resource) => void openFor(focus[0].id, resource)}
           openAll={() => void openFor(focus[0].id, null)}
         />

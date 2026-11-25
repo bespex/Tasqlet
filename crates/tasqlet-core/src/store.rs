@@ -45,6 +45,8 @@ pub enum Action {
     ToggleCheck { id: Id, check: Id },
     /// Attach a link, file or mail; the kind is derived from the text.
     AddResource { id: Id, target: String },
+    /// A brainstorm thought: a link, file or mail becomes a resource, anything else a bullet in the note.
+    Brainstorm { id: Id, text: String },
     /// Take a resource off an item.
     RemoveResource { id: Id, resource: Id },
     /// A resource was opened: it ranks first from now on (`used_at`).
@@ -229,6 +231,7 @@ impl Store {
             Action::AddCheck { id, text } => self.add_check(id, &text, now),
             Action::ToggleCheck { id, check } => self.toggle_check(id, check, now),
             Action::AddResource { id, target } => self.add_resource(id, &target, now),
+            Action::Brainstorm { id, text } => self.brainstorm(id, &text, now),
             Action::RemoveResource { id, resource } => self.remove_resource(id, resource, now),
             Action::MarkUsed { id, resource } => self.mark_used(id, resource, now),
         }
@@ -308,6 +311,27 @@ impl Store {
             .find(|c| c.id == check)
             .ok_or(Error::UnknownItem(check))?;
         step.done = !step.done;
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Add a thought to an item (`docs/KONZEPT.md` 6.2): a link, file or mail becomes a resource,
+    /// anything else a new bullet at the end of the note, so nothing gets lost while an idea grows.
+    pub fn brainstorm(&mut self, id: Id, text: &str, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let text = text.trim();
+        if text.is_empty() {
+            return Err(Error::EmptyName);
+        }
+        if crate::resources::classify(text).is_some() {
+            return self.add_resource(id, text, now);
+        }
+        let note = &mut self.items[i].note;
+        if !note.is_empty() && !note.ends_with('\n') {
+            note.push('\n');
+        }
+        note.push_str("- ");
+        note.push_str(text);
         self.items[i].updated_at = now;
         Ok(())
     }
@@ -1102,6 +1126,28 @@ mod tests {
             s.toggle_check(a, Id::generate(), t(6)),
             Err(Error::UnknownItem(_))
         ));
+        s.check_invariants().unwrap();
+    }
+
+    #[test]
+    fn brainstorm_thoughts_grow_the_note_and_links_become_resources() {
+        let mut s = Store::new();
+        let a = add(&mut s, "Idee", Target::Idea);
+        s.brainstorm(a, "  erster Gedanke ", t(1)).unwrap();
+        s.brainstorm(a, "zweiter", t(2)).unwrap();
+        assert_eq!(s.get(a).unwrap().note, "- erster Gedanke\n- zweiter");
+        s.brainstorm(a, "https://example.com/x", t(3)).unwrap();
+        assert_eq!(s.get(a).unwrap().resources.len(), 1);
+        assert_eq!(s.get(a).unwrap().note, "- erster Gedanke\n- zweiter");
+        assert_eq!(s.brainstorm(a, "  ", t(4)), Err(Error::EmptyName));
+        // An idea without a title takes its first bullet as title when it goes to focus.
+        let mut new = NewItem::new("");
+        new.note = String::new();
+        let blank = new.id;
+        s.add(new, Target::Idea, t(5)).unwrap();
+        s.brainstorm(blank, "Stichwort", t(6)).unwrap();
+        s.send_to(blank, List::Focus, t(7)).unwrap();
+        assert_eq!(s.get(blank).unwrap().title, "Stichwort");
         s.check_invariants().unwrap();
     }
 

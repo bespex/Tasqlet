@@ -16,6 +16,7 @@
     run,
     open,
     openAll,
+    people = [],
   }: {
     item: Item;
     onbreak?: boolean;
@@ -23,6 +24,8 @@
     open: (resource: string) => void;
     /** Opens all resources, most important first. */
     openAll: () => void;
+    /** Names of earlier recipients, offered when delegating. */
+    people?: string[];
     /** Carries out a change; `message` is the feedback line (with "Undo") on success. Resolves to success. */
     run: (change: Act, message?: string) => Promise<boolean>;
   } = $props();
@@ -195,11 +198,15 @@
 
     <div class="tools" class:open={delegating || menu} class:wide={delegating}>
       {#if delegating}
+        <datalist id="tq-people">
+          {#each people as name (name)}<option value={name}></option>{/each}
+        </datalist>
         <!-- svelte-ignore a11y_autofocus -->
         <input
           class="delegate"
           bind:this={delegateInput}
           bind:value={delegateTo}
+          list="tq-people"
           placeholder={t("Delegate to @Name …")}
           aria-label={t("Delegate to")}
           onkeydown={(e) => {

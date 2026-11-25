@@ -250,6 +250,19 @@ export async function act(change: Act): Promise<void> {
       queue.forEach((i, n) => (i.order = n));
       break;
     }
+    case "brainstorm": {
+      const text = change.text.trim();
+      if (!text) throw new Error("empty name");
+      const item = find(change.id);
+      const found = mockParse(text).resources[0];
+      if (found && found.target === text) {
+        if (!item.resources.some((r) => r.target === text))
+          item.resources.push({ ...found, id: newId("mr"), used_at: null });
+      } else {
+        item.note = `${item.note}${item.note && !item.note.endsWith("\n") ? "\n" : ""}- ${text}`;
+      }
+      break;
+    }
     case "remove_resource": {
       const item = find(change.id);
       const before = item.resources.length;
