@@ -82,7 +82,7 @@ export const de: Record<string, string> = {
   "No steps yet": "Noch keine Schritte",
   "New step …": "Neuer Schritt …",
   "Add step": "Schritt hinzufügen",
-  "Thoughts, results, next steps …": "Gedanken, Ergebnisse, nächste Schritte …",
+  "Keywords, results …": "Stichworte, Ergebnisse …",
   Ready: "Bereit",
   "In progress": "In Arbeit",
   Elaborate: "Ausarbeiten",

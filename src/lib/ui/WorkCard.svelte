@@ -21,6 +21,9 @@
     run: (change: Act, message?: string) => Promise<boolean>;
   } = $props();
 
+  /** The note grows with its text up to five lines (20 px each, plus padding and border), then scrolls. */
+  const NOTE_MAX_PX = 5 * 20 + 12 + 2;
+
   const ready = $derived(!item.active);
   const steps = $derived(item.checklist.filter((c) => c.done).length);
 
@@ -107,11 +110,16 @@
     }
     if (document.activeElement !== noteField && !noteDirty) note = item.note;
   });
-  $effect(() => {
-    void note;
+  function fitNote() {
     if (!noteField) return;
     noteField.style.height = "auto";
-    noteField.style.height = `${Math.min(noteField.scrollHeight + 2, 250)}px`;
+    noteField.style.height = `${Math.min(noteField.scrollHeight + 2, NOTE_MAX_PX)}px`;
+  }
+  $effect(() => {
+    void note;
+    void noteField;
+    // After the text has reached the field, or its height would be measured on the old text.
+    void tick().then(fitNote);
   });
   function onNoteInput() {
     noteDirty = true;
@@ -310,10 +318,10 @@
     <Section label={t("Note")}>
       <textarea
         class="note"
-        rows="2"
+        rows="1"
         bind:this={noteField}
         bind:value={note}
-        placeholder={t("Thoughts, results, next steps …")}
+        placeholder={t("Keywords, results …")}
         aria-label={t("Note")}
         oninput={onNoteInput}
         onblur={flushNote}
@@ -334,8 +342,9 @@
 
 <style>
   .card {
+    position: relative;
     margin: 14px;
-    padding: 14px 16px 0;
+    padding: 12px 14px 0;
     background: var(--tq-card);
     border: var(--tq-f-border-w) solid var(--tq-line);
     border-radius: 12px;
@@ -398,36 +407,44 @@
   .go.ready:hover {
     filter: brightness(1.1);
   }
+  /* The tools lie over the card, right under the round button, and take no room of their own. They
+     are solid and cast a shadow, so they stand out from whatever text or chips lie beneath. */
   .tools {
+    position: absolute;
+    top: 52px;
+    right: 14px;
+    z-index: 3;
     display: flex;
-    justify-content: flex-end;
     align-items: center;
     gap: 6px;
-    height: 28px;
-    margin-top: 6px;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.12s;
   }
   .card:hover .tools,
   .card:has(:focus-visible) .tools,
   .tools.open {
     opacity: 1;
+    pointer-events: auto;
   }
   .rb {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     display: grid;
     place-items: center;
     padding: 0;
     border-radius: 50%;
-    border: 1px solid var(--tq-line);
-    background: var(--tq-field);
-    color: var(--tq-ink-2);
+    border: 1px solid var(--tq-line-strong);
+    background: var(--tq-card);
+    color: var(--tq-ink);
+    box-shadow:
+      0 0 0 3px var(--tq-card),
+      0 3px 10px rgba(0, 0, 0, 0.45);
   }
   .rb:hover {
-    color: var(--tq-ink);
-    border-color: var(--tq-line-strong);
-    background: var(--tq-hover);
+    background: var(--tq-accent);
+    border-color: var(--tq-accent);
+    color: var(--tq-on-accent);
   }
   .delegate,
   .add {
@@ -440,6 +457,14 @@
     border: 1px solid var(--tq-line);
     border-radius: 8px;
     padding: 5px 8px;
+  }
+  .delegate {
+    width: 250px;
+    background: var(--tq-card);
+    border-color: var(--tq-line-strong);
+    box-shadow:
+      0 0 0 3px var(--tq-card),
+      0 3px 10px rgba(0, 0, 0, 0.45);
   }
   .delegate:focus,
   .add:focus,
@@ -514,7 +539,7 @@
     resize: none;
     font: inherit;
     font-size: 14px;
-    line-height: 1.45;
+    line-height: 20px;
     background: var(--tq-field);
     color: var(--tq-ink);
     border: 1px solid var(--tq-line);
@@ -526,8 +551,8 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 14px -16px 0;
-    padding: 8px 16px;
+    margin: 10px -14px 0;
+    padding: 7px 14px;
     border-top: 1px solid var(--tq-line);
     font-size: 12px;
     color: var(--tq-ink-2);

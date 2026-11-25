@@ -23,6 +23,8 @@
   let list: HTMLElement;
   let selected = $state<string | null>(null);
   let drag = $state<{ id: string; from: number; drop: number } | null>(null);
+  /** The copy of the dragged line that follows the pointer: position, size and what it shows. */
+  let ghost = $state<{ x: number; y: number; w: number; h: number; num: number; title: string } | null>(null);
 
   const rows = () => [...list.querySelectorAll<HTMLElement>("[role=option]")];
 
@@ -78,6 +80,12 @@
     grip.setPointerCapture(e.pointerId);
     const from = items.findIndex((it) => it.id === id);
     drag = { id, from, drop: from };
+    const box = grip.closest<HTMLElement>("[role=option]")?.getBoundingClientRect();
+    // The line stays under the pointer where it was grabbed, only moving up and down.
+    const grab = box ? e.clientY - box.top : 0;
+    ghost = box
+      ? { x: box.left, y: box.top, w: box.width, h: box.height, num: from + 2, title: items[from].title }
+      : null;
     const middles = () =>
       rows().map((r) => {
         const b = r.getBoundingClientRect();
@@ -85,6 +93,7 @@
       });
     const over = (ev: PointerEvent) => {
       if (drag) drag.drop = dropIndex(ev.clientY, middles());
+      if (ghost) ghost.y = ev.clientY - grab;
     };
     const end = async (ev: PointerEvent) => {
       window.removeEventListener("pointermove", over);
@@ -93,6 +102,7 @@
       over(ev);
       const done = drag;
       drag = null;
+      ghost = null;
       const delta = done && ev.type === "pointerup" ? moveDelta(done.from, done.drop) : 0;
       if (delta) await move(items[from], { kind: "move_by", id, delta });
     };
@@ -149,7 +159,43 @@
   {/each}
 </div>
 
+{#if ghost}
+  <div class="ghost" aria-hidden="true" style="left:{ghost.x}px;top:{ghost.y}px;width:{ghost.w}px;height:{ghost.h}px">
+    <span class="gnum">{ghost.num}</span>
+    <span class="gt">{ghost.title}</span>
+  </div>
+{/if}
+
 <style>
+  .ghost {
+    position: fixed;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+    padding: 0 10px 0 30px;
+    background: var(--tq-card);
+    border: 1px solid var(--tq-accent);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    color: var(--tq-ink);
+    pointer-events: none;
+    opacity: 0.95;
+  }
+  .gnum {
+    width: 18px;
+    text-align: right;
+    color: var(--tq-ink-2);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+  .gt {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .badge {
     white-space: nowrap;
   }
