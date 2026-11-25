@@ -2,7 +2,7 @@
 
 Persönliches Fokus- und Notiz-Werkzeug im Linux-Tray: einfach erfassen, schnell überblicken, kurze
 Wege zu den Arbeitsmitteln. Tauri 2 (Rust, `src-tauri/`), Domäne in `crates/tasqlet-core/`, Frontend
-Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.10, 2.1 bis 2.5, schlanke Einstellungen und Release 0.1.0 fertig, Alltagstest läuft, bei 1.4 steht die Abnahme am Desktop noch aus.
+Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.10, 2.1 bis 2.5, schlanke Einstellungen und Release 0.2.0 fertig, Alltagstest läuft, bei 1.4 steht die Abnahme am Desktop noch aus.
 
 ## Lesen, bevor gearbeitet wird
 
