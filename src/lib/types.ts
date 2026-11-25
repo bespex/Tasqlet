@@ -113,6 +113,8 @@ export interface SearchResult {
 export type Language = "auto" | "de" | "en";
 export type PopoverPosition = "corner" | "center";
 
+export type ToggleKeyProblem = "invalid" | "taken" | "unsupported";
+
 /** What the settings dialog shows (shell: `prefs::get_settings`). */
 export interface Settings {
   language: Language;
@@ -120,6 +122,10 @@ export interface Settings {
   autostart: boolean;
   /** No icon position is known (Wayland): the position setting matters. */
   wayland: boolean;
+  /** Global key that shows or hides the popover (`Ctrl+Alt+KeyT`), empty for none (D36). */
+  toggle_key: string;
+  /** Why that key is not held. */
+  toggle_key_problem: ToggleKeyProblem | null;
   /** Learned Jira projects with their base URL (D26). */
   jira: { project: string; base: string }[];
 }

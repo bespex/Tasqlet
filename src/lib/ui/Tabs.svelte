@@ -2,6 +2,7 @@
   // Reiter: Fokus, Ideen, Delegiert with their counts, the search at the end (docs/KONZEPT.md 6).
   import { Search, Settings } from "@lucide/svelte";
   import { t } from "../i18n";
+  import { withKey } from "../keys";
 
   type Tab = { id: string; label: string; count: number };
 
@@ -21,9 +22,10 @@
 </script>
 
 <div class="tabs zone-chrome" role="tablist">
-  {#each tabs as tab (tab.id)}
+  {#each tabs as tab, i (tab.id)}
     <button
       class="tab"
+      title={withKey(tab.label, `Ctrl+${i + 1}`)}
       class:on={tab.id === active}
       role="tab"
       aria-selected={tab.id === active}
@@ -35,7 +37,7 @@
   {/each}
   <span class="sp"></span>
   {#if onsearch}
-    <button class="ib" title={`${t("Search")} (Strg+F)`} aria-label={t("Search")} onclick={onsearch}>
+    <button class="ib" title={withKey(t("Search"), "Ctrl+F")} aria-label={t("Search")} onclick={onsearch}>
       <Search size={16} />
     </button>
   {/if}

@@ -384,7 +384,9 @@ const previewSettings = (): Settings => {
       language: "auto",
       popover_position: "corner",
       autostart: false,
-      wayland: true,
+      wayland: false,
+      toggle_key: "",
+      toggle_key_problem: null,
       jira: [{ project: "CORE", base: "https://jira.example.com" }],
     }
   );
@@ -409,6 +411,19 @@ export async function setSettings(language: Language, popoverPosition: PopoverPo
 export async function setAutostart(enabled: boolean): Promise<void> {
   if (inTauri()) return invoke("set_autostart", { enabled });
   keepPreview({ ...previewSettings(), autostart: enabled });
+}
+
+/** A new global key for the popover (empty: none). Rejects with "invalid", "taken" or "unsupported";
+ *  then the old key stays (D36). */
+export async function setToggleKey(keys: string): Promise<void> {
+  if (inTauri()) return invoke("set_toggle_key", { keys });
+  if (keys === "Ctrl+Alt+KeyX") throw "taken"; // to see the message in the preview
+  keepPreview({ ...previewSettings(), toggle_key: keys, toggle_key_problem: null });
+}
+
+/** While a key is recorded, the global one is let go, so pressing it does not hide the popover. */
+export async function suspendToggleKey(suspended: boolean): Promise<void> {
+  if (inTauri()) return invoke("suspend_toggle_key", { suspended });
 }
 
 /** Forgets a learned Jira project (D26). */

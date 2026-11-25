@@ -9,6 +9,7 @@
   import type { Act, Item } from "../types";
   import Chip from "./Chip.svelte";
   import Section from "./Section.svelte";
+  import { keyLabel, withKey } from "../keys";
 
   let {
     item,
@@ -164,7 +165,9 @@
       <b>{t("Break.")}</b>
       {t("Then back to")} <span class="then">{item.title}</span>
     </p>
-    <button class="primary" onclick={() => run({ kind: "resume" })}><Play size={15} />{t("Continue")}</button>
+    <button class="primary" title={withKey(t("Continue"), "Ctrl+P")} onclick={() => run({ kind: "resume" })}>
+      <Play size={15} />{t("Continue")}
+    </button>
   </section>
 {:else}
   <section class="card zone-focus" class:active={item.active} class:ready>
@@ -223,7 +226,7 @@
         {:else}
           <button
             class="rb"
-            title={t("Coffee break")}
+            title={withKey(t("Coffee break"), "Ctrl+P")}
             aria-label={t("Coffee break")}
             onclick={() => run({ kind: "pause" })}
           >
@@ -276,7 +279,7 @@
       {/if}
     </div>
 
-    <Section label={t("Resources")} onadd={openAdd}>
+    <Section label={t("Resources")} onadd={openAdd} empty={!item.resources.length && !addingResource}>
       <div class="chips">
         {#each item.resources.slice(0, 3) as r (r.id)}
           <Chip
@@ -321,14 +324,13 @@
                     openAll();
                   }}
                 >
-                  {t("Open all ({n})", { n: item.resources.length })}
+                  {t("Open all ({n})", { n: item.resources.length })}<span class="rk">{keyLabel("Ctrl+O")}</span>
                 </button>
                 <button role="menuitem" onclick={openAdd}><Plus size={14} />{t("Add link or file …")}</button>
               </div>
             {/if}
           </span>
         {/if}
-        {#if !item.resources.length && !addingResource}<span class="none">{t("None yet")}</span>{/if}
       </div>
       {#if addingResource}
         <input
@@ -345,7 +347,7 @@
       {/if}
     </Section>
 
-    <Section label={t("Checklist")} onadd={openStep}>
+    <Section label={t("Checklist")} onadd={openStep} empty={!item.checklist.length && !addingStep}>
       {#if item.checklist.length}
         <ul class="steps">
           {#each item.checklist as step (step.id)}
@@ -361,8 +363,6 @@
             </li>
           {/each}
         </ul>
-      {:else if !addingStep}
-        <span class="none">{t("No steps yet")}</span>
       {/if}
       {#if addingStep}
         <input
@@ -397,7 +397,7 @@
       {#if item.checklist.length}<span>{steps}/{item.checklist.length}</span>{/if}
       {#if item.date}<span>{dateLabel(item.date)}</span>{/if}
       <span class="sp"></span>
-      <button class="elab" title={`${t("Elaborate")} (Strg+E)`} onclick={onelaborate}>
+      <button class="elab" title={withKey(t("Elaborate"), "Ctrl+E")} onclick={onelaborate}>
         <Maximize2 size={13} />{t("Elaborate")}
       </button>
     </footer>
@@ -632,10 +632,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-  }
-  .none {
-    color: var(--tq-ink-3);
-    font-size: 13px;
   }
   .steps {
     list-style: none;

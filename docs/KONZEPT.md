@@ -288,6 +288,9 @@ dann Arbeitsmittel, Checkliste und Notiz mit `+` an den Überschriften. `Esc` od
 |---|---|---|
 | überall | `Strg+F` / `Strg+E` / `Strg+Z` | Suche / Ausarbeitung / Rückgängig |
 | überall | `Alt+1` … `Alt+9` | Arbeitsmittel der aktuellen Aufgabe öffnen |
+| überall | `Strg+1` / `Strg+2` / `Strg+3`, `Strg+Tab` | Reiter Fokus / Ideen / Delegiert, nächster Reiter (`⇧` zurück) |
+| überall | `Strg+P` / `Strg+O` / `Strg+L` | Pause und weiter / alle Arbeitsmittel öffnen / in die Schnelleingabe |
+| global (X11) | in den Einstellungen festgelegt | Popover ein- und ausblenden (D36); sonst `tasqlet --toggle` |
 | überall | `Esc` | schließt stufenweise: Menü oder Eingabe, Ausarbeitung, Suche, Popover |
 | Schnelleingabe | `Strg ⇧ ⏎`, `Strg ⏎`, `Alt ⏎`, `⏎` | siehe 3.1 |
 | Schnelleingabe (leer) | `↓` | in die Queue |

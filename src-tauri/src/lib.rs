@@ -9,6 +9,7 @@ mod act;
 mod autostart;
 mod capture;
 mod data;
+mod hotkey;
 mod i18n;
 mod instance;
 mod open;
@@ -76,8 +77,10 @@ pub fn run() {
         tasqlet_core::settings::Language::Auto => {}
     }
     let show_at_start = request == Request::Toggle;
+    let toggle_key = settings.toggle_key.clone();
 
     let app = tauri::Builder::default()
+        .plugin(hotkey::plugin())
         .manage(data)
         .invoke_handler(tauri::generate_handler![
             schema_version,
@@ -95,7 +98,9 @@ pub fn run() {
             prefs::get_settings,
             prefs::set_settings,
             prefs::set_autostart,
-            prefs::forget_jira
+            prefs::forget_jira,
+            hotkey::set_toggle_key,
+            hotkey::suspend_toggle_key
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
@@ -105,6 +110,7 @@ pub fn run() {
                 settings.popover_position == tasqlet_core::settings::PopoverPosition::Center,
             );
             tray::start(&handle);
+            hotkey::start(&handle, &toggle_key);
             data::watch(&handle);
             if let Some(instance) = &instance {
                 let handle = handle.clone();

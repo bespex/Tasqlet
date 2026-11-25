@@ -5,6 +5,7 @@
   import { tick } from "svelte";
   import { Link, ListStart, Maximize2, Play } from "@lucide/svelte";
   import { t } from "../i18n";
+  import { withKey } from "../keys";
   import { dropIndex, moveDelta } from "../queue";
   import type { Act, Item } from "../types";
   import Chip from "./Chip.svelte";
@@ -168,7 +169,7 @@
       {#snippet tools()}
         <button
           class="ib"
-          title={`${t("Elaborate")} (Strg+E)`}
+          title={withKey(t("Elaborate"), "Ctrl+E")}
           aria-label={t("Elaborate")}
           onclick={(e) => (e.stopPropagation(), onelaborate(item.id))}
         >

@@ -5,6 +5,7 @@
   import { Check, Maximize2, Undo2 } from "@lucide/svelte";
   import { dateLabel } from "../format";
   import { t } from "../i18n";
+  import { withKey } from "../keys";
   import type { Act, Item } from "../types";
   import Chip from "./Chip.svelte";
 
@@ -59,7 +60,7 @@
               <h3>{item.title || t("Untitled")}</h3>
               <button
                 class="expand"
-                title={`${t("Elaborate")} (Strg+E)`}
+                title={withKey(t("Elaborate"), "Ctrl+E")}
                 aria-label={t("Elaborate")}
                 onclick={() => onelaborate(item.id)}
               >

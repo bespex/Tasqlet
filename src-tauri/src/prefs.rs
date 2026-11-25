@@ -1,5 +1,5 @@
 //! Settings dialog (plan 2.6 in a slim form): language, popover position, autostart and the learned
-//! Jira projects. The rules and the files are the core's; this is the bridge.
+//! Jira projects; the global key is in `hotkey`. The rules and the files are the core's; this is the bridge.
 
 use serde_json::{Value, json};
 use tasqlet_core::settings::{Language, PopoverPosition, Settings};
@@ -13,13 +13,17 @@ use crate::{autostart, popover};
 pub fn get_settings(app: AppHandle) -> Value {
     let data = app.state::<Data>();
     let settings = data.settings();
-    json!({
+    let mut value = json!({
         "language": settings.language,
         "popover_position": settings.popover_position,
         "autostart": autostart::enabled(),
         "wayland": !crate::platform::is_x11(),
         "jira": data.jira().projects().map(|(project, base)| json!({"project": project, "base": base})).collect::<Vec<_>>(),
-    })
+    });
+    if let (Value::Object(map), Value::Object(key)) = (&mut value, crate::hotkey::status(&app)) {
+        map.extend(key);
+    }
+    value
 }
 
 /// Save language and popover position.
@@ -29,9 +33,11 @@ pub fn set_settings(
     language: Language,
     popover_position: PopoverPosition,
 ) -> Result<(), String> {
-    app.state::<Data>().set_settings(Settings {
+    let data = app.state::<Data>();
+    data.set_settings(Settings {
         language,
         popover_position,
+        ..data.settings()
     })?;
     popover::set_center(&app, popover_position == PopoverPosition::Center);
     Ok(())

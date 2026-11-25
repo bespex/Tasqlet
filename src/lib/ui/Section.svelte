@@ -1,14 +1,20 @@
 <script lang="ts">
   // A section of the work card (docs/KONZEPT.md 6.1): label on the left with "+" below it to add,
-  // content on the right, separated from the previous section by a fine line.
+  // content on the right, separated from the previous section by a fine line. Empty, it takes one
+  // line: the "+" sits right of the label and no "none yet" is needed.
   import type { Snippet } from "svelte";
   import { Plus } from "@lucide/svelte";
   import { t } from "../i18n";
 
-  let { label, onadd, children }: { label: string; onadd?: () => void; children: Snippet } = $props();
+  let {
+    label,
+    onadd,
+    empty = false,
+    children,
+  }: { label: string; onadd?: () => void; empty?: boolean; children: Snippet } = $props();
 </script>
 
-<section class="f">
+<section class="f" class:empty>
   <div class="lbl">
     {label}
     {#if onadd}
@@ -39,6 +45,14 @@
     font-size: 12.5px;
     font-weight: 600;
     padding-top: 3px;
+  }
+  .empty {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .empty .lbl {
+    flex-direction: row;
+    align-items: center;
+    padding-top: 0;
   }
   .plus {
     width: 24px;

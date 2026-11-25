@@ -6,6 +6,7 @@
   import { Link, Maximize2 } from "@lucide/svelte";
   import { ageLabel, bullets } from "../format";
   import { t } from "../i18n";
+  import { withKey } from "../keys";
   import type { Act, Item } from "../types";
   import Chip from "./Chip.svelte";
 
@@ -53,7 +54,7 @@
           <span class="age">{ageLabel(item.created_at)}</span>
           <button
             class="expand"
-            title={`${t("Elaborate")} (Strg+E)`}
+            title={withKey(t("Elaborate"), "Ctrl+E")}
             aria-label={t("Elaborate")}
             onclick={() => onelaborate(item.id)}
           >

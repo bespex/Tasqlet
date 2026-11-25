@@ -247,6 +247,8 @@ Vorlage: `../Maillet` (Packaging), `../aur`.
 - `.deb` und AppImage, `.desktop`-Datei, Symbol, XDG-Autostart anbieten. (Release-Workflow, Paket
   und Eintrag im APT-Repository stehen, D35; Autostart in den Einstellungen, D33.)
 - Eine Woche im Alltag nutzen, Befunde in `docs/ENTSCHEIDUNGEN.md` und als Schritte hier.
+  Erster Befund (D36): mehr Tasten (Reiter, Pause, Alle öffnen, Schnelleingabe), globale Taste in den
+  Einstellungen (X11), leere Abschnitte der Karte einzeilig.
 
 **Abnahme:** Installiert auf einem frischen System, Autostart klappt, eine Woche ohne Datenverlust.
 
@@ -331,7 +333,7 @@ an die aktuelle Aufgabe.
 ### 3.2 Globale Tastenkürzel
 
 X11 über `tauri-plugin-global-shortcut`, Wayland über das Portal *GlobalShortcuts* (`ashpd`). Fällt
-beides aus, bleibt `--toggle`.
+beides aus, bleibt `--toggle`. (Der X11-Teil mit Aufnahme in den Einstellungen steht, D36.)
 **Abnahme:** In den Einstellungen festgelegte Taste wirkt auf allen drei Testdesktops oder zeigt, warum
 nicht.
 

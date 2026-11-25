@@ -200,6 +200,40 @@
       if (found) void openFor(focus[0].id, found.id);
       return;
     }
+    const ctrl = e.ctrlKey && !e.altKey && !e.metaKey;
+    // Ctrl+1 … Ctrl+3: the tabs; Ctrl+Tab and Ctrl+Shift+Tab go round them.
+    if (ctrl && !e.shiftKey && /^Digit[1-3]$/.test(e.code)) {
+      e.preventDefault();
+      selectTab(tabs[Number(e.code.slice(5)) - 1].id);
+      return;
+    }
+    if (ctrl && e.key === "Tab") {
+      e.preventDefault();
+      const at = tabs.findIndex((tab) => tab.id === view);
+      selectTab(tabs[(at + (e.shiftKey ? tabs.length - 1 : 1)) % tabs.length].id);
+      return;
+    }
+    // Ctrl+P: a break, pressed again it goes on. Ctrl+O: all resources of the current task.
+    // Ctrl+L: into the quick entry, from wherever.
+    if (ctrl && !e.shiftKey && e.code === "KeyP") {
+      e.preventDefault();
+      void run(snapshot?.on_break ? { kind: "resume" } : { kind: "pause" });
+      return;
+    }
+    if (ctrl && !e.shiftKey && e.code === "KeyO") {
+      e.preventDefault();
+      if (focus[0]?.resources.length) void openFor(focus[0].id, null);
+      else showToast({ text: t("The current task has no resources") });
+      return;
+    }
+    if (ctrl && !e.shiftKey && e.code === "KeyL") {
+      e.preventDefault();
+      settings = false;
+      elab = null;
+      if (searching) closeSearch();
+      else void tick().then(() => quick.focus());
+      return;
+    }
     // Ctrl+F opens the search, Esc closes it before it closes the popover (6.6).
     if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "f") {
       e.preventDefault();

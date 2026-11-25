@@ -3,6 +3,7 @@
   // items grouped by list, on the right the editor of the chosen one. Ctrl+E, Esc or the × close it.
   import { X } from "@lucide/svelte";
   import { t } from "../i18n";
+  import { withKey } from "../keys";
   import type { Act, Item, State } from "../types";
   import ElabEditor from "./ElabEditor.svelte";
 
@@ -72,7 +73,7 @@
       <span class="gt">{t("ELABORATION")}</span>
       <span class="sp"></span>
       <kbd>Esc</kbd>
-      <button class="x" title={`${t("Close")} (Strg+E)`} aria-label={t("Close")} onclick={onclose}>
+      <button class="x" title={withKey(t("Close"), "Ctrl+E")} aria-label={t("Close")} onclick={onclose}>
         <X size={16} />
       </button>
     </div>

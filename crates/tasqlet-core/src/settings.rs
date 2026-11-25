@@ -1,6 +1,6 @@
 //! The few settings that are no data (`~/.config/tasqlet/settings.json`, plan 2.6 in a slim form):
-//! the language and where the popover appears when the desktop gives no icon position. Themes follow
-//! with the rest of 2.6. A missing file means the defaults; a missing key does too.
+//! the language, where the popover appears when the desktop gives no icon position and the global
+//! key that shows or hides it (X11). Themes follow with the rest of 2.6. A missing file means the defaults; a missing key does too.
 
 use std::io;
 use std::path::Path;
@@ -39,6 +39,8 @@ pub enum PopoverPosition {
 pub struct Settings {
     pub language: Language,
     pub popover_position: PopoverPosition,
+    /// Global key that shows or hides the popover, as `Ctrl+Alt+KeyT`; empty means none (D36).
+    pub toggle_key: String,
 }
 
 impl Settings {
@@ -76,6 +78,7 @@ mod tests {
         let s = Settings::load(&path).unwrap();
         assert_eq!(s.language, Language::De);
         assert_eq!(s.popover_position, PopoverPosition::Corner);
+        assert_eq!(s.toggle_key, "");
         // Keys from a newer version are ignored, not an error.
         std::fs::write(&path, r#"{"theme":"x","popover_position":"center"}"#).unwrap();
         assert_eq!(
@@ -91,6 +94,7 @@ mod tests {
         let s = Settings {
             language: Language::En,
             popover_position: PopoverPosition::Center,
+            toggle_key: "Ctrl+Alt+KeyT".into(),
         };
         s.save(&path).unwrap();
         assert_eq!(Settings::load(&path).unwrap(), s);

@@ -2,7 +2,7 @@
 
 Persönliches Fokus- und Notiz-Werkzeug im Linux-Tray: einfach erfassen, schnell überblicken, kurze
 Wege zu den Arbeitsmitteln. Tauri 2 (Rust, `src-tauri/`), Domäne in `crates/tasqlet-core/`, Frontend
-Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.10, 2.1 bis 2.4 und schlanke Einstellungen fertig, bei 1.4 steht die Abnahme am Desktop noch aus.
+Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.10, 2.1 bis 2.4, schlanke Einstellungen und Release 0.1.0 fertig, Alltagstest läuft, bei 1.4 steht die Abnahme am Desktop noch aus.
 
 ## Lesen, bevor gearbeitet wird
 
@@ -95,6 +95,7 @@ Browser-Vorschau prüfen.
 | `src-tauri/src/lib.rs` | Start (Einzelinstanz, `--toggle`), Tauri-Builder, Commands (`schema_version`, `snapshot`) |
 | `src-tauri/src/act.rs` | Befehl `act`: Änderungen an einem Eintrag (Karte) als `Action` an den Core |
 | `crates/tasqlet-core/src/settings.rs`, `src-tauri/src/prefs.rs`, `autostart.rs` | `settings.json` (Sprache, Popover-Position), Befehle der Einstellungen, Autostart-Eintrag |
+| `src-tauri/src/hotkey.rs`, `src/lib/keys.ts` | Globale Taste zum Ein-/Ausblenden (X11, D36); Tastenkombinationen aufnehmen und anzeigen |
 | `src-tauri/src/open.rs` | Befehle `open_resource`, `open_all`: `xdg-open`, `used_at` setzen (D30) |
 | `src-tauri/src/search.rs` | Befehl `search` (Treffer im Snapshot-Format) |
 | `src-tauri/src/capture.rs` | Befehle `parse_quick`, `capture`, `undo` für die Schnelleingabe |

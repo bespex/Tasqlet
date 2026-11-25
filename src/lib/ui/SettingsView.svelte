@@ -2,10 +2,11 @@
   // Slim settings (plan 2.6 in a slim form): language, popover position without an icon position,
   // autostart and the learned Jira projects, which can be forgotten one by one (D26). Themes follow
   // with the rest of 2.6.
-  import { onMount } from "svelte";
-  import { forgetJira, getSettings, setAutostart, setSettings } from "../backend";
+  import { onDestroy, onMount } from "svelte";
+  import { forgetJira, getSettings, setAutostart, setSettings, setToggleKey, suspendToggleKey } from "../backend";
   import { setLang, systemLang, t } from "../i18n";
-  import type { Language, PopoverPosition, Settings } from "../types";
+  import { comboFromEvent, keyLabel } from "../keys";
+  import type { Language, PopoverPosition, Settings, ToggleKeyProblem } from "../types";
 
   let { onclose }: { onclose: () => void } = $props();
 
@@ -34,6 +35,46 @@
     { value: "corner", label: t("Corner") },
     { value: "center", label: t("Middle") },
   ]);
+
+  // The global key (D36): click the field, press the combination; Esc cancels, Backspace clears.
+  let recording = $state(false);
+  let keyProblem = $state("");
+  const problems = (code: ToggleKeyProblem | string): string =>
+    code === "taken"
+      ? t("This key is already taken, by another program or the desktop. The previous key stays.")
+      : code === "invalid"
+        ? t("This key cannot be used.")
+        : code === "unsupported"
+          ? t("Wayland does not let apps hold global keys.")
+          : code;
+  async function record(on: boolean) {
+    if (recording === on) return;
+    recording = on;
+    await suspendToggleKey(on);
+  }
+  function onRecordKey(e: KeyboardEvent) {
+    if (!recording) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const plain = !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey;
+    if (plain && e.key === "Escape") return void record(false);
+    if (plain && (e.key === "Backspace" || e.key === "Delete")) return void keepKey("");
+    const combo = comboFromEvent(e);
+    if (combo) void keepKey(combo);
+  }
+  async function keepKey(combo: string) {
+    keyProblem = "";
+    try {
+      await setToggleKey(combo);
+    } catch (e) {
+      keyProblem = problems(String(e));
+    }
+    await record(false);
+    await load();
+  }
+  onDestroy(() => {
+    if (recording) void suspendToggleKey(false);
+  });
 
   const save = (language: Language, position: PopoverPosition) =>
     guard(async () => {
@@ -84,6 +125,39 @@
     {#if !s.wayland}<p class="hint">
         {t("On X11 the popover sits at the tray icon; this applies to the key binding.")}
       </p>{/if}
+
+    <div class="row">
+      <span>{t("Key to show or hide")}</span>
+      {#if s.wayland}
+        <span class="hint">{t("Not on Wayland")}</span>
+      {:else}
+        <span class="keys">
+          <button
+            class="record"
+            class:on={recording}
+            onclick={() => void record(!recording)}
+            onkeydown={onRecordKey}
+            onblur={() => void record(false)}
+          >
+            {recording ? t("Press keys …") : s.toggle_key ? keyLabel(s.toggle_key) : t("None")}
+          </button>
+          {#if s.toggle_key && !recording}
+            <button title={t("Remove")} aria-label={t("Remove")} onclick={() => void keepKey("")}>×</button>
+          {/if}
+        </span>
+      {/if}
+    </div>
+    {#if s.wayland}
+      <p class="hint">{t("Put “tasqlet --toggle” on a key in your desktop's keyboard settings.")}</p>
+    {:else if recording}
+      <p class="hint">{t("Esc cancels, Backspace removes the key.")}</p>
+    {:else if keyProblem}
+      <p class="hint warn" role="alert">{keyProblem}</p>
+    {:else if s.toggle_key_problem}
+      <p class="hint warn">{problems(s.toggle_key_problem)}</p>
+    {:else}
+      <p class="hint">{t("Works everywhere, also when Tasqlet is hidden.")}</p>
+    {/if}
 
     <label class="row check">
       <input
@@ -181,6 +255,21 @@
     margin: 4px 0 0;
     font-size: 12px;
     color: var(--tq-ink-3);
+  }
+  .keys {
+    display: inline-flex;
+    gap: 6px;
+  }
+  .record {
+    min-width: 120px;
+  }
+  .record.on {
+    border-color: var(--tq-accent);
+    color: var(--tq-accent);
+    background: var(--tq-accent-soft);
+  }
+  .warn {
+    color: var(--tq-warn, var(--tq-ink));
   }
   .problem {
     margin: 8px 0 0;
