@@ -244,7 +244,8 @@ Konzept: 6.4.
 
 Vorlage: `../Maillet` (Packaging), `../aur`.
 
-- `.deb` und AppImage, `.desktop`-Datei, Symbol, XDG-Autostart anbieten.
+- `.deb` und AppImage, `.desktop`-Datei, Symbol, XDG-Autostart anbieten. (Release-Workflow, Paket
+  und Eintrag im APT-Repository stehen, D35; Autostart in den Einstellungen, D33.)
 - Eine Woche im Alltag nutzen, Befunde in `docs/ENTSCHEIDUNGEN.md` und als Schritte hier.
 
 **Abnahme:** Installiert auf einem frischen System, Autostart klappt, eine Woche ohne Datenverlust.

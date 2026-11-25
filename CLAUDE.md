@@ -68,6 +68,12 @@ Ein lauffähiges Release-Binary nur über `npm run tauri build` (bzw. `-- --no-b
 Datenordner: `~/.local/share/tasqlet`, Konfiguration: `~/.config/tasqlet`; für Entwicklung und Tests mit
 `TASQLET_DATA_DIR` und `TASQLET_CONFIG_DIR` umlenken.
 Die Versionen von `tauri` (Cargo) und `@tauri-apps/api` (npm) müssen in Major/Minor übereinstimmen.
+
+Release (D35): Version in `src-tauri/tauri.conf.json`, `package.json` (mit `npm install`, damit
+`package-lock.json` folgt) und `Cargo.toml` gleich setzen, `release-notes/<Version>.md` schreiben,
+committen, dann Tag `v<Version>` pushen. `.github/workflows/release.yml` baut `.deb` und AppImage,
+veröffentlicht das GitHub-Release und stößt das APT-Repository `bespex/apt` an (dort `repos.json`).
+Tag und Push nur auf ausdrücklichen Wunsch.
 Keine Testfenster auf dem Desktop des Nutzers öffnen, ohne es vorher anzukündigen; Oberfläche lieber in der
 Browser-Vorschau prüfen.
 
@@ -99,6 +105,7 @@ Browser-Vorschau prüfen.
 | `src-tauri/src/platform.rs` | X11 oder Wayland, Fenster aktivieren (`x11rb`), Tray-Host vorhanden? |
 | `src-tauri/src/i18n.rs` | Texte der Hülle (Tray) auf Deutsch und Englisch |
 | `src-tauri/tauri.conf.json` | Fenster `popover` (470 px, rahmenlos), Bundle `.deb`/AppImage, Identifier `eu.spex.tasqlet` |
+| `src-tauri/tasqlet.desktop`, `.github/workflows/release.yml`, `release-notes/` | Vorlage des Menüeintrags; Release bei Tag `v*`; Text je Version |
 | `src-tauri/icons/icon.svg` | Quelle der App-Symbole (`npx tauri icon src-tauri/icons/icon.svg -o src-tauri/icons`) |
 | `src/lib/backend.ts` | alle Aufrufe an Rust, mit Mock (`inTauri`, `mock`) |
 | `src/lib/types.ts`, `src/lib/mock-data.ts` | Datenmodell aus Sicht der UI, Beispieldaten aus dem Dummy |

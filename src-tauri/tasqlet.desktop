@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name={{name}}
+GenericName=Focus Tray
+GenericName[de]=Fokus-Tray
+Comment={{comment}}
+Comment[de]=Fokus und Notizen im Tray: erfassen, überblicken, schnell zu den Arbeitsmitteln – be spex
+Exec={{exec}}
+Icon={{icon}}
+Terminal=false
+StartupWMClass=tasqlet
+Categories=Office;ProjectManagement;
+Keywords=task;todo;focus;notes;ideas;tray;jira;be-spex;bespex;spex;
+Keywords[de]=aufgabe;todo;fokus;notiz;ideen;tray;jira;be-spex;bespex;spex;

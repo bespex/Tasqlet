@@ -35,14 +35,14 @@
     "longDescription": "Tasqlet lives in your tray and keeps one task in focus: capture a thought or a link in\nseconds, see what is next at a glance, and open the ticket, mail or file of the current\ntask with one click. Local, no cloud, no time tracking.\n\nPart of be spex – apps for the way you work: https://bespex.github.io",
     "copyright": "Copyright (c) 2026 Bert Speckels, MIT License",
     "license": "MIT",
-    "publisher": "Bert Speckels",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ],
-    "homepage": "https://github.com/bespex/Tasqlet"
+    "publisher": "Bert Speckels <skrrytch@speckels.net>",
+    "icon": ["icons/32x32.png", "icons/64x64.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png"],
+    "homepage": "https://github.com/bespex/Tasqlet",
+    "linux": {
+      "deb": {
+        "desktopTemplate": "tasqlet.desktop",
+        "depends": ["xdg-utils"]
+      }
+    }
   }
 }

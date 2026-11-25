@@ -6,9 +6,20 @@ glance, and open the ticket, mail or file of the current task with one click.
 One task is in focus. Everything else stays calm: a short queue of what is urgent, small things for
 in between, and ideas that grow over days. Local data, no cloud, and no time tracking.
 
-> **Status:** early development. Nothing to install yet. The target design is the click dummy in
-> [`docs/click-dummy/`](docs/click-dummy/index.html); the plan is in [`docs/PLAN.md`](docs/PLAN.md)
-> (German).
+## Install
+
+Ubuntu 24.04+, Linux Mint 22+, Debian 13+. From the [be spex APT repository](https://bespex.run/apt/)
+(set it up once, updates then come with `apt upgrade`):
+
+```sh
+sudo apt install tasqlet
+```
+
+Or take the `.deb` or the AppImage from the [releases](https://github.com/bespex/Tasqlet/releases).
+Start **Tasqlet** from the application menu: it lives in the tray. Bind `tasqlet --toggle` to a key of
+your desktop to show and hide it. Autostart at login is in the settings (gear icon).
+
+The plan and the concept are in [`docs/`](docs/) (German).
 
 ## Development
 

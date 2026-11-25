@@ -1,0 +1,136 @@
+name: Release
+
+# Builds the .deb and the AppImage on Ubuntu 24.04 (glibc 2.39: current Ubuntu, Mint, Debian and
+# their relatives), as Maillet and CodeDeck do. A tag v<version> publishes them as a GitHub release
+# and asks the APT repository (bespex/apt) to pick the .deb up. workflow_dispatch only builds
+# (artifacts, no release).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config file \
+            libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Check tag matches app version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(jq -r .version src-tauri/tauri.conf.json)
+          npm_version=$(jq -r .version package.json)
+          cargo_version=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
+          for v in "$version" "$npm_version" "$cargo_version"; do
+            if [ "v$v" != "$GITHUB_REF_NAME" ]; then
+              echo "Tag $GITHUB_REF_NAME does not match the versions: tauri.conf.json $version, package.json $npm_version, Cargo.toml $cargo_version" >&2
+              exit 1
+            fi
+          done
+
+      - run: npm ci
+
+      - name: Test
+        run: |
+          npm test
+          mkdir -p dist && cargo test --workspace --locked
+
+      - name: Build .deb and AppImage
+        env:
+          # linuxdeploy's strip cannot read the .relr.dyn sections of Ubuntu 24.04 libraries
+          NO_STRIP: "true"
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: npm run tauri -- build --bundles deb,appimage
+
+      - name: Collect artifacts
+        run: |
+          conf=src-tauri/tauri.conf.json
+          version=$(jq -r .version $conf)
+          name=$(jq -r .productName $conf)
+          pkg=$(jq -r .mainBinaryName $conf)
+          # The Cargo workspace puts the build output into target/ at the root.
+          bundle=target/release/bundle
+          mkdir -p dist-release
+          cp "$bundle/deb/${name}_${version}_amd64.deb" "dist-release/${pkg}_${version}_amd64.deb"
+          cp "$bundle/appimage/${name}_${version}_amd64.AppImage" "dist-release/"
+          dpkg-deb -f "dist-release/${pkg}_${version}_amd64.deb" Package Version Depends
+          cd dist-release
+          sha256sum *.deb *.AppImage > SHA256SUMS
+          ls -l
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: dist-release/*
+
+      # The text of the release: release-notes/<version>.md (if there is one), then how to install;
+      # the list of commits follows (generate_release_notes)
+      - name: Release text
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(jq -r .version src-tauri/tauri.conf.json)
+          {
+            if [ -f "release-notes/$version.md" ]; then cat "release-notes/$version.md"; echo; fi
+            cat <<'TEXT'
+          ## Install (Ubuntu 24.04+, Linux Mint 22+, Debian 13+)
+
+          From the be spex APT repository (updates come with `apt upgrade`), set up once as described
+          on https://bespex.run/apt/, then:
+
+          ```bash
+          sudo apt install tasqlet
+          ```
+
+          Or install the package from this release directly:
+
+          ```bash
+          sudo apt install ./tasqlet_*_amd64.deb
+          ```
+
+          Or run the AppImage (`chmod +x Tasqlet_*_amd64.AppImage`). Then start **Tasqlet** from the
+          application menu: it lives in the tray. Bind `tasqlet --toggle` to a key to show and hide it.
+          Verify the downloads with `sha256sum -c SHA256SUMS`.
+          TEXT
+          } > release-body.md
+          cat release-body.md
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist-release/*
+          generate_release_notes: true
+          body_path: release-body.md
+
+      # The APT repository (bespex/apt) rebuilds on a schedule, but GitHub runs scheduled workflows
+      # only every few hours: the release asks for a run at once. Needs the secret APT_DISPATCH_TOKEN
+      # (fine-grained token for bespex/apt, Actions: read and write); without it the step is skipped
+      # and the schedule picks the release up later.
+      - name: Update the APT repository
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.APT_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "No APT_DISPATCH_TOKEN: the APT repository's schedule picks the release up later."
+            exit 0
+          fi
+          gh workflow run publish.yml -R bespex/apt
