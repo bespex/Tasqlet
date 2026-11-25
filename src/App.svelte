@@ -1,7 +1,7 @@
 <script lang="ts">
   // The popover: tabs, quick entry (1.6), notices, the work card (1.7), the focus list and the feedback
   // line. The keyboard in the queue (1.8) follows.
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import {
     act,
     hidePopover,
@@ -21,6 +21,7 @@
   import type { Act, Item, Snapshot } from "./lib/types";
   import Notice from "./lib/ui/Notice.svelte";
   import QuickEntry from "./lib/ui/QuickEntry.svelte";
+  import SearchView from "./lib/ui/SearchView.svelte";
   import Queue from "./lib/ui/Queue.svelte";
   import Tabs from "./lib/ui/Tabs.svelte";
   import Toast from "./lib/ui/Toast.svelte";
@@ -28,6 +29,7 @@
 
   let snapshot = $state<Snapshot | null>(null);
   let view = $state("focus");
+  let searching = $state(false);
   const preview = !inTauri();
 
   const items = $derived(snapshot?.items ?? []);
@@ -41,6 +43,18 @@
 
   let quick: QuickEntry;
   let queue = $state<Queue>();
+
+  function openSearch() {
+    searching = true;
+  }
+  function closeSearch() {
+    searching = false;
+    void tick().then(() => quick.focus());
+  }
+  function selectTab(id: string) {
+    view = id;
+    if (searching) closeSearch();
+  }
 
   const reload = () => loadSnapshot().then((s) => (snapshot = s));
 
@@ -139,8 +153,14 @@
       if (found) void openFor(focus[0].id, found.id);
       return;
     }
-    if (e.key === "Escape") void hidePopover();
-    else if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "z" && !typing(e.target)) {
+    // Ctrl+F opens the search, Esc closes it before it closes the popover (6.6).
+    if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "f") {
+      e.preventDefault();
+      openSearch();
+    } else if (e.key === "Escape") {
+      if (searching) closeSearch();
+      else void hidePopover();
+    } else if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "z" && !typing(e.target)) {
       e.preventDefault();
       void undoLast();
     }
@@ -151,7 +171,7 @@
 
 <div class="stage" class:preview>
   <div class="pop">
-    <Tabs {tabs} active={view} onselect={(id) => (view = id)} />
+    <Tabs {tabs} active={searching ? "" : view} onselect={selectTab} onsearch={openSearch} />
     <QuickEntry bind:this={quick} ondown={() => queue?.enter()} />
 
     {#if snapshot?.tray_missing}
@@ -173,7 +193,14 @@
     {/if}
 
     <div class="body">
-      {#if focus.length === 0}
+      {#if searching}
+        <SearchView
+          version={snapshot}
+          {run}
+          open={(id, resource) => void openFor(id, resource)}
+          onclose={closeSearch}
+        />
+      {:else if focus.length === 0}
         <div class="empty">
           <p><b>{t("Nothing urgent.")}</b><br />{t("Ctrl ⏎ in the quick entry puts a task into focus.")}</p>
         </div>

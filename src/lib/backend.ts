@@ -4,7 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { mockSnapshot } from "./mock-data";
 import { mockParse } from "./mock-quick";
-import type { Act, CaptureKey, Captured, Item, QuickEntry, Snapshot } from "./types";
+import { mockRecentlyDone, mockSearch, searchTerms } from "./mock-search";
+import type { Act, CaptureKey, Captured, Item, QuickEntry, SearchResult, Snapshot } from "./types";
 
 /** True inside the Tauri webview, false in the browser preview. */
 export const inTauri = (): boolean => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -311,4 +312,12 @@ export async function openAll(id: string): Promise<void> {
   const now = new Date().toISOString();
   item.resources.forEach((r) => (r.used_at = now));
   preview.changed();
+}
+
+/** Full text search over everything, finished items included; without words the recently finished. */
+export async function search(query: string): Promise<SearchResult> {
+  if (inTauri()) return invoke<SearchResult>("search", { query });
+  const items = mock.snapshot().items;
+  const recent = searchTerms(query).length === 0;
+  return { recent, items: recent ? mockRecentlyDone(items) : mockSearch(items, query) };
 }

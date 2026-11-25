@@ -13,7 +13,7 @@ use serde_json::{Value, json};
 use tasqlet_core::jira::{self, JiraProjects};
 use tasqlet_core::resources::ranked;
 use tasqlet_core::storage::{self, LoadError, Saver, Storage, Watcher};
-use tasqlet_core::{Action, Error, SCHEMA_VERSION, Session, Store};
+use tasqlet_core::{Action, Error, Item, SCHEMA_VERSION, Session, Store};
 use tauri::{AppHandle, Emitter, Manager};
 
 /// Event to the webview after every change of the items.
@@ -128,24 +128,7 @@ impl Data {
     pub fn snapshot(&self) -> Value {
         let session = self.session();
         let store = session.store();
-        let items: Vec<Value> = store
-            .items()
-            .iter()
-            .map(|it| {
-                let mut value = serde_json::to_value(it).unwrap_or(Value::Null);
-                // Most important first, each with its fixed Alt+n digit (docs/KONZEPT.md 5).
-                value["resources"] = ranked(&it.resources)
-                    .into_iter()
-                    .map(|r| {
-                        let mut json = serde_json::to_value(r.resource).unwrap_or(Value::Null);
-                        json["shown"] = r.resource.shown_label().into();
-                        json["digit"] = r.digit.into();
-                        json
-                    })
-                    .collect();
-                value
-            })
-            .collect();
+        let items: Vec<Value> = store.items().iter().map(item_json).collect();
         let problem = lock(&self.problem);
         json!({
             "schema": SCHEMA_VERSION,
@@ -173,6 +156,22 @@ impl Data {
             eprintln!("tasqlet: saving failed: {e}");
         }
     }
+}
+
+/// An item as the webview gets it: the data file's shape, its resources most important first, each
+/// with the label to show (`shown`) and its fixed `Alt+n` digit (docs/KONZEPT.md 5).
+pub fn item_json(it: &Item) -> Value {
+    let mut value = serde_json::to_value(it).unwrap_or(Value::Null);
+    value["resources"] = ranked(&it.resources)
+        .into_iter()
+        .map(|r| {
+            let mut json = serde_json::to_value(r.resource).unwrap_or(Value::Null);
+            json["shown"] = r.resource.shown_label().into();
+            json["digit"] = r.digit.into();
+            json
+        })
+        .collect();
+    value
 }
 
 /// Carry out an action, save it in the background and tell tray and webview.

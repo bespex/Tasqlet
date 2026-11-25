@@ -99,3 +99,9 @@ export type Act =
   | { kind: "toggle_check"; id: string; check: string }
   | { kind: "add_resource"; id: string; target: string }
   | { kind: "remove_resource"; id: string; resource: string };
+
+/** What the search returns: hits best first, or the recently finished items without a query. */
+export interface SearchResult {
+  recent: boolean;
+  items: Item[];
+}

@@ -49,7 +49,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 1.7 Arbeitskarte
   - [x] 1.8 Queue und Tastatur
   - [x] 1.9 Kurze Wege: Öffnen, `…`-Menü, `Alt+n`, `Strg+V`, Tray-Menü
-  - [ ] 1.10 Suche
+  - [x] 1.10 Suche
   - [ ] 1.11 Pakete, Autostart, Alltagstest
 - **MVP 2: Drei Geschwindigkeiten, Delegation, Themen**
   - [ ] 2.1 Zwischendurch-Leiste

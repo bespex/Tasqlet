@@ -100,4 +100,13 @@ export const de: Record<string, string> = {
   "Add link or file …": "Link oder Datei hinzufügen …",
   "Show resources": "Arbeitsmittel zeigen",
   "Could not open: {error}": "Öffnen fehlgeschlagen: {error}",
+  "Search everything, finished items too …": "Alles durchsuchen, auch Erledigtes …",
+  "Close search": "Suche schließen",
+  "Recently finished": "Zuletzt erledigt",
+  "{n} hits": "{n} Treffer",
+  "Nothing finished yet.": "Noch nichts erledigt.",
+  "Nothing found.": "Nichts gefunden.",
+  "Take over": "Übernehmen",
+  "Back to focus": "Zurück in Fokus",
+  "Back in focus": "Zurück im Fokus",
 };

@@ -13,6 +13,7 @@ mod instance;
 mod open;
 mod platform;
 mod popover;
+mod search;
 mod tray;
 
 use instance::{Request, Start};
@@ -80,7 +81,8 @@ pub fn run() {
             capture::undo,
             act::act,
             open::open_resource,
-            open::open_all
+            open::open_all,
+            search::search
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
