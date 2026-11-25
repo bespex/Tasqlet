@@ -128,7 +128,7 @@ fn url_label(url: &str) -> String {
 }
 
 /// `CORE-418`: a project key (capital letter, then capitals or digits), a dash, a number.
-fn is_issue_key(s: &str) -> bool {
+pub(crate) fn is_issue_key(s: &str) -> bool {
     let Some((project, number)) = s.split_once('-') else {
         return false;
     };

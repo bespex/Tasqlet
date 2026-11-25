@@ -1,14 +1,24 @@
 <script lang="ts">
-  // The popover. Plan 1.5 builds its frame from the components: tabs, notices, the focus list and the
-  // feedback line. The work card (1.7), quick entry (1.6) and keyboard (1.8) follow.
+  // The popover: tabs, quick entry (1.6), notices, the focus list and the feedback line. The work card
+  // (1.7) and the keyboard in the queue (1.8) follow.
   import { onMount } from "svelte";
   import { Play } from "@lucide/svelte";
-  import { hidePopover, inTauri, loadSnapshot, restoreBackup, watchChanged, watchShown } from "./lib/backend";
+  import {
+    hidePopover,
+    inTauri,
+    loadSnapshot,
+    restoreBackup,
+    undo,
+    watchCapture,
+    watchChanged,
+    watchShown,
+  } from "./lib/backend";
   import { t } from "./lib/i18n";
   import { showToast } from "./lib/toast.svelte";
   import type { Item, Snapshot } from "./lib/types";
   import Chip from "./lib/ui/Chip.svelte";
   import Notice from "./lib/ui/Notice.svelte";
+  import QuickEntry from "./lib/ui/QuickEntry.svelte";
   import Row from "./lib/ui/Row.svelte";
   import Tabs from "./lib/ui/Tabs.svelte";
   import Toast from "./lib/ui/Toast.svelte";
@@ -26,13 +36,44 @@
     { id: "delegated", label: t("Delegated"), count: count("delegated") },
   ]);
 
+  let quick: QuickEntry;
+  let queue = $state<HTMLElement>();
+
   const reload = () => loadSnapshot().then((s) => (snapshot = s));
 
   onMount(() => {
     void reload();
-    const stops = [watchShown(reload), watchChanged(reload)];
+    quick.focus();
+    const shown = () => {
+      void reload();
+      quick.focus();
+    };
+    const stops = [watchShown(shown), watchChanged(reload), watchCapture(() => quick.focus())];
     return () => stops.forEach((stop) => void stop.then((f) => f()));
   });
+
+  /** Whether a text field has the focus: then keys and pasting belong to it. */
+  const typing = (target: EventTarget | null) =>
+    target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA"].includes(target.tagName));
+
+  async function undoLast() {
+    try {
+      await undo();
+      showToast({ text: t("Undone") });
+    } catch {
+      showToast({ text: t("Nothing to undo") });
+    }
+  }
+
+  // Pasting with no text field focused and no item as target puts the text into the quick entry
+  // (docs/KONZEPT.md 3.2). Pasting onto a hovered or selected item follows with plan 1.9.
+  function onPaste(e: ClipboardEvent) {
+    if (typing(e.target)) return;
+    const text = e.clipboardData?.getData("text")?.trim();
+    if (!text) return;
+    e.preventDefault();
+    quick.setText(text);
+  }
 
   async function restore() {
     try {
@@ -46,14 +87,19 @@
 
   function onKey(e: KeyboardEvent) {
     if (e.key === "Escape") void hidePopover();
+    else if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "z" && !typing(e.target)) {
+      e.preventDefault();
+      void undoLast();
+    }
   }
 </script>
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} onpaste={onPaste} />
 
 <div class="stage" class:preview>
   <div class="pop">
     <Tabs {tabs} active={view} onselect={(id) => (view = id)} />
+    <QuickEntry bind:this={quick} ondown={() => queue?.querySelector<HTMLElement>("[role=option]")?.focus()} />
 
     {#if snapshot?.tray_missing}
       <Notice
@@ -91,7 +137,7 @@
             </div>
           {/if}
         </section>
-        <div role="listbox" aria-label={t("Focus")}>
+        <div role="listbox" aria-label={t("Focus")} bind:this={queue}>
           {#each focus.slice(1) as item, i (item.id)}
             <Row num={i + 2} title={item.title}>
               {#snippet indicators()}

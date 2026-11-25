@@ -5,6 +5,7 @@
 //! the popover, `tasqlet --toggle` shows or hides it). The first start loads the items, puts the
 //! icon into the tray and prepares the popover hidden.
 
+mod capture;
 mod data;
 mod i18n;
 mod instance;
@@ -71,7 +72,10 @@ pub fn run() {
             schema_version,
             snapshot,
             popover::hide_popover,
-            data::restore_backup
+            data::restore_backup,
+            capture::parse_quick,
+            capture::capture,
+            capture::undo
         ])
         .setup(move |app| {
             let handle = app.handle().clone();

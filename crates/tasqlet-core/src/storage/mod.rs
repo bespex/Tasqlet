@@ -16,7 +16,7 @@
 //! The storage remembers what it last wrote or read for each file, so the watcher can tell its own
 //! writes from changes made by others ([`Storage::watch`]).
 
-mod atomic;
+pub(crate) mod atomic;
 mod migrate;
 mod saver;
 mod watch;

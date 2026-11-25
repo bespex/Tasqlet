@@ -10,6 +10,7 @@ use std::sync::{Mutex, MutexGuard};
 
 use chrono::Utc;
 use serde_json::{Value, json};
+use tasqlet_core::jira::{self, JiraProjects};
 use tasqlet_core::storage::{self, LoadError, Saver, Storage, Watcher};
 use tasqlet_core::{Action, Error, SCHEMA_VERSION, Session, Store};
 use tauri::{AppHandle, Emitter, Manager};
@@ -24,6 +25,10 @@ pub struct Data {
     saver: Mutex<Option<Saver>>,
     problem: Mutex<Option<Problem>>,
     watcher: Mutex<Option<Watcher>>,
+    /// Learned Jira projects (D26) and where they are kept; no path if the file was unreadable, so
+    /// it is not overwritten.
+    jira: Mutex<JiraProjects>,
+    jira_path: Option<PathBuf>,
 }
 
 /// Why the data could not be loaded.
@@ -71,13 +76,41 @@ impl Data {
                 (Store::new(), None, Some(problem))
             }
         };
+        let path = jira::config_dir().map(|dir| dir.join(jira::JIRA_FILE));
+        let (jira, jira_path) = match path.as_deref().map(JiraProjects::load) {
+            Some(Ok(projects)) => (projects, path),
+            Some(Err(e)) => {
+                eprintln!("tasqlet: Jira projects not readable, not learning: {e}");
+                (JiraProjects::default(), None)
+            }
+            None => (JiraProjects::default(), None),
+        };
         Ok(Self {
             session: Mutex::new(Session::new(store)),
             storage,
             saver: Mutex::new(saver),
             problem: Mutex::new(problem),
             watcher: Mutex::new(None),
+            jira: Mutex::new(jira),
+            jira_path,
         })
+    }
+
+    /// A copy of the learned Jira projects.
+    pub fn jira(&self) -> JiraProjects {
+        lock(&self.jira).clone()
+    }
+
+    /// Learn the Jira projects of these links and keep them if something new was learned.
+    pub fn learn_jira<'a>(&self, urls: impl IntoIterator<Item = &'a str>) {
+        let mut jira = lock(&self.jira);
+        let learned = urls.into_iter().filter(|u| jira.learn(u).is_some()).count();
+        if learned > 0
+            && let Some(path) = &self.jira_path
+            && let Err(e) = jira.save(path)
+        {
+            eprintln!("tasqlet: Jira projects not saved: {e}");
+        }
     }
 
     fn session(&self) -> MutexGuard<'_, Session> {
@@ -142,6 +175,18 @@ pub fn apply(app: &AppHandle, action: Action) -> Result<(), Error> {
     {
         let mut session = data.session();
         session.apply(action, Utc::now())?;
+        data.save(session.store());
+    }
+    changed(app);
+    Ok(())
+}
+
+/// Undo the last action.
+pub fn undo(app: &AppHandle) -> Result<(), Error> {
+    let data = app.state::<Data>();
+    {
+        let mut session = data.session();
+        session.undo()?;
         data.save(session.store());
     }
     changed(app);

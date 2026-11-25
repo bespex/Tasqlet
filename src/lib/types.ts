@@ -56,3 +56,26 @@ export interface LoadError {
   /** A previous version exists and can be restored (`restoreBackup`). */
   backup: boolean;
 }
+
+/** What the quick entry recognised while typing (core: `quick::QuickEntry`). */
+export interface QuickEntry {
+  title: string;
+  /** Noted date, "YYYY-MM-DD" */
+  date: string | null;
+  delegate_to: string | null;
+  resources: { type: ResourceType; target: string; label: string | null; shown: string }[];
+}
+
+/** The key the quick entry was saved with (docs/KONZEPT.md 3.1). */
+export type CaptureKey = "now" | "focus" | "intermezzo" | "idea";
+
+/** What was saved, for the feedback line. */
+export interface Captured {
+  title: string;
+  placed: CaptureKey | "delegated";
+  /** Position in the focus list (1-based) for "now" and "focus" */
+  position: number | null;
+  /** "now": another task was active and moved to #2 */
+  replaced: boolean;
+  delegated_to: string | null;
+}

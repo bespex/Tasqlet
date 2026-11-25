@@ -5,17 +5,21 @@
 //! | `@Name` | delegate to Name (the first one counts) |
 //! | `!heute`, `!morgen`, `!übermorgen`, `!fr`, `!freitag`, `!28.11.`, `!28.11.2026`, `!2026-11-28` | note a date (the first one counts); English `!today`, `!tomorrow`, `!fri` work too |
 //! | a link, path or mail target | becomes a resource and leaves the title |
+//! | `NMS-19470` of a learned Jira project | becomes a resource and stays in the title (D26) |
 //!
 //! A word that only looks like a shortcut (`!wichtig`, `!31.02.`) stays in the title. A link
 //! alone gives an item titled with its smart label (`PR #42`).
 
 use chrono::{Datelike, Duration, NaiveDate};
 
-use crate::model::{NewItem, NewResource, Target};
+use serde::Serialize;
+
+use crate::jira::JiraProjects;
+use crate::model::{NewItem, NewResource, ResourceType, Target};
 use crate::resources::{classify, smart_label};
 
 /// What the quick entry recognised.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize)]
 pub struct QuickEntry {
     pub title: String,
     pub date: Option<NaiveDate>,
@@ -50,8 +54,21 @@ impl QuickEntry {
 
 /// Parse the text of the quick entry. `today` resolves relative dates.
 pub fn parse(input: &str, today: NaiveDate) -> QuickEntry {
+    parse_with(input, today, &JiraProjects::default())
+}
+
+/// Parse with the learned Jira projects: a bare key of a known project becomes a resource and
+/// stays in the title. Jira links in the same input count as learned already.
+pub fn parse_with(input: &str, today: NaiveDate, jira: &JiraProjects) -> QuickEntry {
+    let mut jira = jira.clone();
+    for word in input.split_whitespace() {
+        jira.learn(trim_punctuation(word));
+    }
     let mut entry = QuickEntry::default();
     let mut words: Vec<&str> = Vec::new();
+    // Resources in the order they appear, so Alt+1 is usually the ticket; `true` marks one made
+    // from a bare Jira key.
+    let mut found: Vec<(NewResource, bool)> = Vec::new();
     for word in input.split_whitespace() {
         if let Some(rest) = word.strip_prefix('@') {
             let name = person(rest);
@@ -67,20 +84,40 @@ pub fn parse(input: &str, today: NaiveDate) -> QuickEntry {
                 continue;
             }
         } else {
-            let core = word
-                .trim_start_matches(['<', '(', '"'])
-                .trim_end_matches(['.', ',', ';', ':', '!', '?', ')', '>', '"']);
+            let core = trim_punctuation(word);
             if let Some(kind) = classify(core) {
-                entry.resources.push(NewResource {
+                let resource = NewResource {
                     kind,
                     target: core.to_string(),
                     label: None,
-                });
+                };
+                found.push((resource, false));
                 continue;
+            }
+            if let Some(link) = jira.link(core)
+                && !found.iter().any(|(r, _)| r.target == link)
+            {
+                let resource = NewResource {
+                    kind: ResourceType::Url,
+                    target: link,
+                    label: None,
+                };
+                found.push((resource, true));
             }
         }
         words.push(word);
     }
+    // A key whose link was typed as well needs no second chip; the typed link wins.
+    let typed: Vec<String> = found
+        .iter()
+        .filter(|(_, from_key)| !from_key)
+        .map(|(r, _)| smart_label(&r.target))
+        .collect();
+    entry.resources = found
+        .into_iter()
+        .filter(|(r, from_key)| !from_key || !typed.contains(&smart_label(&r.target)))
+        .map(|(r, _)| r)
+        .collect();
     entry.title = words.join(" ");
     if entry.title.is_empty()
         && let Some(first) = entry.resources.first()
@@ -88,6 +125,12 @@ pub fn parse(input: &str, today: NaiveDate) -> QuickEntry {
         entry.title = smart_label(&first.target);
     }
     entry
+}
+
+/// A word without surrounding punctuation: `(https://x.de/a).` → `https://x.de/a`.
+fn trim_punctuation(word: &str) -> &str {
+    word.trim_start_matches(['<', '(', '"'])
+        .trim_end_matches(['.', ',', ';', ':', '!', '?', ')', '>', '"'])
 }
 
 /// The name in `@Name,`: letters, digits, `.`, `_`, `-`, without trailing punctuation.
@@ -342,6 +385,76 @@ mod tests {
             parse("@Jonas", today()).is_empty(),
             "a person alone is nothing to save"
         );
+    }
+
+    fn jira() -> JiraProjects {
+        let mut jira = JiraProjects::default();
+        jira.learn("https://jira.firma.de/browse/NMS-19465");
+        jira
+    }
+
+    #[test]
+    fn learned_jira_keys_become_resources_and_stay_in_the_title() {
+        let e = parse_with(
+            "NMS-19470: Review Outgoing-Timestamps UTC",
+            today(),
+            &jira(),
+        );
+        assert_eq!(e.title, "NMS-19470: Review Outgoing-Timestamps UTC");
+        assert_eq!(
+            e.resources,
+            vec![url("https://jira.firma.de/browse/NMS-19470")]
+        );
+    }
+
+    #[test]
+    fn unknown_projects_and_lookalikes_stay_text() {
+        let e = parse_with("CORE-1 auf UTF-8 und SHA-256 prüfen", today(), &jira());
+        assert!(e.resources.is_empty());
+        assert_eq!(e.title, "CORE-1 auf UTF-8 und SHA-256 prüfen");
+    }
+
+    #[test]
+    fn a_link_in_the_same_input_teaches_its_project() {
+        let e = parse_with(
+            "Siehe https://jira.example.com/browse/CORE-418 und CORE-419",
+            today(),
+            &JiraProjects::default(),
+        );
+        assert_eq!(e.title, "Siehe und CORE-419");
+        assert_eq!(
+            e.resources,
+            vec![
+                url("https://jira.example.com/browse/CORE-418"),
+                url("https://jira.example.com/browse/CORE-419"),
+            ]
+        );
+    }
+
+    #[test]
+    fn key_and_its_link_give_one_chip() {
+        let e = parse_with(
+            "NMS-19470 https://jira.firma.de/browse/NMS-19470?focusedId=3",
+            today(),
+            &jira(),
+        );
+        assert_eq!(e.resources.len(), 1);
+        assert_eq!(
+            e.resources[0].target,
+            "https://jira.firma.de/browse/NMS-19470?focusedId=3"
+        );
+        assert_eq!(e.title, "NMS-19470");
+    }
+
+    #[test]
+    fn resources_keep_the_order_of_the_text() {
+        let e = parse_with(
+            "NMS-19470 prüfen https://github.com/example/core/pull/57",
+            today(),
+            &jira(),
+        );
+        let labels: Vec<String> = e.resources.iter().map(|r| smart_label(&r.target)).collect();
+        assert_eq!(labels, ["NMS-19470", "PR #57"], "Alt+1 is the ticket");
     }
 
     #[test]

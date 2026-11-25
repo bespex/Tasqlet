@@ -45,7 +45,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 1.3 Core: Schnelleingabe-Parser, Smart-Labels, Rang der Arbeitsmittel
   - [ ] 1.4 Tray, Popover-Fenster, Einzelinstanz, `--toggle`
   - [x] 1.5 Frontend-Grundlage: Rollen-Theming, Bausteine, Rückmeldung
-  - [ ] 1.6 Schnelleingabe
+  - [x] 1.6 Schnelleingabe
   - [ ] 1.7 Arbeitskarte
   - [ ] 1.8 Queue und Tastatur
   - [ ] 1.9 Kurze Wege: Öffnen, `…`-Menü, `Alt+n`, `Strg+V`, Tray-Menü
@@ -181,6 +181,9 @@ Konzept: 3.1, 3.2 (`Strg+V` ohne Ziel).
 
 **Abnahme:** Alle vier Ziele, `@Name`, `!fr` und ein reiner Link funktionieren mit Tastatur allein. Nach
 einem Jira-Link wird ein nackter Key desselben Projekts zum Chip.
+
+**Stand 2026-11-25:** umgesetzt (D27). In der Browser-Vorschau geprüft (Erkennung, Legende, alle vier
+Tasten, Rückgängig); am Desktop noch nicht ausprobiert.
 
 ### 1.7 Arbeitskarte
 

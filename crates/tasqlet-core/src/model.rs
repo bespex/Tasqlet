@@ -172,8 +172,9 @@ impl NewItem {
 }
 
 /// A resource to attach to a new item.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct NewResource {
+    #[serde(rename = "type")]
     pub kind: ResourceType,
     pub target: String,
     pub label: Option<String>,
