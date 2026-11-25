@@ -404,10 +404,17 @@
     color: var(--tq-accent);
     padding: 0;
   }
+  .go {
+    transition: box-shadow 0.12s;
+  }
   .go:hover,
   .go.ready {
     background: var(--tq-accent);
     color: var(--tq-on-accent);
+  }
+  /* The same soft glow as on the tools, only while hovering. */
+  .go:hover {
+    box-shadow: 0 0 11px 1px color-mix(in srgb, var(--tq-accent) 50%, transparent);
   }
   .go.ready:hover {
     filter: brightness(1.1);
@@ -450,16 +457,16 @@
     color: var(--tq-ink);
     box-shadow:
       0 0 0 3px var(--tq-card),
-      0 0 12px 2px color-mix(in srgb, var(--tq-accent) 55%, transparent),
-      0 3px 10px rgba(0, 0, 0, 0.45);
+      0 0 7px 0 color-mix(in srgb, var(--tq-accent) 28%, transparent),
+      0 3px 10px rgba(0, 0, 0, 0.4);
   }
   .rb:hover {
     background: var(--tq-accent);
     color: var(--tq-on-accent);
     box-shadow:
       0 0 0 3px var(--tq-card),
-      0 0 16px 4px color-mix(in srgb, var(--tq-accent) 75%, transparent),
-      0 3px 10px rgba(0, 0, 0, 0.45);
+      0 0 11px 1px color-mix(in srgb, var(--tq-accent) 50%, transparent),
+      0 3px 10px rgba(0, 0, 0, 0.4);
   }
   .delegate,
   .add {
@@ -479,8 +486,8 @@
     border-color: var(--tq-line-strong);
     box-shadow:
       0 0 0 3px var(--tq-card),
-      0 0 12px 2px color-mix(in srgb, var(--tq-accent) 55%, transparent),
-      0 3px 10px rgba(0, 0, 0, 0.45);
+      0 0 7px 0 color-mix(in srgb, var(--tq-accent) 28%, transparent),
+      0 3px 10px rgba(0, 0, 0, 0.4);
   }
   .delegate:focus,
   .add:focus,
