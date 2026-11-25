@@ -647,6 +647,8 @@
     font-size: 14px;
   }
   .steps input {
+    /* Long step text must not squeeze the box (it is a flex item). */
+    flex: none;
     margin-top: 3px;
     accent-color: var(--tq-accent);
   }
