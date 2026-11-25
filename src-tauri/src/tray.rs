@@ -297,6 +297,14 @@ impl ksni::Tray for TasqletTray {
                 ..Default::default()
             }
             .into(),
+            StandardItem {
+                label: format!("{} …", t(Key::Settings)),
+                activate: Box::new(|t: &mut Self| {
+                    let _ = crate::settings_window::open(&t.app);
+                }),
+                ..Default::default()
+            }
+            .into(),
             MenuItem::Separator,
             StandardItem {
                 label: t(Key::Quit).into(),

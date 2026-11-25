@@ -103,6 +103,7 @@ Browser-Vorschau prüfen.
 | `src-tauri/src/capture.rs` | Befehle `parse_quick`, `capture`, `undo` für die Schnelleingabe |
 | `src-tauri/src/data.rs` | `Session` der App, Speichern im Hintergrund, Neuladen bei Änderung von außen, Ereignis `store-changed` |
 | `src-tauri/src/tray.rs` | Tray (`ksni`): Symbol mit Zahl, Punkt, Tasse; Tooltip; Menü |
+| `src-tauri/src/settings_window.rs` | Einstellungen als eigenes Fenster (`?view=settings`, D40): öffnen (`open_settings`, Tray-Menü), `is_open` hält das Popover offen, beim Schließen `popover::refocus` |
 | `src-tauri/src/popover.rs` | Popover zeigen/verstecken, Position am Symbol (X11) oder in der Ecke, Schließen bei Fokusverlust |
 | `src-tauri/src/instance.rs` | Einzelinstanz: Sperrdatei und Socket je Datenordner, Befehle der CLI mit Antwort |
 | `src-tauri/src/platform.rs` | X11 oder Wayland, Fenster aktivieren (`x11rb`), Tray-Host vorhanden? |
@@ -120,7 +121,7 @@ Browser-Vorschau prüfen.
 | `src/lib/ui/SearchView.svelte`, `Mark.svelte`, `src/lib/mock-search.ts` | Suchansicht mit Markierung; vereinfachte Suche nur für die Vorschau |
 | `src/lib/ui/IdeasView.svelte`, `DelegatedView.svelte` | Reiter „Ideen“ (Karten, Brainstorm) und „Delegiert“ (nach Person gruppiert) |
 | `src/lib/ui/ElaborateView.svelte`, `ElabEditor.svelte` | Ausarbeitung: breites Fenster, links Listen, rechts Editor (`Strg+E`) |
-| `src/lib/ui/IntermezzoBar.svelte`, `SettingsView.svelte` | Zwischendurch-Leiste unten (Pillen); Einstellungen (Sprache, Popover-Position, Taste, Autostart, Erscheinungsbild mit `<sx-appearance>`, Jira vergessen) |
+| `src/lib/ui/IntermezzoBar.svelte`, `SettingsView.svelte` | Zwischendurch-Leiste unten (Pillen); Einstellungen in Reitern (Allgemein, Theme mit `<sx-appearance>`, Jira-Projekte), als Fenster (D40), in der Vorschau im Popover |
 | `src/lib/ui/Queue.svelte`, `src/lib/queue.ts` | Queue #2 … n: Tastatur, Sortieren per Zeiger am Griff, reine Hilfen dazu |
 | `src/lib/ui/QuickEntry.svelte`, `src/lib/mock-quick.ts` | Schnelleingabe mit Live-Erkennung und vier Tasten; vereinfachter Parser nur für die Vorschau |
 | `src/Gallery.svelte` | Bausteinseite, `http://localhost:1430/#bausteine` |

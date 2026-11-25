@@ -3,7 +3,7 @@
 
 use serde_json::{Value, json};
 use tasqlet_core::settings::{Language, PopoverPosition, Settings};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 use crate::data::Data;
 use crate::{autostart, popover};
@@ -41,6 +41,7 @@ pub fn set_settings(
         ..data.settings()
     })?;
     popover::set_center(&app, popover_position == PopoverPosition::Center);
+    let _ = app.emit("settings-changed", ());
     Ok(())
 }
 
@@ -54,7 +55,10 @@ pub fn set_appearance(app: AppHandle, appearance: Value) -> Result<(), String> {
     data.set_settings(Settings {
         appearance: Some(appearance),
         ..data.settings()
-    })
+    })?;
+    // The popover (and any other window) puts the new look on at once
+    let _ = app.emit("settings-changed", ());
+    Ok(())
 }
 
 /// Switch autostart at login on or off.

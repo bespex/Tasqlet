@@ -16,7 +16,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@bespex/themes": "github:bespex/kit#themes-v0.2.0",
+    "@bespex/themes": "github:bespex/kit#themes-v0.3.0",
     "@lucide/svelte": "^1.79.0",
     "@tauri-apps/api": "^2.12.5"
   },

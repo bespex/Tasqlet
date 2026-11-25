@@ -159,6 +159,17 @@ export async function restoreBackup(): Promise<void> {
   if (inTauri()) await invoke("restore_backup");
 }
 
+/** Opens the settings in a window of their own (D40); the preview shows them in the popover. */
+export async function openSettings(): Promise<void> {
+  if (inTauri()) await invoke("open_settings");
+}
+
+/** Calls `onChanged` when a setting changed in the settings window (language, appearance). */
+export async function watchSettings(onChanged: () => void): Promise<() => void> {
+  if (!inTauri()) return () => {};
+  return listen("settings-changed", onChanged);
+}
+
 /** Calls `onCapture` when the tray menu asks for quick capture. */
 export async function watchCapture(onCapture: () => void): Promise<() => void> {
   if (!inTauri()) return () => {};

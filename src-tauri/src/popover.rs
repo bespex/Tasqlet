@@ -64,7 +64,11 @@ pub fn setup(app: &AppHandle) {
     w.on_window_event(move |event| match event {
         WindowEvent::Focused(false) => {
             let state = handle.state::<PopoverState>();
-            if !recent(&state.shown_at) && !state.pinned.load(Ordering::Relaxed) {
+            // Open settings keep it open, so their changes show here at once (D40)
+            if !recent(&state.shown_at)
+                && !state.pinned.load(Ordering::Relaxed)
+                && !crate::settings_window::is_open(&handle)
+            {
                 *lock(&state.hidden_on_blur) = Some(Instant::now());
                 hide(&handle);
             }
@@ -122,6 +126,17 @@ fn settle(app: &AppHandle, w: &WebviewWindow) {
             let _ = app.clone().run_on_main_thread(move || place(&app, &w));
         }
     });
+}
+
+/// The settings closed: if the popover is still open, it gets the focus back, so that the next click
+/// elsewhere or Esc hides it as usual.
+pub fn refocus(app: &AppHandle) {
+    let Some(w) = window(app) else { return };
+    if w.is_visible().unwrap_or(false) {
+        *lock(&app.state::<PopoverState>().shown_at) = Some(Instant::now());
+        let _ = w.set_focus();
+        activate_x11(&w);
+    }
 }
 
 pub fn hide(app: &AppHandle) {

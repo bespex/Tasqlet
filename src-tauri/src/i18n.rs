@@ -57,6 +57,7 @@ pub enum Key {
     BreakThen,
     ClickHint,
     OpenAll,
+    Settings,
 }
 
 fn text(lang: Lang, key: Key) -> &'static str {
@@ -82,6 +83,8 @@ fn text(lang: Lang, key: Key) -> &'static str {
         (Lang::En, After) => "Next",
         (Lang::De, BreakThen) => "Pause. Danach weiter mit",
         (Lang::En, BreakThen) => "Break. Then back to",
+        (Lang::De, Settings) => "Einstellungen",
+        (Lang::En, Settings) => "Settings",
         (Lang::De, OpenAll) => "Alle Arbeitsmittel öffnen",
         (Lang::En, OpenAll) => "Open all resources",
         (Lang::De, ClickHint) => "Klick öffnet Tasqlet",

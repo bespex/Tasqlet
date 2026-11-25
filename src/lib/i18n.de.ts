@@ -31,7 +31,10 @@ export const de: Record<string, string> = {
   "Browser preview with sample data": "Browser-Vorschau mit Beispieldaten",
   "Esc hides the popover": "Esc versteckt das Popover",
   Components: "Bausteine",
-  Theme: "Thema",
+  Theme: "Theme",
+  General: "Allgemein",
+  "The same choice as in every be spex app. A click applies it at once.":
+    "Dieselbe Auswahl wie in jeder be spex-App. Ein Klick wendet sie sofort an.",
   "Saved as idea": "Als Idee gespeichert",
   "Marked as done": "Erledigt",
   Ctrl: "Strg",

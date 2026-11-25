@@ -19,6 +19,7 @@ mod platform;
 mod popover;
 mod prefs;
 mod search;
+mod settings_window;
 mod tray;
 
 use instance::{Request, Start};
@@ -135,6 +136,7 @@ pub fn run() {
             prefs::get_settings,
             prefs::set_settings,
             prefs::set_appearance,
+            settings_window::open_settings,
             prefs::set_autostart,
             prefs::forget_jira,
             hotkey::set_toggle_key,

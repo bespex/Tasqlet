@@ -16,11 +16,15 @@
     watchHidden,
     watchShown,
     watchDrop,
+    watchSettings,
+    getSettings,
+    openSettings,
     setPinned,
     setWide,
     type DropEvent,
   } from "./lib/backend";
-  import { t } from "./lib/i18n";
+  import { setLang, systemLang, t } from "./lib/i18n";
+  import { appearanceOf, applyAppearance } from "./lib/theme";
   import { MANY_IN_FOCUS } from "./lib/queue";
   import { showToast } from "./lib/toast.svelte";
   import type { Act, Item, Snapshot } from "./lib/types";
@@ -128,6 +132,14 @@
       watchChanged(reload),
       watchCapture(() => quick.focus()),
       watchDrop(onDrop),
+      // The settings window changed language or look: show it here at once (D40)
+      watchSettings(
+        () =>
+          void getSettings().then((s) => {
+            setLang(s.language === "auto" ? systemLang() : s.language);
+            applyAppearance(appearanceOf(s.appearance));
+          }),
+      ),
     ];
     return () => stops.forEach((stop) => void stop.then((f) => f()));
   });
@@ -332,7 +344,9 @@
       onpin={togglePin}
       onsettings={() => {
         searching = false;
-        settings = true;
+        // In the app the settings are a window of their own; the browser preview shows them here
+        if (inTauri()) void openSettings();
+        else settings = true;
       }}
     />
     <QuickEntry bind:this={quick} ondown={() => queue?.enter()} />
