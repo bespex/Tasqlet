@@ -2,7 +2,7 @@
   // Delegated (docs/KONZEPT.md 6.3, plan 2.3): grouped by the person, each entry with the day it was
   // handed over, the noted date (no reminder, D2), note, checklist and resources. Actions: back to
   // focus and done.
-  import { Check, Undo2 } from "@lucide/svelte";
+  import { Check, Maximize2, Undo2 } from "@lucide/svelte";
   import { dateLabel } from "../format";
   import { t } from "../i18n";
   import type { Act, Item } from "../types";
@@ -12,10 +12,12 @@
     items,
     run,
     open,
+    onelaborate,
   }: {
     items: Item[];
     run: (change: Act, message?: string) => Promise<boolean>;
     open: (id: string, resource: string) => void;
+    onelaborate: (id: string) => void;
   } = $props();
 
   /** People in alphabetical order, each with their entries, the longest ago first. */
@@ -55,6 +57,14 @@
           <li class="entry">
             <div class="top">
               <h3>{item.title || t("Untitled")}</h3>
+              <button
+                class="expand"
+                title={`${t("Elaborate")} (Strg+E)`}
+                aria-label={t("Elaborate")}
+                onclick={() => onelaborate(item.id)}
+              >
+                <Maximize2 size={13} />
+              </button>
               <span class="dates">
                 {t("handed over {date}", { date: dayOf(item.delegated_at) })}
                 {#if item.date}
@@ -120,7 +130,24 @@
   }
   .top {
     display: grid;
-    gap: 2px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 8px;
+    align-items: center;
+  }
+  .dates {
+    grid-column: 1 / -1;
+  }
+  .expand {
+    display: inline-grid;
+    place-items: center;
+    border: 0;
+    background: none;
+    color: var(--tq-ink-3);
+    padding: 2px;
+    border-radius: 6px;
+  }
+  .expand:hover {
+    color: var(--tq-accent);
   }
   h3 {
     margin: 0;

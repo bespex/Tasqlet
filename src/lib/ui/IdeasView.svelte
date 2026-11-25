@@ -3,7 +3,7 @@
   // three bullets of the note and "+n more", its resources and the checklist progress. A line at the
   // bottom adds a brainstorm thought with Enter (a link becomes a resource); the buttons send the idea
   // on: "→ Focus" and "⚡ In between".
-  import { Link } from "@lucide/svelte";
+  import { Link, Maximize2 } from "@lucide/svelte";
   import { ageLabel, bullets } from "../format";
   import { t } from "../i18n";
   import type { Act, Item } from "../types";
@@ -13,10 +13,12 @@
     items,
     run,
     open,
+    onelaborate,
   }: {
     items: Item[];
     run: (change: Act, message?: string) => Promise<boolean>;
     open: (id: string, resource: string) => void;
+    onelaborate: (id: string) => void;
   } = $props();
 
   const ideas = $derived(
@@ -49,6 +51,14 @@
         <div class="top">
           <h3>{p.title}</h3>
           <span class="age">{ageLabel(item.created_at)}</span>
+          <button
+            class="expand"
+            title={`${t("Elaborate")} (Strg+E)`}
+            aria-label={t("Elaborate")}
+            onclick={() => onelaborate(item.id)}
+          >
+            <Maximize2 size={13} />
+          </button>
         </div>
         {#if p.rest.length}
           <ul class="pts" role="list">
@@ -121,6 +131,19 @@
     font-size: 11.5px;
     color: var(--tq-ink-3);
     white-space: nowrap;
+  }
+  .expand {
+    display: inline-grid;
+    place-items: center;
+    border: 0;
+    background: none;
+    color: var(--tq-ink-3);
+    padding: 2px;
+    border-radius: 6px;
+    align-self: center;
+  }
+  .expand:hover {
+    color: var(--tq-accent);
   }
   .pts {
     margin-top: 6px;

@@ -7,7 +7,7 @@
 use std::collections::HashSet;
 use std::fmt;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 
 use crate::model::{ChecklistItem, Id, Item, NewItem, Resource, State, Target, title_from_note};
 
@@ -43,6 +43,12 @@ pub enum Action {
     AddCheck { id: Id, text: String },
     /// Tick or untick a step.
     ToggleCheck { id: Id, check: Id },
+    /// Change the wording of a step.
+    RenameCheck { id: Id, check: Id, text: String },
+    /// Take a step off the checklist.
+    RemoveCheck { id: Id, check: Id },
+    /// Note a date, or clear it. Only noted, never evaluated (D2).
+    SetDate { id: Id, date: Option<NaiveDate> },
     /// Attach a link, file or mail; the kind is derived from the text.
     AddResource { id: Id, target: String },
     /// A brainstorm thought: a link, file or mail becomes a resource, anything else a bullet in the note.
@@ -230,6 +236,9 @@ impl Store {
             Action::SetNote { id, note } => self.set_note(id, note, now),
             Action::AddCheck { id, text } => self.add_check(id, &text, now),
             Action::ToggleCheck { id, check } => self.toggle_check(id, check, now),
+            Action::RenameCheck { id, check, text } => self.rename_check(id, check, &text, now),
+            Action::RemoveCheck { id, check } => self.remove_check(id, check, now),
+            Action::SetDate { id, date } => self.set_date(id, date, now),
             Action::AddResource { id, target } => self.add_resource(id, &target, now),
             Action::Brainstorm { id, text } => self.brainstorm(id, &text, now),
             Action::RemoveResource { id, resource } => self.remove_resource(id, resource, now),
@@ -311,6 +320,60 @@ impl Store {
             .find(|c| c.id == check)
             .ok_or(Error::UnknownItem(check))?;
         step.done = !step.done;
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Change the wording of a step. Blank text is refused, the step stays.
+    pub fn rename_check(
+        &mut self,
+        id: Id,
+        check: Id,
+        text: &str,
+        now: DateTime<Utc>,
+    ) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let text = text.trim();
+        if text.is_empty() {
+            return Err(Error::EmptyName);
+        }
+        let step = self.items[i]
+            .checklist
+            .iter_mut()
+            .find(|c| c.id == check)
+            .ok_or(Error::UnknownItem(check))?;
+        if step.text == text {
+            return Err(Error::Unchanged);
+        }
+        step.text = text.to_string();
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Take a step off the checklist.
+    pub fn remove_check(&mut self, id: Id, check: Id, now: DateTime<Utc>) -> Result<(), Error> {
+        let i = self.index(id)?;
+        let before = self.items[i].checklist.len();
+        self.items[i].checklist.retain(|c| c.id != check);
+        if self.items[i].checklist.len() == before {
+            return Err(Error::UnknownItem(check));
+        }
+        self.items[i].updated_at = now;
+        Ok(())
+    }
+
+    /// Note a date or clear it. The date is only shown, never evaluated (D2).
+    pub fn set_date(
+        &mut self,
+        id: Id,
+        date: Option<NaiveDate>,
+        now: DateTime<Utc>,
+    ) -> Result<(), Error> {
+        let i = self.index(id)?;
+        if self.items[i].date == date {
+            return Err(Error::Unchanged);
+        }
+        self.items[i].date = date;
         self.items[i].updated_at = now;
         Ok(())
     }
@@ -1192,5 +1255,45 @@ mod tests {
             s.add_resource(a, "just words", t(2)),
             Err(Error::NotApplicable)
         );
+    }
+
+    // --- Ausarbeitung: Datum und Schritte bearbeiten ---
+
+    #[test]
+    fn date_is_noted_and_cleared_without_other_effect() {
+        let (mut s, [a, b, ..]) = sample();
+        let day = NaiveDate::from_ymd_opt(2026, 11, 27).unwrap();
+        s.set_date(b, Some(day), t(3)).unwrap();
+        assert_eq!(s.item(b).date, Some(day));
+        assert_eq!(s.item(b).state, State::Focus);
+        assert_eq!(s.set_date(b, Some(day), t(4)), Err(Error::Unchanged));
+        s.set_date(b, None, t(5)).unwrap();
+        assert_eq!(s.item(b).date, None);
+        assert_eq!(s.set_date(a, None, t(6)), Err(Error::Unchanged));
+        ok(&s);
+    }
+
+    #[test]
+    fn steps_can_be_reworded_and_removed() {
+        let (mut s, [a, ..]) = sample();
+        s.add_check(a, "eins", t(1)).unwrap();
+        s.add_check(a, "zwei", t(2)).unwrap();
+        let first = s.item(a).checklist[0].id;
+        let second = s.item(a).checklist[1].id;
+        s.rename_check(a, first, "  erstens ", t(3)).unwrap();
+        assert_eq!(s.item(a).checklist[0].text, "erstens");
+        assert_eq!(
+            s.rename_check(a, first, "erstens", t(4)),
+            Err(Error::Unchanged)
+        );
+        assert_eq!(s.rename_check(a, first, "  ", t(4)), Err(Error::EmptyName));
+        s.remove_check(a, first, t(5)).unwrap();
+        assert_eq!(s.item(a).checklist.len(), 1);
+        assert_eq!(s.item(a).checklist[0].id, second);
+        assert_eq!(
+            s.remove_check(a, first, t(6)),
+            Err(Error::UnknownItem(first))
+        );
+        ok(&s);
     }
 }

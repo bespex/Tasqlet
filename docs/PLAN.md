@@ -55,7 +55,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 2.1 Zwischendurch-Leiste
   - [x] 2.2 Ideen (vorgezogen vor 1.11, damit der Alltagstest sie hat)
   - [x] 2.3 Delegiert (vorgezogen vor 1.11)
-  - [ ] 2.4 Ausarbeitung (Split-View)
+  - [x] 2.4 Ausarbeitung (Split-View)
   - [ ] 2.5 Ablegen ins Popover, CLI `add`, `open`, `current`, `list`
   - [ ] 2.6 Themen: alle Paletten, beide Achsen, Theme-Dateien, Einstellungen
   - [ ] 2.7 MCP-Server für KI-Assistenten

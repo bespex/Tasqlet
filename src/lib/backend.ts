@@ -74,6 +74,17 @@ export async function hidePopover(): Promise<void> {
   if (inTauri()) await invoke("hide_popover");
 }
 
+/** Calls `onHidden` whenever the popover was hidden (focus lost, Esc, tray), so the UI can step back. */
+export async function watchHidden(onHidden: () => void): Promise<() => void> {
+  if (!inTauri()) return () => {};
+  return listen("popover-hidden", onHidden);
+}
+
+/** Makes the popover twice as wide for the elaboration, or normal again. No-op in the browser. */
+export async function setWide(wide: boolean): Promise<void> {
+  if (inTauri()) await invoke("set_wide", { wide });
+}
+
 /** Calls `onShown` whenever the app has just shown the popover, so the UI can refresh. */
 export async function watchShown(onShown: () => void): Promise<() => void> {
   if (!inTauri()) return () => {};
@@ -303,6 +314,23 @@ export async function act(change: Act): Promise<void> {
       step.done = !step.done;
       break;
     }
+    case "rename_check": {
+      const text = change.text.trim();
+      if (!text) throw new Error("empty name");
+      const step = find(change.id).checklist.find((c) => c.id === change.check);
+      if (!step) throw new Error("unknown step");
+      step.text = text;
+      break;
+    }
+    case "remove_check": {
+      const item = find(change.id);
+      if (!item.checklist.some((c) => c.id === change.check)) throw new Error("unknown step");
+      item.checklist = item.checklist.filter((c) => c.id !== change.check);
+      break;
+    }
+    case "set_date":
+      find(change.id).date = change.date;
+      break;
     case "add_resource": {
       const target = change.target.trim();
       const entry = mockParse(target);

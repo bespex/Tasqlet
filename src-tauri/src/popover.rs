@@ -31,6 +31,8 @@ pub struct PopoverState {
     hidden_on_blur: Mutex<Option<Instant>>,
     /// Without an icon position: the middle of the screen instead of the top right corner.
     center: AtomicBool,
+    /// The elaboration is open: wide, and always in the middle of the screen.
+    wide: AtomicBool,
 }
 
 /// Where the popover goes without an icon position (a setting, plan 2.6).
@@ -122,8 +124,79 @@ fn settle(app: &AppHandle, w: &WebviewWindow) {
 
 pub fn hide(app: &AppHandle) {
     if let Some(w) = window(app) {
+        // The next time it opens, it is the normal popover again, not the elaboration.
+        app.state::<PopoverState>()
+            .wide
+            .store(false, Ordering::Relaxed);
+        resize(app, &w, false);
         let _ = w.hide();
+        let _ = app.emit_to(LABEL, "popover-hidden", ());
     }
+}
+
+/// Width of the popover, normal and with the elaboration beside the lists (plan 2.4, `KONZEPT.md` 6.5).
+const WIDTH: f64 = 470.0;
+const WIDTH_WIDE: f64 = 940.0;
+
+/// Height of the normal popover.
+const HEIGHT: f64 = 680.0;
+
+/// The monitor the popover is on (or would appear on).
+fn monitor_of(app: &AppHandle, w: &WebviewWindow) -> Option<tauri::Monitor> {
+    let anchor = *lock(&app.state::<PopoverState>().anchor);
+    let point = anchor.or_else(|| app.cursor_position().ok().map(|p| (p.x as i32, p.y as i32)));
+    point
+        .and_then(|(x, y)| w.monitor_from_point(x as f64, y as f64).ok().flatten())
+        .or_else(|| w.primary_monitor().ok().flatten())
+}
+
+/// The size of the elaboration: roomy, but never larger than the screen allows (logical pixels).
+pub fn wide_size(work_area: (f64, f64)) -> (f64, f64) {
+    let (aw, ah) = work_area;
+    let width = (aw * 0.75)
+        .clamp(WIDTH_WIDE, 1280.0)
+        .min(aw - 2.0 * MARGIN as f64);
+    let height = (ah * 0.88)
+        .clamp(HEIGHT, 900.0)
+        .min(ah - 2.0 * MARGIN as f64);
+    (width, height)
+}
+
+/// Resize to the normal popover or the roomy elaboration.
+fn resize(app: &AppHandle, w: &WebviewWindow, wide: bool) {
+    let size = if wide {
+        monitor_of(app, w).map_or((WIDTH_WIDE, HEIGHT), |m| {
+            let scale = m.scale_factor();
+            let area = m.work_area();
+            wide_size((
+                area.size.width as f64 / scale,
+                area.size.height as f64 / scale,
+            ))
+        })
+    } else {
+        (WIDTH, HEIGHT)
+    };
+    let _ = w.set_size(tauri::LogicalSize::new(size.0, size.1));
+}
+
+/// Make the popover roomy for the elaboration, always in the middle of the screen, or normal again
+/// (back at the icon). Only a real change moves the window: navigating inside the elaboration, or a
+/// window the user has dragged elsewhere, stays where it is.
+#[tauri::command]
+pub fn set_wide(app: AppHandle, wide: bool) {
+    let Some(w) = window(&app) else { return };
+    if app
+        .state::<PopoverState>()
+        .wide
+        .swap(wide, Ordering::Relaxed)
+        == wide
+    {
+        return;
+    }
+    resize(&app, &w, wide);
+    // The window manager applies the size a moment later: place again afterwards.
+    place(&app, &w);
+    settle(&app, &w);
 }
 
 #[tauri::command]
@@ -162,7 +235,8 @@ pub fn position(
 }
 
 fn place(app: &AppHandle, w: &WebviewWindow) {
-    let anchor = if crate::platform::is_x11() {
+    let wide = app.state::<PopoverState>().wide.load(Ordering::Relaxed);
+    let anchor = if crate::platform::is_x11() && !wide {
         *lock(&app.state::<PopoverState>().anchor)
     } else {
         None
@@ -184,7 +258,7 @@ fn place(app: &AppHandle, w: &WebviewWindow) {
             area.size.height as i32,
         ),
         (size.width as i32, size.height as i32),
-        app.state::<PopoverState>().center.load(Ordering::Relaxed),
+        wide || app.state::<PopoverState>().center.load(Ordering::Relaxed),
     );
     let _ = w.set_position(PhysicalPosition::new(x, y));
 }
@@ -236,6 +310,17 @@ mod tests {
             position(None, (1920, 0, 2560, 1440), SIZE, false),
             (4002, 8)
         );
+    }
+
+    #[test]
+    fn the_elaboration_is_roomy_but_fits_the_screen() {
+        // A big screen: capped, not stretched over everything.
+        assert_eq!(wide_size((2560.0, 1400.0)), (1280.0, 900.0));
+        // A laptop: three quarters of the width, but at least the normal height.
+        assert_eq!(wide_size((1366.0, 728.0)), (1024.5, 680.0));
+        // A small screen: smaller than the preferred size, still inside the work area.
+        let (w, h) = wide_size((800.0, 600.0));
+        assert!(w <= 784.0 && h <= 584.0);
     }
 
     #[test]

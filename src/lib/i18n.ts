@@ -6,6 +6,7 @@
 //   t("{n} items in focus", { n: 3 })   text with values
 
 import { de } from "./i18n.de";
+import { langRevision } from "./lang.svelte";
 
 export type Lang = "en" | "de";
 
@@ -18,15 +19,19 @@ let lang: Lang = systemLang();
 
 /** Switch the language (tests, later the settings of plan 2.6). */
 export function setLang(next: Lang): void {
+  if (next === lang) return;
   lang = next;
+  langRevision.n++;
 }
 
 export function currentLang(): Lang {
+  void langRevision.n;
   return lang;
 }
 
 /** The text in the current language, with `{name}` replaced by `values.name`. */
 export function t(text: string, values?: Record<string, string | number>): string {
+  void langRevision.n; // subscribes the caller to a change of the language
   const translated = lang === "de" ? (de[text] ?? text) : text;
   if (!values) return translated;
   return translated.replace(/\{(\w+)\}/g, (all, name: string) => (name in values ? String(values[name]) : all));

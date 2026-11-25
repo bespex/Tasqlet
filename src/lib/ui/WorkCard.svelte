@@ -17,6 +17,7 @@
     open,
     openAll,
     people = [],
+    onelaborate,
   }: {
     item: Item;
     onbreak?: boolean;
@@ -26,6 +27,8 @@
     openAll: () => void;
     /** Names of earlier recipients, offered when delegating. */
     people?: string[];
+    /** Opens the elaboration of this task. */
+    onelaborate: () => void;
     /** Carries out a change; `message` is the feedback line (with "Undo") on success. Resolves to success. */
     run: (change: Act, message?: string) => Promise<boolean>;
   } = $props();
@@ -394,7 +397,7 @@
       {#if item.checklist.length}<span>{steps}/{item.checklist.length}</span>{/if}
       {#if item.date}<span>{dateLabel(item.date)}</span>{/if}
       <span class="sp"></span>
-      <button class="elab" disabled title={t("Comes with the elaboration view")}>
+      <button class="elab" title={`${t("Elaborate")} (Strg+E)`} onclick={onelaborate}>
         <Maximize2 size={13} />{t("Elaborate")}
       </button>
     </footer>

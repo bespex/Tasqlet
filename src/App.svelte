@@ -13,13 +13,16 @@
     undo,
     watchCapture,
     watchChanged,
+    watchHidden,
     watchShown,
+    setWide,
   } from "./lib/backend";
   import { t } from "./lib/i18n";
   import { MANY_IN_FOCUS } from "./lib/queue";
   import { showToast } from "./lib/toast.svelte";
   import type { Act, Item, Snapshot } from "./lib/types";
   import Notice from "./lib/ui/Notice.svelte";
+  import ElaborateView from "./lib/ui/ElaborateView.svelte";
   import DelegatedView from "./lib/ui/DelegatedView.svelte";
   import IdeasView from "./lib/ui/IdeasView.svelte";
   import IntermezzoBar from "./lib/ui/IntermezzoBar.svelte";
@@ -35,7 +38,8 @@
   let view = $state("focus");
   let searching = $state(false);
   let settings = $state(false);
-  let headHeight = $state(48);
+  /** The item being elaborated (plan 2.4), or null. */
+  let elab = $state<string | null>(null);
   const preview = !inTauri();
 
   const items = $derived(snapshot?.items ?? []);
@@ -57,6 +61,28 @@
     settings = false;
     searching = true;
   }
+  function openElab(id: string | null | undefined) {
+    if (!id) return;
+    settings = false;
+    searching = false;
+    elab = id;
+  }
+  function closeElab() {
+    elab = null;
+    void tick().then(() => quick.focus());
+  }
+  // The popover is twice as wide while elaborating.
+  const wide = $derived(elab !== null);
+  $effect(() => {
+    void setWide(wide);
+  });
+  /** Ctrl+E: the selected or hovered queue line, else the current task, else the newest idea. */
+  const elabTarget = () =>
+    queue?.target() ??
+    (view === "idea"
+      ? items.filter((i) => i.state === "idea").sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.id
+      : undefined) ??
+    focus[0]?.id;
   function closeSettings() {
     settings = false;
     void tick().then(() => quick.focus());
@@ -68,6 +94,7 @@
   function selectTab(id: string) {
     view = id;
     settings = false;
+    elab = null;
     if (searching) closeSearch();
   }
 
@@ -80,7 +107,12 @@
       void reload();
       quick.focus();
     };
-    const stops = [watchShown(shown), watchChanged(reload), watchCapture(() => quick.focus())];
+    // Hidden while elaborating or in the settings: the next opening is the normal popover again.
+    const hidden = () => {
+      elab = null;
+      settings = false;
+    };
+    const stops = [watchShown(shown), watchHidden(hidden), watchChanged(reload), watchCapture(() => quick.focus())];
     return () => stops.forEach((stop) => void stop.then((f) => f()));
   });
 
@@ -172,8 +204,13 @@
     if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "f") {
       e.preventDefault();
       openSearch();
+    } else if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "e") {
+      e.preventDefault();
+      if (elab) closeElab();
+      else openElab(elabTarget());
     } else if (e.key === "Escape") {
       if (settings) closeSettings();
+      else if (elab) closeElab();
       else if (searching) closeSearch();
       else void hidePopover();
     } else if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "z" && !typing(e.target)) {
@@ -186,19 +223,17 @@
 <svelte:window onkeydown={onKey} onpaste={onPaste} />
 
 <div class="stage" class:preview>
-  <div class="pop">
-    <div class="head" bind:clientHeight={headHeight}>
-      <Tabs
-        {tabs}
-        active={searching || settings ? "" : view}
-        onselect={selectTab}
-        onsearch={openSearch}
-        onsettings={() => {
-          searching = false;
-          settings = true;
-        }}
-      />
-    </div>
+  <div class="pop" class:wide>
+    <Tabs
+      {tabs}
+      active={searching || settings ? "" : view}
+      onselect={selectTab}
+      onsearch={openSearch}
+      onsettings={() => {
+        searching = false;
+        settings = true;
+      }}
+    />
     <QuickEntry bind:this={quick} ondown={() => queue?.enter()} />
 
     {#if snapshot?.tray_missing}
@@ -228,9 +263,9 @@
           onclose={closeSearch}
         />
       {:else if view === "idea"}
-        <IdeasView {items} {run} open={(id, resource) => void openFor(id, resource)} />
+        <IdeasView {items} {run} open={(id, resource) => void openFor(id, resource)} onelaborate={openElab} />
       {:else if view === "delegated"}
-        <DelegatedView {items} {run} open={(id, resource) => void openFor(id, resource)} />
+        <DelegatedView {items} {run} open={(id, resource) => void openFor(id, resource)} onelaborate={openElab} />
       {:else if focus.length === 0}
         <div class="empty">
           <p><b>{t("Nothing urgent.")}</b><br />{t("Ctrl ⏎ in the quick entry puts a task into focus.")}</p>
@@ -243,6 +278,7 @@
           {people}
           open={(resource) => void openFor(focus[0].id, resource)}
           openAll={() => void openFor(focus[0].id, null)}
+          onelaborate={() => openElab(focus[0].id)}
         />
         <Queue
           bind:this={queue}
@@ -250,6 +286,7 @@
           {run}
           open={(id, resource) => void openFor(id, resource)}
           onup={() => quick.focus()}
+          onelaborate={openElab}
         />
         {#if focus.length >= MANY_IN_FOCUS}
           <p class="quiet">{t("Is all of this urgent?")}</p>
@@ -259,8 +296,22 @@
 
     <IntermezzoBar {items} {run} />
 
+    {#if elab}
+      <div class="overlay elab">
+        <ElaborateView
+          {items}
+          id={elab}
+          {people}
+          {run}
+          open={(id, resource) => void openFor(id, resource)}
+          onpick={(id) => (elab = id)}
+          onclose={closeElab}
+        />
+      </div>
+    {/if}
+
     {#if settings}
-      <div class="overlay" style:top="{headHeight}px">
+      <div class="overlay">
         <SettingsView onclose={closeSettings} />
       </div>
     {/if}
@@ -298,8 +349,16 @@
     overflow: hidden;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.38);
   }
+  .preview .pop.wide {
+    width: 940px;
+  }
+  .overlay.elab {
+    z-index: 15;
+    overflow: hidden;
+  }
   .overlay {
     position: absolute;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;

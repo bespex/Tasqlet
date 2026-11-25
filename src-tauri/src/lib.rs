@@ -83,6 +83,7 @@ pub fn run() {
             schema_version,
             snapshot,
             popover::hide_popover,
+            popover::set_wide,
             data::restore_backup,
             capture::parse_quick,
             capture::capture,

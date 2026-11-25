@@ -3,7 +3,7 @@
   // line back to the quick entry), Enter takes over, Alt+↑/↓ move, Alt+Home next. Sorting by pointer
   // goes through the grip (no HTML5 drag and drop, which WebKitGTK handles badly).
   import { tick } from "svelte";
-  import { Link, ListStart, Play } from "@lucide/svelte";
+  import { Link, ListStart, Maximize2, Play } from "@lucide/svelte";
   import { t } from "../i18n";
   import { dropIndex, moveDelta } from "../queue";
   import type { Act, Item } from "../types";
@@ -15,6 +15,7 @@
     run,
     open,
     onup,
+    onelaborate,
   }: {
     items: Item[];
     /** Opens one resource of a task (ranks it first). */
@@ -22,6 +23,8 @@
     run: (change: Act, message?: string) => Promise<boolean>;
     /** ↑ on the first line: back into the quick entry. */
     onup?: () => void;
+    /** Opens the elaboration of a task. */
+    onelaborate: (id: string) => void;
   } = $props();
 
   let list: HTMLElement;
@@ -163,6 +166,14 @@
         {/if}
       {/snippet}
       {#snippet tools()}
+        <button
+          class="ib"
+          title={`${t("Elaborate")} (Strg+E)`}
+          aria-label={t("Elaborate")}
+          onclick={(e) => (e.stopPropagation(), onelaborate(item.id))}
+        >
+          <Maximize2 size={15} />
+        </button>
         {#if i > 0}
           <button
             class="ib"

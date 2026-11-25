@@ -34,3 +34,27 @@ export function bullets(note: string): string[] {
     .map((l) => l.trim().replace(/^[-*•]\s*/, ""))
     .filter(Boolean);
 }
+
+/**
+ * A day typed by hand: `2026-11-27`, `27.11.`, `27.11.26`, `27.11.2026`, "today", "tomorrow" (also in
+ * German). Empty text clears the date (null); anything else yields `undefined` (not understood).
+ * The year defaults to this year; a day that does not exist (31.02.) is not understood.
+ */
+export function parseDay(text: string, today: Date = new Date()): string | null | undefined {
+  const v = text.trim().toLowerCase();
+  if (!v) return null;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const iso = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (v === "today" || v === "heute") return iso(base);
+  if (v === "tomorrow" || v === "morgen") return iso(new Date(base.getFullYear(), base.getMonth(), base.getDate() + 1));
+  let y: number, m: number, d: number;
+  let hit = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(v);
+  if (hit) [y, m, d] = [+hit[1], +hit[2], +hit[3]];
+  else if ((hit = /^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})?$/.exec(v))) {
+    [m, d] = [+hit[2], +hit[1]];
+    y = hit[3] ? (hit[3].length === 2 ? 2000 + +hit[3] : +hit[3]) : base.getFullYear();
+  } else return undefined;
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d ? iso(date) : undefined;
+}

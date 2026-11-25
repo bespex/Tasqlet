@@ -89,3 +89,34 @@ describe("settings in the preview", () => {
     expect(now.jira.map((j) => j.project)).not.toContain(first.jira[0].project);
   });
 });
+
+describe("elaboration helpers", () => {
+  it("understands a typed day", async () => {
+    const { parseDay } = await import("./format");
+    const today = new Date(2026, 10, 25);
+    expect(parseDay("", today)).toBeNull();
+    expect(parseDay("2026-11-27", today)).toBe("2026-11-27");
+    expect(parseDay("27.11.", today)).toBe("2026-11-27");
+    expect(parseDay("1.2.27", today)).toBe("2027-02-01");
+    expect(parseDay("3.4.2028", today)).toBe("2028-04-03");
+    expect(parseDay("morgen", today)).toBe("2026-11-26");
+    expect(parseDay("Today", today)).toBe("2026-11-25");
+    expect(parseDay("31.02.", today)).toBeUndefined();
+    expect(parseDay("bald", today)).toBeUndefined();
+  });
+
+  it("edits date and steps of any item", async () => {
+    mock.reset();
+    const item = mock.snapshot().items.find((i) => i.checklist.length > 1)!;
+    await act({ kind: "set_date", id: item.id, date: "2026-12-01" });
+    expect(mock.snapshot().items.find((i) => i.id === item.id)!.date).toBe("2026-12-01");
+    await act({ kind: "set_date", id: item.id, date: null });
+    expect(mock.snapshot().items.find((i) => i.id === item.id)!.date).toBeNull();
+    const step = item.checklist[0];
+    await act({ kind: "rename_check", id: item.id, check: step.id, text: "  neu  " });
+    expect(mock.snapshot().items.find((i) => i.id === item.id)!.checklist[0].text).toBe("neu");
+    await expect(act({ kind: "rename_check", id: item.id, check: step.id, text: " " })).rejects.toThrow();
+    await act({ kind: "remove_check", id: item.id, check: step.id });
+    expect(mock.snapshot().items.find((i) => i.id === item.id)!.checklist).toHaveLength(item.checklist.length - 1);
+  });
+});

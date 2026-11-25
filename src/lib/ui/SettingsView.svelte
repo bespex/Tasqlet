@@ -37,11 +37,8 @@
 
   const save = (language: Language, position: PopoverPosition) =>
     guard(async () => {
-      const changed = language !== s?.language;
       await setSettings(language, position);
       setLang(language === "auto" ? systemLang() : language);
-      // The texts are drawn once; a reload draws them in the new language (the data is in the shell).
-      if (changed) location.reload();
     });
 </script>
 
@@ -115,9 +112,13 @@
 
 <style>
   .settings {
-    padding: 8px 16px 16px;
+    padding: 12px 16px 16px;
   }
   header {
+    padding: 4px 0 10px;
+    margin: 0 -16px;
+    padding-inline: 16px;
+    border-bottom: 1px solid var(--tq-c-divider, var(--tq-line));
     display: flex;
     align-items: center;
     justify-content: space-between;

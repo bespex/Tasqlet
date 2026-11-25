@@ -99,6 +99,9 @@ export type Act =
   | { kind: "toggle_check"; id: string; check: string }
   | { kind: "add_resource"; id: string; target: string }
   | { kind: "brainstorm"; id: string; text: string }
+  | { kind: "rename_check"; id: string; check: string; text: string }
+  | { kind: "remove_check"; id: string; check: string }
+  | { kind: "set_date"; id: string; date: string | null }
   | { kind: "remove_resource"; id: string; resource: string };
 
 /** What the search returns: hits best first, or the recently finished items without a query. */
