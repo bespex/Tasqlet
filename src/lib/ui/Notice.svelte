@@ -29,19 +29,19 @@
     gap: 10px;
     margin: 12px 14px 0;
     padding: 10px 12px;
-    border: 1px solid var(--tq-line-strong);
-    border-radius: 10px;
-    background: var(--tq-card);
+    border: 1px solid var(--sx-line-strong);
+    border-radius: var(--sx-radius-l);
+    background: var(--sx-surface);
     font-size: 13px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .notice.warn {
-    border-color: var(--tq-accent);
-    background: var(--tq-accent-soft);
-    color: var(--tq-ink);
+    border-color: var(--sx-accent);
+    background: var(--sx-accent-soft);
+    color: var(--sx-ink);
   }
   .ic {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
     padding-top: 1px;
   }
   .tx {
@@ -49,7 +49,7 @@
     gap: 4px;
   }
   b {
-    color: var(--tq-ink);
+    color: var(--sx-ink);
   }
   p {
     margin: 0;
@@ -57,15 +57,15 @@
   .btn {
     justify-self: start;
     margin-top: 4px;
-    border: 1px solid var(--tq-line-strong);
-    background: var(--tq-card);
-    color: var(--tq-ink);
-    border-radius: 8px;
+    border: 1px solid var(--sx-line-strong);
+    background: var(--sx-surface);
+    color: var(--sx-ink);
+    border-radius: var(--sx-radius-l);
     padding: 5px 10px;
     font-size: 13px;
     font-weight: 500;
   }
   .btn:hover {
-    background: var(--tq-hover);
+    background: var(--sx-hover);
   }
 </style>

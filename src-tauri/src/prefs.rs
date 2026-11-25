@@ -1,4 +1,4 @@
-//! Settings dialog (plan 2.6 in a slim form): language, popover position, autostart and the learned
+//! Settings dialog (plan 2.6): language, popover position, appearance, autostart and the learned
 //! Jira projects; the global key is in `hotkey`. The rules and the files are the core's; this is the bridge.
 
 use serde_json::{Value, json};
@@ -16,6 +16,7 @@ pub fn get_settings(app: AppHandle) -> Value {
     let mut value = json!({
         "language": settings.language,
         "popover_position": settings.popover_position,
+        "appearance": settings.appearance,
         "autostart": autostart::enabled(),
         "wayland": !crate::platform::is_x11(),
         "jira": data.jira().projects().map(|(project, base)| json!({"project": project, "base": base})).collect::<Vec<_>>(),
@@ -41,6 +42,19 @@ pub fn set_settings(
     })?;
     popover::set_center(&app, popover_position == PopoverPosition::Center);
     Ok(())
+}
+
+/// Save colour theme and style as the interface hands them over (`@bespex/themes` checks them there).
+#[tauri::command]
+pub fn set_appearance(app: AppHandle, appearance: Value) -> Result<(), String> {
+    if !appearance.is_object() {
+        return Err("appearance must be an object".into());
+    }
+    let data = app.state::<Data>();
+    data.set_settings(Settings {
+        appearance: Some(appearance),
+        ..data.settings()
+    })
 }
 
 /// Switch autostart at login on or off.

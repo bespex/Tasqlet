@@ -114,20 +114,20 @@
     padding: 8px 16px 2px;
     font-size: 12.5px;
     font-weight: 700;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     letter-spacing: 0.02em;
   }
   .count {
     font-weight: 600;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     margin-left: 4px;
   }
   .entry {
     margin: 6px 14px;
     padding: 10px 12px;
-    background: var(--tq-card);
-    border: 1px solid var(--tq-line);
-    border-radius: 10px;
+    background: var(--sx-surface);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
   }
   .top {
     display: grid;
@@ -143,12 +143,12 @@
     place-items: center;
     border: 0;
     background: none;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     padding: 2px;
-    border-radius: 6px;
+    border-radius: var(--sx-radius-m);
   }
   .expand:hover {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
   }
   h3 {
     margin: 0;
@@ -158,13 +158,13 @@
   }
   .dates {
     font-size: 11.5px;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .note {
     margin: 6px 0 0;
     white-space: pre-wrap;
     font-size: 13px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     max-height: 100px;
     overflow-y: auto;
   }
@@ -175,7 +175,7 @@
     font-size: 13px;
   }
   .steps .done {
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .chips {
     display: flex;
@@ -192,18 +192,18 @@
     display: inline-flex;
     gap: 5px;
     align-items: center;
-    border: 1px solid var(--tq-line-strong);
-    background: var(--tq-field);
-    color: var(--tq-ink);
-    border-radius: 8px;
+    border: 1px solid var(--sx-line-strong);
+    background: var(--sx-field);
+    color: var(--sx-ink);
+    border-radius: var(--sx-radius-l);
     padding: 4px 11px;
     font-size: 12.5px;
   }
   .acts button:hover {
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .acts .primary {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
     font-weight: 600;
   }
   .empty {
@@ -211,13 +211,13 @@
     justify-items: center;
     text-align: center;
     padding: 48px 24px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .empty p {
     margin: 0;
     max-width: 34ch;
   }
   .empty b {
-    color: var(--tq-ink);
+    color: var(--sx-ink);
   }
 </style>

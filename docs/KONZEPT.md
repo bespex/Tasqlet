@@ -301,6 +301,10 @@ dann Arbeitsmittel, Checkliste und Notiz mit `+` an den Überschriften. `Esc` od
 
 ## 7. Farbthemen
 
+> Stand 2026-11-25 (D38): Umgesetzt über das gemeinsame be spex kit (`../kit`, `PLAN.md` K1–K4).
+> Paletten sind dort Farbthemen, die beiden Achsen sind die Stilachsen `emphasis` und `chrome`, die
+> Rollen heißen `--sx-*`. Dieser Abschnitt bleibt als Herkunft der Achsen und der Kontrasttabelle.
+
 Die Oberfläche kennt keine festen Farben, nur Rollen. Ein Thema besteht aus drei Teilen: einer
 **Palette** und zwei **Achsen**.
 

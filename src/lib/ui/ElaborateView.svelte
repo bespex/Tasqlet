@@ -95,20 +95,20 @@
   .left {
     overflow-y: auto;
     padding: 14px 8px;
-    border-right: 1px solid var(--tq-line);
-    background: var(--tq-field);
+    border-right: 1px solid var(--sx-line);
+    background: var(--sx-field);
   }
   .gt {
     padding: 0 6px;
     font-size: 12px;
     font-weight: 700;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     letter-spacing: 0.03em;
   }
   .gh {
     margin: 14px 6px 4px;
     font-size: 12px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .sl {
     display: block;
@@ -116,21 +116,21 @@
     text-align: left;
     border: 0;
     background: none;
-    color: var(--tq-ink);
+    color: var(--sx-ink);
     font: inherit;
     font-size: 13px;
     padding: 6px 8px;
-    border-radius: 7px;
+    border-radius: var(--sx-radius-m);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .sl:hover {
-    background: var(--tq-hover, var(--tq-card));
+    background: var(--sx-hover, var(--sx-surface));
   }
   .sl.on {
-    background: var(--tq-card);
-    box-shadow: 0 0 0 1px var(--tq-line);
+    background: var(--sx-surface);
+    box-shadow: 0 0 0 1px var(--sx-line);
     font-weight: 600;
   }
   .right {
@@ -148,9 +148,9 @@
   }
   kbd {
     font-size: 11px;
-    color: var(--tq-ink-3);
-    border: 1px solid var(--tq-line);
-    border-radius: 4px;
+    color: var(--sx-ink-3);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-s);
     padding: 0 5px;
   }
   .x {
@@ -158,12 +158,12 @@
     place-items: center;
     border: 1px solid transparent;
     background: none;
-    color: var(--tq-ink-2);
-    border-radius: 8px;
+    color: var(--sx-ink-2);
+    border-radius: var(--sx-radius-l);
     padding: 4px;
   }
   .x:hover {
-    color: var(--tq-accent);
-    border-color: var(--tq-line-strong);
+    color: var(--sx-accent-ink);
+    border-color: var(--sx-line-strong);
   }
 </style>

@@ -1,10 +1,13 @@
 <script lang="ts">
-  // Components page (plan 1.5, acceptance): every component in every theme available so far, light
-  // and dark, to compare with the click dummy. Open with http://localhost:1430/#bausteine.
+  // Components page (plan 1.5, acceptance; plan 2.6): every component in a sample of colour themes and
+  // styles from @bespex/themes, light and dark, to compare with the click dummy. All themes in all
+  // styles are on the kit's own gallery (../kit/themes/gallery). Open with
+  // http://localhost:1430/#bausteine.
   import { ArrowUpToLine, Play } from "@lucide/svelte";
   import { t } from "./lib/i18n";
   import { mockSnapshot } from "./lib/mock-data";
-  import { PRESETS, type Theme } from "./lib/theme";
+  import { resolveStyle, type Appearance } from "@bespex/themes";
+  import { DEFAULT_APPEARANCE } from "./lib/theme";
   import Chip from "./lib/ui/Chip.svelte";
   import Notice from "./lib/ui/Notice.svelte";
   import Row from "./lib/ui/Row.svelte";
@@ -21,14 +24,19 @@
     { id: "delegated", label: t("Delegated"), count: 2 },
   ];
 
-  const byName = (name: string) => PRESETS.find((p) => p.name === name)!;
-  const variants: { label: string; theme: Theme; scheme?: "light" | "dark" }[] = [
-    { label: "Leitstand", theme: byName("Leitstand") },
-    { label: "Automatisch · hell", theme: byName("Automatisch"), scheme: "light" },
-    { label: "Automatisch · dunkel", theme: byName("Automatisch"), scheme: "dark" },
-    { label: "Papier", theme: byName("Papier") },
-    { label: "Graphit", theme: byName("Graphit") },
+  const variants: { label: string; look: Appearance }[] = [
+    { label: "Fjord · Vorgabe (Leitstand)", look: DEFAULT_APPEARANCE },
+    { label: "Papier · Ruhig", look: { theme: "paper", style: "calm" } },
+    { label: "Graphit · Werkzeug", look: { theme: "graphite", style: "tool" } },
+    { label: "Papier · Bühne", look: { theme: "paper", style: "stage" } },
+    { label: "Salbei · Plastisch", look: { theme: "sage", style: "plastic" } },
+    { label: "Kontrast · Ruhig", look: { theme: "contrast", style: "calm" } },
   ];
+  /** Theme and style as the attributes the kit's stylesheet reads, on the frame itself. */
+  const attrs = (look: Appearance) => ({
+    "data-sx-theme": look.theme,
+    ...Object.fromEntries(Object.entries(resolveStyle(look.style)).map(([axis, step]) => [`data-sx-${axis}`, step])),
+  });
   let selected = $state(queue[1]?.id);
 </script>
 
@@ -36,13 +44,7 @@
   <h1>Tasqlet · {t("Components")}</h1>
   <div class="grid">
     {#each variants as v (v.label)}
-      <section
-        class="frame"
-        data-tq={v.theme.palette}
-        data-focus={v.theme.focus}
-        data-chrome={v.theme.chrome}
-        style:color-scheme={v.scheme}
-      >
+      <section class="frame" {...attrs(v.look)}>
         <h2>{t("Theme")}: {v.label}</h2>
         <div class="pop">
           <Tabs {tabs} active="focus" onselect={() => {}} onsearch={() => {}} />
@@ -54,7 +56,7 @@
             action={t("Restore the previous version")}
             onaction={() => {}}
           />
-          <article class="card zone-focus">
+          <article class="card sx-emphasis">
             <h3>{top.title}</h3>
             <Section label={t("Resources")} onadd={() => {}}>
               <div class="chips">
@@ -133,10 +135,10 @@
     color: #c9d1d9;
   }
   .pop {
-    background: var(--tq-bg);
-    color: var(--tq-ink);
-    border: 1px solid var(--tq-line);
-    border-radius: 14px;
+    background: var(--sx-bg);
+    color: var(--sx-ink);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
     overflow: hidden;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.38);
     padding-bottom: 12px;
@@ -144,10 +146,10 @@
   .card {
     margin: 14px;
     padding: 14px 16px 16px;
-    background: var(--tq-card);
-    border: var(--tq-f-border-w) solid var(--tq-f-border);
-    border-radius: 12px;
-    box-shadow: var(--tq-f-shadow);
+    background: var(--sx-surface);
+    border: var(--sx-emph-border-w) solid var(--sx-emph-border);
+    border-radius: var(--sx-radius-l);
+    box-shadow: var(--sx-emph-shadow);
   }
   h3 {
     font-size: 17px;
@@ -178,13 +180,13 @@
     width: 16px;
     height: 16px;
     margin: 2px 0 0;
-    accent-color: var(--tq-accent);
+    accent-color: var(--sx-accent);
     flex: none;
   }
   .chk .done span {
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     text-decoration: line-through;
-    text-decoration-color: var(--tq-ink-3);
+    text-decoration-color: var(--sx-ink-3);
   }
   .ib {
     width: 30px;
@@ -193,15 +195,15 @@
     place-items: center;
     border: 1px solid transparent;
     background: none;
-    border-radius: 8px;
-    color: var(--tq-ink-2);
+    border-radius: var(--sx-radius-l);
+    color: var(--sx-ink-2);
   }
   .ib:hover {
-    background: var(--tq-hover);
-    color: var(--tq-ink);
+    background: var(--sx-hover);
+    color: var(--sx-ink);
   }
   .ib.run {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
   }
   .toastwrap {
     margin: 12px 14px 0;

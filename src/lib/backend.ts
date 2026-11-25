@@ -3,6 +3,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import type { Appearance } from "@bespex/themes";
 import { mockSnapshot } from "./mock-data";
 import { mockParse } from "./mock-quick";
 import { mockRecentlyDone, mockSearch, searchTerms } from "./mock-search";
@@ -452,7 +453,7 @@ const keepPreview = (s: Settings) => {
   if (typeof sessionStorage !== "undefined") sessionStorage.setItem("tq-settings", JSON.stringify(s));
 };
 
-/** Settings for the dialog: language, popover position, autostart, learned Jira projects. */
+/** Settings for the dialog: language, popover position, appearance, autostart, learned Jira projects. */
 export async function getSettings(): Promise<Settings> {
   return inTauri() ? invoke<Settings>("get_settings") : previewSettings();
 }
@@ -461,6 +462,12 @@ export async function getSettings(): Promise<Settings> {
 export async function setSettings(language: Language, popoverPosition: PopoverPosition): Promise<void> {
   if (inTauri()) return invoke("set_settings", { language, popoverPosition });
   keepPreview({ ...previewSettings(), language, popover_position: popoverPosition });
+}
+
+/** Saves colour theme and style (plan 2.6). */
+export async function setAppearance(appearance: Appearance): Promise<void> {
+  if (inTauri()) return invoke("set_appearance", { appearance });
+  keepPreview({ ...previewSettings(), appearance });
 }
 
 /** Switches autostart at login on or off. */

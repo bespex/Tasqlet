@@ -44,18 +44,18 @@
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    border: 1px solid var(--tq-line);
-    background: var(--tq-field);
-    color: var(--tq-ink);
-    border-radius: 999px;
+    border: 1px solid var(--sx-line);
+    background: var(--sx-field);
+    color: var(--sx-ink);
+    border-radius: var(--sx-radius-l);
     padding: 0 6px 0 0;
     font-size: 13px;
     max-width: 100%;
     white-space: nowrap;
   }
   .chip:hover {
-    border-color: var(--tq-line-strong);
-    background: var(--tq-hover);
+    border-color: var(--sx-line-strong);
+    background: var(--sx-hover);
   }
   .open {
     display: inline-flex;
@@ -68,7 +68,7 @@
     min-width: 0;
   }
   .open :global(svg) {
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     flex: none;
   }
   .lb {
@@ -78,9 +78,9 @@
   .kn {
     font-size: 10.5px;
     font-weight: 700;
-    color: var(--tq-ink-2);
-    border: 1px solid var(--tq-line);
-    border-radius: 4px;
+    color: var(--sx-ink-2);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-s);
     padding: 0 4px;
   }
   .x {
@@ -88,7 +88,7 @@
     border: 0;
     background: none;
     padding: 2px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     border-radius: 50%;
   }
   .chip:hover .x,
@@ -96,11 +96,11 @@
     display: inline-grid;
   }
   .x:hover {
-    color: var(--tq-ink);
+    color: var(--sx-ink);
   }
   .chip.more {
     background: none;
     padding: 4px 8px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
 </style>

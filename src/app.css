@@ -1,177 +1,18 @@
-/* Colours come only from role tokens (docs/KONZEPT.md 7). Components use --tq-* and nothing else.
-   A theme is a palette (data-tq) plus two axes: data-focus (how the current task stands out) and
-   data-chrome (how tabs, quick entry and footer set themselves apart). Values from the click dummy.
-   Set on <html> by src/lib/theme.ts (the default is the preset "Leitstand", D19), or on any element
-   to theme just that part. */
+/* Colours and style come from @bespex/themes (../kit, PLAN.md K1–K4): components use the roles
+   --sx-* and nothing else. src/lib/theme.ts puts the user's colour theme and style on <html> as
+   data-sx-theme and data-sx-<axis>; the kit's stylesheet turns them into the roles. Tasqlet marks its
+   zones: .sx-emphasis is the current task (axis "emphasis"), .sx-chrome are tabs, quick entry, footer
+   and the intermezzo bar (axis "chrome"). Corners follow the axis "shape" (--sx-radius-s/m/l). */
 
-/* --- Palettes ----------------------------------------------------------------------------------- */
+@import "@bespex/themes/sx.css";
 
-/* Automatisch: follows light/dark of the system (or of `color-scheme` set on the element). */
+/* Tasqlet's own: when the current task is emphasised, the queue's text steps back (KONZEPT.md 7.2). */
 :root,
-[data-tq="auto"] {
-  color-scheme: light dark;
-  --tq-bg: light-dark(#faf9f6, #1a1b1e);
-  --tq-card: light-dark(#ffffff, #222327);
-  --tq-field: light-dark(#f2f0eb, #16171a);
-  --tq-hover: light-dark(#efece6, #2b2c31);
-  --tq-line: light-dark(#e6e2da, #313338);
-  --tq-line-strong: light-dark(#877f75, #7c7f88);
-  --tq-ink: light-dark(#1d1b18, #ededeb);
-  --tq-ink-2: light-dark(#57524b, #b1b3b8);
-  --tq-ink-3: light-dark(#857e74, #878a91);
-  --tq-accent: light-dark(#b4410e, #ff9068);
-  --tq-on-accent: light-dark(#ffffff, #1a1b1e);
-  --tq-accent-soft: light-dark(#fbeadf, #3d2b23);
-  --tq-mark: light-dark(#fde7a6, #5c4b1a);
-  --tq-accent-inv: light-dark(#ff9068, #b4410e);
-  --tq-scheme-inv: dark;
+[data-sx-theme] {
+  --tq-row-ink: var(--sx-ink);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --tq-scheme-inv: light;
-  }
-}
-[data-tq="papier"] {
-  color-scheme: light;
-  --tq-bg: #faf9f6;
-  --tq-card: #ffffff;
-  --tq-field: #f2f0eb;
-  --tq-hover: #efece6;
-  --tq-line: #e6e2da;
-  --tq-line-strong: #877f75;
-  --tq-ink: #1d1b18;
-  --tq-ink-2: #57524b;
-  --tq-ink-3: #857e74;
-  --tq-accent: #b4410e;
-  --tq-on-accent: #fff;
-  --tq-accent-soft: #fbeadf;
-  --tq-mark: #fde7a6;
-  --tq-accent-inv: #ff9068;
-  --tq-scheme-inv: dark;
-}
-[data-tq="graphit"] {
-  color-scheme: dark;
-  --tq-bg: #1a1b1e;
-  --tq-card: #222327;
-  --tq-field: #16171a;
-  --tq-hover: #2b2c31;
-  --tq-line: #313338;
-  --tq-line-strong: #7c7f88;
-  --tq-ink: #ededeb;
-  --tq-ink-2: #b1b3b8;
-  --tq-ink-3: #878a91;
-  --tq-accent: #ff9068;
-  --tq-on-accent: #1a1b1e;
-  --tq-accent-soft: #3d2b23;
-  --tq-mark: #5c4b1a;
-  --tq-accent-inv: #b4410e;
-  --tq-scheme-inv: light;
-}
-[data-tq="fjord"] {
-  color-scheme: dark;
-  --tq-bg: #15202b;
-  --tq-card: #1b2836;
-  --tq-field: #111a23;
-  --tq-hover: #223243;
-  --tq-line: #2a3a4a;
-  --tq-line-strong: #6a87a3;
-  --tq-ink: #e6edf3;
-  --tq-ink-2: #a9bbcc;
-  --tq-ink-3: #7f94a8;
-  --tq-accent: #7cbcff;
-  --tq-on-accent: #0c1620;
-  --tq-accent-soft: #1c3449;
-  --tq-mark: #4d4520;
-  --tq-accent-inv: #1d5ca8;
-  --tq-scheme-inv: light;
-}
-
-/* --- Axes --------------------------------------------------------------------------------------- */
-
-/* Defaults: both follow the palette ("ruhig", "eins mit Inhalt"). Repeated on every themed element,
-   so a theme nested in another one (the components page) derives its axes from its own palette. */
-:root,
-[data-tq] {
-  --tq-f-bg: var(--tq-card);
-  --tq-f-ink: var(--tq-ink);
-  --tq-f-ink-2: var(--tq-ink-2);
-  --tq-f-ink-3: var(--tq-ink-3);
-  --tq-f-line: var(--tq-line);
-  --tq-f-line-strong: var(--tq-line-strong);
-  --tq-f-field: var(--tq-field);
-  --tq-f-hover: var(--tq-hover);
-  --tq-f-accent: var(--tq-accent);
-  --tq-f-on-accent: var(--tq-on-accent);
-  --tq-f-accent-soft: var(--tq-accent-soft);
-  --tq-f-border: color-mix(in srgb, var(--tq-accent) 40%, var(--tq-line));
-  --tq-f-border-w: 1px;
-  --tq-f-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --tq-row-ink: var(--tq-ink);
-  --tq-c-bg: var(--tq-bg);
-  --tq-c-ink: var(--tq-ink);
-  --tq-c-ink-2: var(--tq-ink-2);
-  --tq-c-ink-3: var(--tq-ink-3);
-  --tq-c-line: var(--tq-line);
-  --tq-c-line-strong: var(--tq-line-strong);
-  --tq-c-field: var(--tq-card);
-  --tq-c-field-2: var(--tq-field);
-  --tq-c-hover: var(--tq-hover);
-  --tq-c-accent: var(--tq-accent);
-  --tq-c-on-accent: var(--tq-on-accent);
-  --tq-c-accent-soft: var(--tq-accent-soft);
-  --tq-c-divider: var(--tq-line);
-}
-/* Aktuelle Aufgabe "betont": tinted surface, 2 px accent border, shadow, queue text steps back. */
-[data-focus="strong"] {
-  --tq-f-bg: color-mix(in srgb, var(--tq-accent) 7%, var(--tq-card));
-  --tq-f-field: color-mix(in srgb, var(--tq-accent) 12%, var(--tq-card));
-  --tq-f-hover: color-mix(in srgb, var(--tq-accent) 16%, var(--tq-card));
-  --tq-f-line: color-mix(in srgb, var(--tq-accent) 24%, var(--tq-card));
-  --tq-f-border: var(--tq-accent);
-  --tq-f-border-w: 2px;
-  --tq-f-shadow: 0 10px 28px color-mix(in srgb, var(--tq-accent) 24%, transparent);
-  --tq-row-ink: var(--tq-ink-2);
-}
-/* Bedienelemente "abgesetzt": slightly tinted with a strong dividing line. */
-[data-chrome="raised"] {
-  --tq-c-bg: color-mix(in srgb, var(--tq-ink) 6%, var(--tq-bg));
-  --tq-c-hover: color-mix(in srgb, var(--tq-ink) 11%, var(--tq-bg));
-  --tq-c-line: color-mix(in srgb, var(--tq-ink) 14%, var(--tq-bg));
-  --tq-c-field-2: var(--tq-card);
-  --tq-c-divider: var(--tq-line-strong);
-}
-
-/* Zones take over their axis; every component inside adapts by itself. */
-.zone-focus {
-  --tq-card: var(--tq-f-bg);
-  --tq-ink: var(--tq-f-ink);
-  --tq-ink-2: var(--tq-f-ink-2);
-  --tq-ink-3: var(--tq-f-ink-3);
-  --tq-line: var(--tq-f-line);
-  --tq-line-strong: var(--tq-f-line-strong);
-  --tq-field: var(--tq-f-field);
-  --tq-hover: var(--tq-f-hover);
-  --tq-accent: var(--tq-f-accent);
-  --tq-on-accent: var(--tq-f-on-accent);
-  --tq-accent-soft: var(--tq-f-accent-soft);
-  color: var(--tq-ink);
-}
-.zone-chrome {
-  --tq-bg: var(--tq-c-bg);
-  --tq-card: var(--tq-c-field);
-  --tq-field: var(--tq-c-field-2);
-  --tq-ink: var(--tq-c-ink);
-  --tq-ink-2: var(--tq-c-ink-2);
-  --tq-ink-3: var(--tq-c-ink-3);
-  --tq-line: var(--tq-c-line);
-  --tq-line-strong: var(--tq-c-line-strong);
-  --tq-hover: var(--tq-c-hover);
-  --tq-accent: var(--tq-c-accent);
-  --tq-on-accent: var(--tq-c-on-accent);
-  --tq-accent-soft: var(--tq-c-accent-soft);
-  color: var(--tq-ink);
-  background: var(--tq-c-bg);
-  border-color: var(--tq-c-divider);
+[data-sx-emphasis="strong"] {
+  --tq-row-ink: var(--sx-ink-2);
 }
 
 /* --- Base --------------------------------------------------------------------------------------- */
@@ -182,8 +23,8 @@
 }
 body {
   margin: 0;
-  background: var(--tq-bg);
-  color: var(--tq-ink);
+  background: var(--sx-bg);
+  color: var(--sx-ink);
   font:
     14px/1.45 Inter,
     "Noto Sans",
@@ -201,19 +42,19 @@ button {
   cursor: pointer;
 }
 :focus-visible {
-  outline: 2px solid var(--tq-accent);
+  outline: 2px solid var(--sx-accent);
   outline-offset: 1px;
 }
 kbd {
   font:
     500 11px/1 Inter,
     sans-serif;
-  background: var(--tq-field);
-  border: 1px solid var(--tq-line);
+  background: var(--sx-field);
+  border: 1px solid var(--sx-line);
   border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--sx-radius-s);
   padding: 1px 4px;
-  color: var(--tq-ink-2);
+  color: var(--sx-ink-2);
   white-space: nowrap;
 }
 [hidden] {
@@ -228,7 +69,7 @@ kbd {
 /* An entry under files or links being dragged (plan 2.5): dropped there, they become its resources. */
 /* Over the components' own (scoped, more specific) rules: the mark must show on every entry. */
 .drop-over {
-  outline: 2px dashed var(--tq-accent) !important;
+  outline: 2px dashed var(--sx-accent) !important;
   outline-offset: -6px !important;
-  background-color: var(--tq-accent-soft) !important;
+  background-color: var(--sx-accent-soft) !important;
 }

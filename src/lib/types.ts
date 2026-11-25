@@ -119,6 +119,8 @@ export type ToggleKeyProblem = "invalid" | "taken" | "unsupported";
 export interface Settings {
   language: Language;
   popover_position: PopoverPosition;
+  /** Colour theme and style (`@bespex/themes`); missing until the user chooses (plan 2.6). */
+  appearance?: unknown;
   autostart: boolean;
   /** No icon position is known (Wayland): the position setting matters. */
   wayland: boolean;

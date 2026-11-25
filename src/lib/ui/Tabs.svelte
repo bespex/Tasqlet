@@ -25,7 +25,7 @@
   } = $props();
 </script>
 
-<div class="tabs zone-chrome" role="tablist">
+<div class="tabs sx-chrome" role="tablist">
   {#each tabs as tab, i (tab.id)}
     <button
       class="tab"
@@ -70,7 +70,7 @@
     align-items: center;
     gap: 2px;
     padding: 10px 10px 8px;
-    border-bottom: 1px solid var(--tq-c-divider);
+    border-bottom: 1px solid var(--sx-chrome-divider);
   }
   .tab {
     display: flex;
@@ -79,26 +79,26 @@
     border: 0;
     background: none;
     padding: 7px 11px;
-    border-radius: 8px;
-    color: var(--tq-ink-2);
+    border-radius: var(--sx-radius-l);
+    color: var(--sx-ink-2);
     font-weight: 500;
     white-space: nowrap;
   }
   .tab:hover {
-    background: var(--tq-hover);
-    color: var(--tq-ink);
+    background: var(--sx-hover);
+    color: var(--sx-ink);
   }
   .tab.on {
-    background: var(--tq-card);
-    color: var(--tq-ink);
+    background: var(--sx-surface);
+    color: var(--sx-ink);
     box-shadow:
-      0 0 0 1px var(--tq-line),
+      0 0 0 1px var(--sx-line),
       0 1px 2px rgba(0, 0, 0, 0.06);
   }
   .n {
     font-size: 12px;
     font-weight: 600;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     font-variant-numeric: tabular-nums;
   }
   .sp {
@@ -111,15 +111,15 @@
     place-items: center;
     border: 1px solid transparent;
     background: none;
-    border-radius: 8px;
-    color: var(--tq-ink-2);
+    border-radius: var(--sx-radius-l);
+    color: var(--sx-ink-2);
   }
   .ib:hover {
-    background: var(--tq-hover);
-    color: var(--tq-ink);
+    background: var(--sx-hover);
+    color: var(--sx-ink);
   }
   .ib.on {
-    color: var(--tq-accent);
-    background: var(--tq-accent-soft);
+    color: var(--sx-accent-ink);
+    background: var(--sx-accent-soft);
   }
 </style>

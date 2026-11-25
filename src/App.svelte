@@ -417,7 +417,7 @@
       </div>
     {/if}
 
-    <footer class="zone-chrome">
+    <footer class="sx-chrome">
       {preview ? t("Browser preview with sample data") : t("Esc hides the popover")}
     </footer>
     <Toast />
@@ -439,14 +439,14 @@
     flex-direction: column;
     width: 100%;
     height: 100%;
-    background: var(--tq-bg);
-    color: var(--tq-ink);
+    background: var(--sx-bg);
+    color: var(--sx-ink);
   }
   .preview .pop {
     width: 470px;
     height: 680px;
-    border: 1px solid var(--tq-line);
-    border-radius: 14px;
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
     overflow: hidden;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.38);
   }
@@ -464,7 +464,7 @@
     right: 0;
     bottom: 0;
     z-index: 20;
-    background: var(--tq-bg);
+    background: var(--sx-bg);
     overflow-y: auto;
   }
   .body {
@@ -476,7 +476,7 @@
   .quiet {
     margin: 12px 16px;
     font-size: 12.5px;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     text-align: center;
   }
   .empty {
@@ -484,19 +484,19 @@
     justify-items: center;
     text-align: center;
     padding: 48px 24px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .empty p {
     margin: 0;
     max-width: 34ch;
   }
   .empty b {
-    color: var(--tq-ink);
+    color: var(--sx-ink);
   }
   footer {
     padding: 10px 14px;
     font-size: 12px;
-    border-top: 1px solid var(--tq-c-divider);
-    color: var(--tq-ink-2);
+    border-top: 1px solid var(--sx-chrome-divider);
+    color: var(--sx-ink-2);
   }
 </style>

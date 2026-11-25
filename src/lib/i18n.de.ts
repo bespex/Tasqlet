@@ -140,6 +140,7 @@ export const de: Record<string, string> = {
     "Unter X11 sitzt das Popover am Tray-Symbol; das gilt für die Tastenbelegung.",
   "Start Tasqlet at login": "Tasqlet beim Anmelden starten",
   "Jira projects": "Jira-Projekte",
+  Appearance: "Erscheinungsbild",
   "Nothing learned yet. A Jira link in an entry teaches its project.":
     "Noch nichts gelernt. Ein Jira-Link in einem Eintrag bringt das Projekt bei.",
   Forget: "Vergessen",

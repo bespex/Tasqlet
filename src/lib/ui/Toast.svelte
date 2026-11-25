@@ -33,14 +33,14 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: var(--tq-ink);
-    color: var(--tq-bg);
-    border-radius: 10px;
+    background: var(--sx-ink);
+    color: var(--sx-bg);
+    border-radius: var(--sx-radius-l);
     padding: 9px 10px 9px 14px;
     font-size: 13px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     z-index: 7;
-    color-scheme: var(--tq-scheme-inv);
+    color-scheme: var(--sx-scheme-inv);
   }
   .toast.fixed {
     position: static;
@@ -52,10 +52,10 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    background: color-mix(in srgb, var(--tq-bg) 16%, transparent);
+    background: color-mix(in srgb, var(--sx-bg) 16%, transparent);
     border: 0;
-    color: var(--tq-bg);
-    border-radius: 7px;
+    color: var(--sx-bg);
+    border-radius: var(--sx-radius-m);
     padding: 5px 9px;
     font-weight: 600;
     white-space: nowrap;

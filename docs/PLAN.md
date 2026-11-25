@@ -57,7 +57,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 2.3 Delegiert (vorgezogen vor 1.11)
   - [x] 2.4 Ausarbeitung (Split-View)
   - [ ] 2.5 Ablegen ins Popover, CLI `add`, `open`, `current`, `list`
-  - [ ] 2.6 Themen: alle Paletten, beide Achsen, Theme-Dateien, Einstellungen
+  - [ ] 2.6 Themen: über das be spex kit (D38); Auswahl gebaut, eigene Theme-Dateien offen
   - [ ] 2.7 MCP-Server für KI-Assistenten
 - **MVP 3: Linux-Feinschliff**
   - [ ] 3.1 `tasqlet capture` (Markierung übernehmen)
@@ -294,19 +294,23 @@ statt eines eigenen `flock`. Abnahme am Desktop steht aus.
 
 ### 2.6 Themen
 
-Konzept: 7.
+Konzept: 7. Grundlage seit D38: `@bespex/themes` aus `../kit` (dort `PLAN.md` K1–K4).
 
-- Alle Paletten, beide Achsen in allen Stufen, `accent-inv`, umgekehrtes Farbschema auf invertierten
-  Flächen.
-- Theme-Dateien in `~/.config/tasqlet/themes/` mit `override`. Kontrastprüfung im Core, ablehnen mit
-  Hinweis.
-- Einstellungsdialog: Palette, Achsen, Vorschläge, Vorschau. Dazu Popover-Position (Wayland),
-  Autostart, Sprache. Abschnitt „Jira“: gelernte Projekte mit Basis-URL, je Eintrag
-  „Vergessen“ (D26).
-- Test: alle mitgelieferten Kombinationen erfüllen die Kontrasttabelle.
+- Farbthema und Stil kommen aus dem Kit: 12 Themen plus „Automatisch“, vier Stile, sieben Achsen.
+  Tasqlets Achsen „aktuelle Aufgabe“ und „Bedienelemente“ sind dort `emphasis` und `chrome`, die
+  Vorschläge sind Paare aus Thema und Stil. Tasqlet bietet die Achsen `shape`, `structure`, `chrome`
+  und `emphasis` an.
+- Einstellungsdialog: Abschnitt „Erscheinungsbild“ mit der Auswahl des Kits (`<sx-appearance>`),
+  wirkt sofort, gespeichert als `appearance` in `settings.json`. Vorgabe wie bisher Leitstand
+  (Fjord, Leisten abgesetzt, Aufgabe betont).
+- Kontrastprüfung: im Kit über alle Themen und alle farbwirksamen Stilstufen (`npm run check` dort).
+- Offen: eigene Theme-Dateien der Nutzer in `~/.config/tasqlet/themes/`, geprüft mit `check` des
+  Kits und mit Hinweis abgelehnt, wenn sie die Prüfung verfehlen (Kit-Brainstorm „eigene Themen“).
 
-**Abnahme:** Die sechs Vorschläge sehen aus wie im Dummy. Ein absichtlich schlechtes Thema wird
-abgelehnt.
+**Abnahme:** Die Auswahl in den Einstellungen wechselt Thema und Stil sofort und behält sie nach
+einem Neustart; die Bausteinseite (`#bausteine`) ist in jeder gezeigten Kombination lesbar. Gebaut
+2026-11-25, Abnahme am Desktop steht aus. Ein absichtlich schlechtes eigenes Thema wird abgelehnt
+(offen, mit den Theme-Dateien).
 
 ### 2.7 MCP-Server für KI-Assistenten
 

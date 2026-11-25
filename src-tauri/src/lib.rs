@@ -134,6 +134,7 @@ pub fn run() {
             search::search,
             prefs::get_settings,
             prefs::set_settings,
+            prefs::set_appearance,
             prefs::set_autostart,
             prefs::forget_jira,
             hotkey::set_toggle_key,

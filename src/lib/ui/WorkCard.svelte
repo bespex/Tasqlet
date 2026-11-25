@@ -159,7 +159,7 @@
 </script>
 
 {#if onbreak}
-  <section class="card zone-focus pause" aria-live="polite" data-drop={item.id}>
+  <section class="card sx-emphasis pause" aria-live="polite" data-drop={item.id}>
     <Coffee size={22} />
     <p>
       <b>{t("Break.")}</b>
@@ -170,7 +170,7 @@
     </button>
   </section>
 {:else}
-  <section class="card zone-focus" class:active={item.active} class:ready data-drop={item.id}>
+  <section class="card sx-emphasis" class:active={item.active} class:ready data-drop={item.id}>
     <div class="top">
       {#if renaming}
         <input
@@ -409,10 +409,10 @@
     position: relative;
     margin: 14px;
     padding: 12px 14px 0;
-    background: var(--tq-card);
-    border: var(--tq-f-border-w) solid var(--tq-line);
-    border-radius: 12px;
-    box-shadow: var(--tq-f-shadow);
+    background: var(--sx-surface);
+    border: var(--sx-emph-border-w) solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
+    box-shadow: var(--sx-emph-shadow);
   }
   /* The card is never lower than its tools: they start 54 px from the top and are three 28 px
      buttons with two 9 px gaps (156 px), plus room for halo and glow below. */
@@ -420,7 +420,7 @@
     min-height: 172px;
   }
   .card.active {
-    border-color: var(--tq-f-border);
+    border-color: var(--sx-emph-border);
   }
   .top {
     display: flex;
@@ -450,10 +450,10 @@
     font: inherit;
     font-size: 17px;
     font-weight: 600;
-    background: var(--tq-field);
-    color: var(--tq-ink);
-    border: 1px solid var(--tq-line-strong);
-    border-radius: 6px;
+    background: var(--sx-field);
+    color: var(--sx-ink);
+    border: 1px solid var(--sx-line-strong);
+    border-radius: var(--sx-radius-m);
     padding: 2px 6px;
   }
   .go {
@@ -463,9 +463,9 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    border: 2px solid var(--tq-accent);
+    border: 2px solid var(--sx-accent);
     background: none;
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
     padding: 0;
   }
   .go {
@@ -473,12 +473,12 @@
   }
   .go:hover,
   .go.ready {
-    background: var(--tq-accent);
-    color: var(--tq-on-accent);
+    background: var(--sx-accent-fill);
+    color: var(--sx-on-accent);
   }
   /* The same soft glow as on the tools, only while hovering. */
   .go:hover {
-    box-shadow: 0 0 11px 1px color-mix(in srgb, var(--tq-accent) 50%, transparent);
+    box-shadow: 0 0 11px 1px color-mix(in srgb, var(--sx-accent) 50%, transparent);
   }
   .go.ready:hover {
     filter: brightness(1.1);
@@ -516,20 +516,20 @@
     place-items: center;
     padding: 0;
     border-radius: 50%;
-    border: 1px solid var(--tq-accent);
-    background: var(--tq-card);
-    color: var(--tq-ink);
+    border: 1px solid var(--sx-accent);
+    background: var(--sx-surface);
+    color: var(--sx-ink);
     box-shadow:
-      0 0 0 3px var(--tq-card),
-      0 0 7px 0 color-mix(in srgb, var(--tq-accent) 28%, transparent),
+      0 0 0 3px var(--sx-surface),
+      0 0 7px 0 color-mix(in srgb, var(--sx-accent) 28%, transparent),
       0 3px 10px rgba(0, 0, 0, 0.4);
   }
   .rb:hover {
-    background: var(--tq-accent);
-    color: var(--tq-on-accent);
+    background: var(--sx-accent-fill);
+    color: var(--sx-on-accent);
     box-shadow:
-      0 0 0 3px var(--tq-card),
-      0 0 11px 1px color-mix(in srgb, var(--tq-accent) 50%, transparent),
+      0 0 0 3px var(--sx-surface),
+      0 0 11px 1px color-mix(in srgb, var(--sx-accent) 50%, transparent),
       0 3px 10px rgba(0, 0, 0, 0.4);
   }
   .delegate,
@@ -538,26 +538,26 @@
     box-sizing: border-box;
     font: inherit;
     font-size: 13px;
-    background: var(--tq-field);
-    color: var(--tq-ink);
-    border: 1px solid var(--tq-line);
-    border-radius: 8px;
+    background: var(--sx-field);
+    color: var(--sx-ink);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
     padding: 5px 8px;
   }
   .delegate {
     width: 250px;
-    background: var(--tq-card);
-    border-color: var(--tq-line-strong);
+    background: var(--sx-surface);
+    border-color: var(--sx-line-strong);
     box-shadow:
-      0 0 0 3px var(--tq-card),
-      0 0 7px 0 color-mix(in srgb, var(--tq-accent) 28%, transparent),
+      0 0 0 3px var(--sx-surface),
+      0 0 7px 0 color-mix(in srgb, var(--sx-accent) 28%, transparent),
       0 3px 10px rgba(0, 0, 0, 0.4);
   }
   .delegate:focus,
   .add:focus,
   .note:focus {
     outline: 0;
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .add {
     margin-top: 8px;
@@ -574,9 +574,9 @@
     display: grid;
     min-width: 170px;
     padding: 4px;
-    background: var(--tq-card);
-    border: 1px solid var(--tq-line-strong);
-    border-radius: 8px;
+    background: var(--sx-surface);
+    border: 1px solid var(--sx-line-strong);
+    border-radius: var(--sx-radius-l);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   }
   .menu button {
@@ -584,8 +584,8 @@
     background: none;
     text-align: left;
     padding: 6px 10px;
-    border-radius: 6px;
-    color: var(--tq-ink);
+    border-radius: var(--sx-radius-m);
+    color: var(--sx-ink);
     font-size: 13px;
   }
   .resmenu {
@@ -603,7 +603,7 @@
   }
   .resmenu :global(svg) {
     flex: none;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .resmenu .rl {
     flex: 1;
@@ -615,18 +615,18 @@
   .resmenu .rk {
     font-size: 10.5px;
     font-weight: 700;
-    color: var(--tq-ink-2);
-    border: 1px solid var(--tq-line);
-    border-radius: 4px;
+    color: var(--sx-ink-2);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-s);
     padding: 0 4px;
   }
   .resmenu hr {
     border: 0;
-    border-top: 1px solid var(--tq-line);
+    border-top: 1px solid var(--sx-line);
     margin: 4px 0;
   }
   .menu button:hover {
-    background: var(--tq-hover);
+    background: var(--sx-hover);
   }
   .chips {
     display: flex;
@@ -650,10 +650,10 @@
     /* Long step text must not squeeze the box (it is a flex item). */
     flex: none;
     margin-top: 3px;
-    accent-color: var(--tq-accent);
+    accent-color: var(--sx-accent);
   }
   .steps .done span {
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     text-decoration: line-through;
   }
   .note {
@@ -663,10 +663,10 @@
     font: inherit;
     font-size: 14px;
     line-height: 20px;
-    background: var(--tq-field);
-    color: var(--tq-ink);
-    border: 1px solid var(--tq-line);
-    border-radius: 8px;
+    background: var(--sx-field);
+    color: var(--sx-ink);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
     padding: 6px 8px;
     overflow-y: auto;
   }
@@ -676,9 +676,9 @@
     gap: 12px;
     margin: 10px -14px 0;
     padding: 7px 14px;
-    border-top: 1px solid var(--tq-line);
+    border-top: 1px solid var(--sx-line);
     font-size: 12px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .status {
     font-weight: 700;
@@ -687,7 +687,7 @@
     font-size: 11px;
   }
   .status.ready {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
   }
   .sp {
     flex: 1;
@@ -698,7 +698,7 @@
     align-items: center;
     border: 0;
     background: none;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     font-size: 12px;
   }
   .elab:disabled {
@@ -710,13 +710,13 @@
     gap: 10px;
     padding: 22px 16px;
     text-align: center;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .pause p {
     margin: 0;
   }
   .then {
-    color: var(--tq-ink);
+    color: var(--sx-ink);
     font-weight: 600;
   }
   .primary {
@@ -724,10 +724,10 @@
     gap: 6px;
     align-items: center;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--sx-radius-l);
     padding: 7px 14px;
-    background: var(--tq-accent);
-    color: var(--tq-on-accent);
+    background: var(--sx-accent-fill);
+    color: var(--sx-on-accent);
     font-weight: 600;
   }
 </style>

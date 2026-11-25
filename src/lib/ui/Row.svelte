@@ -59,18 +59,18 @@
     gap: 6px;
     padding: 0 10px 0 6px;
     height: 44px;
-    border-bottom: 1px solid var(--tq-line);
+    border-bottom: 1px solid var(--sx-line);
     outline: 0;
     color: var(--tq-row-ink);
   }
   .row:hover,
   .row.sel {
-    background: var(--tq-hover);
-    color: var(--tq-ink);
+    background: var(--sx-hover);
+    color: var(--sx-ink);
   }
   .row:focus-visible,
   .row.sel {
-    box-shadow: inset 2px 0 0 var(--tq-accent);
+    box-shadow: inset 2px 0 0 var(--sx-accent);
   }
   .row {
     position: relative;
@@ -80,7 +80,7 @@
   }
   .grip {
     touch-action: none;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     cursor: grab;
     display: grid;
     place-items: center;
@@ -90,7 +90,7 @@
   .num {
     width: 18px;
     text-align: right;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     font-size: 13px;
     font-variant-numeric: tabular-nums;
   }
@@ -105,7 +105,7 @@
     gap: 6px;
     align-items: center;
     font-size: 12px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .tools {
     display: flex;

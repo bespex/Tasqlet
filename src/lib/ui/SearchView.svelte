@@ -171,10 +171,10 @@
     margin: 6px 14px 0;
     padding: 0 10px;
     height: 38px;
-    background: var(--tq-field);
-    border: 1px solid var(--tq-accent);
-    border-radius: 10px;
-    color: var(--tq-ink-2);
+    background: var(--sx-field);
+    border: 1px solid var(--sx-accent);
+    border-radius: var(--sx-radius-l);
+    color: var(--sx-ink-2);
   }
   .box input {
     flex: 1;
@@ -182,7 +182,7 @@
     border: 0;
     outline: 0;
     background: none;
-    color: var(--tq-ink);
+    color: var(--sx-ink);
     font: inherit;
   }
   .x {
@@ -190,23 +190,23 @@
     place-items: center;
     border: 0;
     background: none;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     padding: 2px;
-    border-radius: 6px;
+    border-radius: var(--sx-radius-m);
   }
   .x:hover {
-    color: var(--tq-ink);
-    background: var(--tq-hover);
+    color: var(--sx-ink);
+    background: var(--sx-hover);
   }
   .head {
     padding: 12px 16px 4px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .none {
     margin: 18px 16px;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     font-size: 13.5px;
   }
   ul {
@@ -215,7 +215,7 @@
     padding: 0;
   }
   .sv > ul > li {
-    border-bottom: 1px solid var(--tq-c-divider);
+    border-bottom: 1px solid var(--sx-chrome-divider);
   }
   .hit {
     display: grid;
@@ -225,13 +225,13 @@
     text-align: left;
     border: 0;
     background: none;
-    color: var(--tq-ink);
+    color: var(--sx-ink);
     padding: 9px 16px;
     font: inherit;
   }
   .hit:hover,
   li.open .hit {
-    background: var(--tq-hover);
+    background: var(--sx-hover);
   }
   .t {
     min-width: 0;
@@ -241,17 +241,17 @@
   }
   .w {
     font-size: 11.5px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     white-space: nowrap;
     align-self: center;
   }
   .w.done {
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .s {
     grid-column: 1 / -1;
     font-size: 12.5px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -260,7 +260,7 @@
     padding: 4px 16px 12px 24px;
     display: grid;
     gap: 8px;
-    background: var(--tq-hover);
+    background: var(--sx-hover);
   }
   .note {
     margin: 0;
@@ -276,7 +276,7 @@
     font-size: 13.5px;
   }
   .steps .done {
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .chips {
     display: flex;
@@ -288,20 +288,20 @@
     gap: 8px;
   }
   .acts button {
-    border: 1px solid var(--tq-line-strong);
-    background: var(--tq-card);
-    color: var(--tq-ink);
-    border-radius: 8px;
+    border: 1px solid var(--sx-line-strong);
+    background: var(--sx-surface);
+    color: var(--sx-ink);
+    border-radius: var(--sx-radius-l);
     padding: 5px 12px;
     font-size: 13px;
   }
   .acts button:hover {
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .acts .primary {
-    background: var(--tq-accent);
-    border-color: var(--tq-accent);
-    color: var(--tq-on-accent);
+    background: var(--sx-accent-fill);
+    border-color: var(--sx-accent);
+    color: var(--sx-on-accent);
     font-weight: 600;
   }
 </style>

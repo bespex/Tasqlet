@@ -1,11 +1,22 @@
 <script lang="ts">
-  // Slim settings (plan 2.6 in a slim form): language, popover position without an icon position,
-  // autostart and the learned Jira projects, which can be forgotten one by one (D26). Themes follow
-  // with the rest of 2.6.
+  // Settings (plan 2.6): language, popover position without an icon position, the global key,
+  // autostart, colour theme and style (the kit's picker, the same in every be spex app) and the
+  // learned Jira projects, which can be forgotten one by one (D26).
+  import "@bespex/themes/appearance";
+  import type { Appearance } from "@bespex/themes";
   import { onDestroy, onMount } from "svelte";
-  import { forgetJira, getSettings, setAutostart, setSettings, setToggleKey, suspendToggleKey } from "../backend";
-  import { setLang, systemLang, t } from "../i18n";
+  import {
+    forgetJira,
+    getSettings,
+    setAppearance,
+    setAutostart,
+    setSettings,
+    setToggleKey,
+    suspendToggleKey,
+  } from "../backend";
+  import { currentLang, setLang, systemLang, t } from "../i18n";
   import { comboFromEvent, keyLabel } from "../keys";
+  import { AXES_USED, appearanceOf, applyAppearance } from "../theme";
   import type { Language, PopoverPosition, Settings, ToggleKeyProblem } from "../types";
 
   let { onclose }: { onclose: () => void } = $props();
@@ -75,6 +86,12 @@
   onDestroy(() => {
     if (recording) void suspendToggleKey(false);
   });
+
+  // A choice shows at once and is kept; the picker only offers values the kit knows.
+  const choose = (value: Appearance) => {
+    applyAppearance(value);
+    void guard(() => setAppearance(value));
+  };
 
   const save = (language: Language, position: PopoverPosition) =>
     guard(async () => {
@@ -168,6 +185,15 @@
       <span>{t("Start Tasqlet at login")}</span>
     </label>
 
+    <h3>{t("Appearance")}</h3>
+    <sx-appearance
+      class="appearance"
+      lang={currentLang()}
+      axes={AXES_USED.join(" ")}
+      value={appearanceOf(s.appearance)}
+      onchange={(e: CustomEvent<Appearance>) => choose(e.detail)}
+    ></sx-appearance>
+
     <h3>{t("Jira projects")}</h3>
     {#if s.jira.length === 0}
       <p class="hint">{t("Nothing learned yet. A Jira link in an entry teaches its project.")}</p>
@@ -192,7 +218,7 @@
     padding: 4px 0 10px;
     margin: 0 -16px;
     padding-inline: 16px;
-    border-bottom: 1px solid var(--tq-c-divider, var(--tq-line));
+    border-bottom: 1px solid var(--sx-chrome-divider, var(--sx-line));
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -204,7 +230,7 @@
   h3 {
     margin: 18px 0 6px;
     font-size: 13px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .row {
     display: flex;
@@ -220,10 +246,10 @@
   button {
     font: inherit;
     font-size: 13px;
-    color: var(--tq-ink);
-    background: var(--tq-field);
-    border: 1px solid var(--tq-line-strong);
-    border-radius: 8px;
+    color: var(--sx-ink);
+    background: var(--sx-field);
+    border: 1px solid var(--sx-line-strong);
+    border-radius: var(--sx-radius-l);
     padding: 4px 10px;
   }
   .seg {
@@ -234,27 +260,27 @@
     margin-left: -1px;
   }
   .seg button:first-child {
-    border-radius: 8px 0 0 8px;
+    border-radius: var(--sx-radius-l) 0 0 var(--sx-radius-l);
     margin-left: 0;
   }
   .seg button:last-child {
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 var(--sx-radius-l) var(--sx-radius-l) 0;
   }
   .seg .on {
-    background: var(--tq-accent-soft);
-    color: var(--tq-accent);
-    border-color: var(--tq-accent);
+    background: var(--sx-accent-soft);
+    color: var(--sx-accent-ink);
+    border-color: var(--sx-accent);
     position: relative;
     z-index: 1;
     font-weight: 600;
   }
   button:hover {
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .hint {
     margin: 4px 0 0;
     font-size: 12px;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .keys {
     display: inline-flex;
@@ -264,17 +290,17 @@
     min-width: 120px;
   }
   .record.on {
-    border-color: var(--tq-accent);
-    color: var(--tq-accent);
-    background: var(--tq-accent-soft);
+    border-color: var(--sx-accent);
+    color: var(--sx-accent-ink);
+    background: var(--sx-accent-soft);
   }
   .warn {
-    color: var(--tq-warn, var(--tq-ink));
+    color: var(--sx-warn, var(--sx-ink));
   }
   .problem {
     margin: 8px 0 0;
     font-size: 12.5px;
-    color: var(--tq-warn, var(--tq-ink));
+    color: var(--sx-warn, var(--sx-ink));
   }
   ul {
     list-style: none;
@@ -295,6 +321,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
 </style>

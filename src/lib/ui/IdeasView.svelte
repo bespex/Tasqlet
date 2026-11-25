@@ -112,9 +112,9 @@
   .idea {
     margin: 10px 14px;
     padding: 10px 12px 10px;
-    background: var(--tq-card);
-    border: 1px solid var(--tq-line);
-    border-radius: 10px;
+    background: var(--sx-surface);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
   }
   .top {
     display: flex;
@@ -130,7 +130,7 @@
   }
   .age {
     font-size: 11.5px;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     white-space: nowrap;
   }
   .expand {
@@ -138,20 +138,20 @@
     place-items: center;
     border: 0;
     background: none;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     padding: 2px;
-    border-radius: 6px;
+    border-radius: var(--sx-radius-m);
     align-self: center;
   }
   .expand:hover {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
   }
   .pts {
     margin-top: 6px;
     display: grid;
     gap: 2px;
     font-size: 13px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .pts li::before {
     content: "• ";
@@ -159,7 +159,7 @@
   .more {
     margin-top: 2px;
     font-size: 12px;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .meta {
     display: flex;
@@ -173,7 +173,7 @@
     gap: 3px;
     align-items: center;
     font-size: 12px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .brain {
     width: 100%;
@@ -181,16 +181,16 @@
     margin-top: 8px;
     font: inherit;
     font-size: 13px;
-    background: var(--tq-field);
-    color: var(--tq-ink);
-    border: 1px dashed var(--tq-line-strong);
-    border-radius: 8px;
+    background: var(--sx-field);
+    color: var(--sx-ink);
+    border: 1px dashed var(--sx-line-strong);
+    border-radius: var(--sx-radius-l);
     padding: 5px 8px;
   }
   .brain:focus {
     outline: 0;
     border-style: solid;
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .acts {
     display: flex;
@@ -198,18 +198,18 @@
     margin-top: 8px;
   }
   .acts button {
-    border: 1px solid var(--tq-line-strong);
-    background: var(--tq-field);
-    color: var(--tq-ink);
-    border-radius: 8px;
+    border: 1px solid var(--sx-line-strong);
+    background: var(--sx-field);
+    color: var(--sx-ink);
+    border-radius: var(--sx-radius-l);
     padding: 4px 11px;
     font-size: 12.5px;
   }
   .acts button:hover {
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .acts .primary {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
     font-weight: 600;
   }
   .empty {
@@ -217,13 +217,13 @@
     justify-items: center;
     text-align: center;
     padding: 48px 24px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .empty p {
     margin: 0;
     max-width: 34ch;
   }
   .empty b {
-    color: var(--tq-ink);
+    color: var(--sx-ink);
   }
 </style>

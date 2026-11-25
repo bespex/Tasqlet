@@ -25,7 +25,7 @@
   const tick = (item: Item) => run({ kind: "finish", id: item.id }, t("Ticked off: {title}", { title: label(item) }));
 </script>
 
-<div class="inter zone-chrome">
+<div class="inter sx-chrome">
   <span class="il" title={`${t("In between")}: ${list.length}`} aria-label={`${t("In between")}, ${list.length}`}>
     <Zap size={15} />
   </span>
@@ -66,8 +66,8 @@
     align-items: center;
     gap: 10px;
     padding: 10px 14px;
-    border-top: 1px solid var(--tq-line);
-    background: var(--tq-bg);
+    border-top: 1px solid var(--sx-line);
+    background: var(--sx-bg);
   }
   .il {
     display: grid;
@@ -75,8 +75,8 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--tq-accent-soft);
-    color: var(--tq-accent);
+    background: var(--sx-accent-soft);
+    color: var(--sx-accent-ink);
     flex: none;
   }
   .pills {
@@ -91,18 +91,18 @@
     align-items: center;
     flex: 0 1 auto;
     min-width: 0;
-    border: 1px solid var(--tq-line);
-    background: var(--tq-card);
-    border-radius: 999px;
+    border: 1px solid var(--sx-line);
+    background: var(--sx-surface);
+    border-radius: var(--sx-radius-l);
     white-space: nowrap;
   }
   .pill:hover {
-    border-color: var(--tq-line-strong);
+    border-color: var(--sx-line-strong);
   }
   .pb {
     border: 0;
     background: none;
-    color: var(--tq-ink);
+    color: var(--sx-ink);
     padding: 4px 12px;
     font-size: 13px;
     min-width: 0;
@@ -115,7 +115,7 @@
     border: 0;
     background: none;
     padding: 4px 9px 4px 0;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     place-items: center;
   }
   .pill:hover .pb,
@@ -127,20 +127,20 @@
     display: inline-grid;
   }
   .pd:hover {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
   }
   .more {
     flex: none;
-    border: 1px solid var(--tq-line);
-    background: var(--tq-card);
-    border-radius: 999px;
+    border: 1px solid var(--sx-line);
+    background: var(--sx-surface);
+    border-radius: var(--sx-radius-l);
     padding: 4px 11px;
     font-size: 13px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .empty {
     align-self: center;
     font-size: 13px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
 </style>

@@ -33,7 +33,7 @@
     gap: 10px;
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid var(--tq-line);
+    border-top: 1px solid var(--sx-line);
     align-items: start;
   }
   .lbl {
@@ -41,7 +41,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     font-size: 12.5px;
     font-weight: 600;
     padding-top: 3px;
@@ -59,15 +59,15 @@
     height: 24px;
     display: inline-grid;
     place-items: center;
-    border: 1px solid var(--tq-line);
-    background: var(--tq-card);
+    border: 1px solid var(--sx-line);
+    background: var(--sx-surface);
     border-radius: 50%;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     padding: 0;
   }
   .plus:hover {
-    color: var(--tq-on-accent);
-    background: var(--tq-accent);
-    border-color: var(--tq-accent);
+    color: var(--sx-on-accent);
+    background: var(--sx-accent-fill);
+    border-color: var(--sx-accent);
   }
 </style>

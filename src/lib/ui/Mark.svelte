@@ -17,9 +17,9 @@
 
 <style>
   mark {
-    background: var(--tq-mark);
+    background: var(--sx-mark);
     color: inherit;
-    border-radius: 3px;
+    border-radius: var(--sx-radius-s);
     padding: 0 1px;
   }
 </style>

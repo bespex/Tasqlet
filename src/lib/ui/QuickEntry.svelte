@@ -76,7 +76,7 @@
   }
 </script>
 
-<div class="qi zone-chrome">
+<div class="qi sx-chrome">
   <label class="qbox">
     <Plus size={16} />
     <input
@@ -127,21 +127,21 @@
 <style>
   .qi {
     padding: 12px 14px 10px;
-    border-bottom: 1px solid var(--tq-c-divider);
+    border-bottom: 1px solid var(--sx-chrome-divider);
   }
   .qbox {
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--tq-card);
-    border: 1px solid var(--tq-line-strong);
-    border-radius: 10px;
+    background: var(--sx-surface);
+    border: 1px solid var(--sx-line-strong);
+    border-radius: var(--sx-radius-l);
     padding: 0 11px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .qbox:focus-within {
-    border-color: var(--tq-accent);
-    box-shadow: 0 0 0 3px var(--tq-accent-soft);
+    border-color: var(--sx-accent);
+    box-shadow: 0 0 0 3px var(--sx-accent-soft);
   }
   input {
     flex: 1;
@@ -150,10 +150,10 @@
     outline: 0;
     padding: 10px 0;
     font-size: 15px;
-    color: var(--tq-ink);
+    color: var(--sx-ink);
   }
   input::placeholder {
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .qhint {
     display: flex;
@@ -161,7 +161,7 @@
     gap: 6px 10px;
     margin-top: 8px;
     font-size: 12px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     align-items: center;
   }
   .rec {
@@ -176,9 +176,9 @@
     align-items: center;
     gap: 4px;
     font-size: 12px;
-    color: var(--tq-ink-2);
-    border: 1px solid var(--tq-line);
-    border-radius: 999px;
+    color: var(--sx-ink-2);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
     padding: 2px 8px;
     white-space: nowrap;
   }
@@ -190,7 +190,7 @@
   }
   .leg i {
     font-style: normal;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .lg {
     display: inline-flex;
@@ -199,7 +199,7 @@
     white-space: nowrap;
   }
   .lg.l1 {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
     font-weight: 600;
   }
 </style>

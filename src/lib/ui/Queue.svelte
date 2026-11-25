@@ -230,9 +230,9 @@
     height: 4px;
     margin-top: -2px;
     z-index: 5;
-    border-radius: 2px;
-    background: var(--tq-accent);
-    box-shadow: 0 0 10px 2px color-mix(in srgb, var(--tq-accent) 65%, transparent);
+    border-radius: var(--sx-radius-s);
+    background: var(--sx-accent-fill);
+    box-shadow: 0 0 10px 2px color-mix(in srgb, var(--sx-accent) 65%, transparent);
     pointer-events: none;
   }
   .slot::before,
@@ -243,7 +243,7 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: var(--tq-accent);
+    background: var(--sx-accent-fill);
   }
   .slot::before {
     left: -4px;
@@ -259,18 +259,18 @@
     gap: 6px;
     box-sizing: border-box;
     padding: 0 10px 0 30px;
-    background: var(--tq-card);
-    border: 1px solid var(--tq-accent);
-    border-radius: 8px;
+    background: var(--sx-surface);
+    border: 1px solid var(--sx-accent);
+    border-radius: var(--sx-radius-l);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    color: var(--tq-ink);
+    color: var(--sx-ink);
     pointer-events: none;
     opacity: 0.8;
   }
   .gnum {
     width: 18px;
     text-align: right;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     font-size: 13px;
     font-variant-numeric: tabular-nums;
   }
@@ -287,21 +287,21 @@
     border: 0;
     background: none;
     padding: 2px 4px;
-    border-radius: 6px;
-    color: var(--tq-ink-2);
+    border-radius: var(--sx-radius-m);
+    color: var(--sx-ink-2);
     font-size: 12px;
   }
   .links:hover,
   .links.on {
-    color: var(--tq-ink);
-    background: var(--tq-hover);
+    color: var(--sx-ink);
+    background: var(--sx-hover);
   }
   .unfolded {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
     padding: 4px 12px 10px 36px;
-    border-bottom: 1px solid var(--tq-c-divider);
+    border-bottom: 1px solid var(--sx-chrome-divider);
   }
   .badge {
     white-space: nowrap;
@@ -313,15 +313,15 @@
     place-items: center;
     border: 1px solid transparent;
     background: none;
-    border-radius: 8px;
-    color: var(--tq-ink-2);
+    border-radius: var(--sx-radius-l);
+    color: var(--sx-ink-2);
     padding: 0;
   }
   .ib:hover {
-    background: var(--tq-hover);
-    color: var(--tq-ink);
+    background: var(--sx-hover);
+    color: var(--sx-ink);
   }
   .ib.run {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
   }
 </style>

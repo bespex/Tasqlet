@@ -322,7 +322,7 @@
     border: 0;
     border-bottom: 1px solid transparent;
     background: none;
-    color: var(--tq-ink);
+    color: var(--sx-ink);
     font: inherit;
     font-size: 21px;
     font-weight: 600;
@@ -330,7 +330,7 @@
   }
   .title:focus {
     outline: 0;
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .row {
     display: flex;
@@ -342,7 +342,7 @@
   }
   .k {
     width: 52px;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
     font-size: 12.5px;
     font-weight: 600;
   }
@@ -356,30 +356,30 @@
   textarea {
     font: inherit;
     font-size: 13px;
-    color: var(--tq-ink);
-    background: var(--tq-field);
-    border: 1px solid var(--tq-line-strong);
-    border-radius: 8px;
+    color: var(--sx-ink);
+    background: var(--sx-field);
+    border: 1px solid var(--sx-line-strong);
+    border-radius: var(--sx-radius-l);
     padding: 4px 10px;
   }
   button:hover {
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .seg button {
     border-radius: 0;
     margin-left: -1px;
   }
   .seg button:first-child {
-    border-radius: 8px 0 0 8px;
+    border-radius: var(--sx-radius-l) 0 0 var(--sx-radius-l);
     margin-left: 0;
   }
   .seg button:last-child {
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 var(--sx-radius-l) var(--sx-radius-l) 0;
   }
   .seg .on {
-    background: var(--tq-accent-soft);
-    color: var(--tq-accent);
-    border-color: var(--tq-accent);
+    background: var(--sx-accent-soft);
+    color: var(--sx-accent-ink);
+    border-color: var(--sx-accent);
     position: relative;
     z-index: 1;
     font-weight: 600;
@@ -388,16 +388,16 @@
   .add input:focus,
   textarea:focus {
     outline: 0;
-    border-color: var(--tq-accent);
+    border-color: var(--sx-accent);
   }
   .day {
     width: 170px;
   }
   .bad {
-    border-color: var(--tq-warn, #d9534f);
+    border-color: var(--sx-warn, #d9534f);
   }
   .shown {
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .ib {
     display: inline-grid;
@@ -405,21 +405,21 @@
     padding: 3px;
     border-color: transparent;
     background: none;
-    color: var(--tq-ink-3);
-    border-radius: 6px;
+    color: var(--sx-ink-3);
+    border-radius: var(--sx-radius-m);
   }
   .ib:hover {
-    color: var(--tq-accent);
+    color: var(--sx-accent-ink);
   }
   h4 {
     margin: 20px 0 8px;
     padding-top: 14px;
-    border-top: 1px solid var(--tq-line);
+    border-top: 1px solid var(--sx-line);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.03em;
     text-transform: uppercase;
-    color: var(--tq-ink-2);
+    color: var(--sx-ink-2);
   }
   .chips {
     display: flex;
@@ -435,7 +435,7 @@
     align-items: center;
     gap: 6px;
     margin-top: 8px;
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
   }
   .add input {
     flex: 1;
@@ -461,12 +461,12 @@
     width: 18px;
     height: 18px;
     padding: 0;
-    border-radius: 5px;
+    border-radius: var(--sx-radius-s);
   }
   .box.on {
-    background: var(--tq-accent);
-    border-color: var(--tq-accent);
-    color: var(--tq-bg);
+    background: var(--sx-accent-fill);
+    border-color: var(--sx-accent);
+    color: var(--sx-bg);
   }
   .steptext {
     flex: 1;
@@ -475,10 +475,10 @@
     background: none;
   }
   .steptext:hover {
-    border-color: var(--tq-line);
+    border-color: var(--sx-line);
   }
   .steptext.done {
-    color: var(--tq-ink-3);
+    color: var(--sx-ink-3);
     text-decoration: line-through;
   }
   textarea {
