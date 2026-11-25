@@ -185,7 +185,7 @@
       </button>
     </div>
 
-    <div class="tools" class:open={delegating || menu}>
+    <div class="tools" class:open={delegating || menu} class:wide={delegating}>
       {#if delegating}
         <!-- svelte-ignore a11y_autofocus -->
         <input
@@ -350,6 +350,11 @@
     border-radius: 12px;
     box-shadow: var(--tq-f-shadow);
   }
+  /* The card is never lower than its tools: they start 54 px from the top and are three 28 px
+     buttons with two 9 px gaps (156 px), plus room for halo and glow below. */
+  .card:not(.pause) {
+    min-height: 172px;
+  }
   .card.active {
     border-color: var(--tq-f-border);
   }
@@ -407,19 +412,25 @@
   .go.ready:hover {
     filter: brightness(1.1);
   }
-  /* The tools lie over the card, right under the round button, and take no room of their own. They
-     are solid and cast a shadow, so they stand out from whatever text or chips lie beneath. */
+  /* The tools lie over the card in a column, centred under the round button, and take no room of
+     their own. They are solid with a halo and a soft glow, so they stand out from whatever text or
+     chips lie beneath. The round button is 34 px wide, the tools 28 px: 3 px more on the right. */
   .tools {
     position: absolute;
-    top: 52px;
-    right: 14px;
+    top: 54px;
+    right: 17px;
     z-index: 3;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 9px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.12s;
+  }
+  .tools.wide {
+    right: 14px;
+    align-items: flex-end;
   }
   .card:hover .tools,
   .card:has(:focus-visible) .tools,
@@ -434,17 +445,21 @@
     place-items: center;
     padding: 0;
     border-radius: 50%;
-    border: 1px solid var(--tq-line-strong);
+    border: 1px solid var(--tq-accent);
     background: var(--tq-card);
     color: var(--tq-ink);
     box-shadow:
       0 0 0 3px var(--tq-card),
+      0 0 12px 2px color-mix(in srgb, var(--tq-accent) 55%, transparent),
       0 3px 10px rgba(0, 0, 0, 0.45);
   }
   .rb:hover {
     background: var(--tq-accent);
-    border-color: var(--tq-accent);
     color: var(--tq-on-accent);
+    box-shadow:
+      0 0 0 3px var(--tq-card),
+      0 0 16px 4px color-mix(in srgb, var(--tq-accent) 75%, transparent),
+      0 3px 10px rgba(0, 0, 0, 0.45);
   }
   .delegate,
   .add {
@@ -464,6 +479,7 @@
     border-color: var(--tq-line-strong);
     box-shadow:
       0 0 0 3px var(--tq-card),
+      0 0 12px 2px color-mix(in srgb, var(--tq-accent) 55%, transparent),
       0 3px 10px rgba(0, 0, 0, 0.45);
   }
   .delegate:focus,
@@ -480,8 +496,8 @@
   }
   .menu {
     position: absolute;
-    right: 0;
-    top: 30px;
+    right: 38px;
+    top: -4px;
     z-index: 5;
     display: grid;
     min-width: 170px;

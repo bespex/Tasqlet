@@ -12,7 +12,6 @@
     title,
     selected = false,
     dragging = false,
-    line,
     indicators,
     tools,
     onselect,
@@ -24,8 +23,6 @@
     selected?: boolean;
     /** This row is being dragged. */
     dragging?: boolean;
-    /** Drop marker: a line above or below the row while another row is dragged over it. */
-    line?: "before" | "after";
     indicators?: Snippet;
     tools?: Snippet;
     onselect?: () => void;
@@ -39,8 +36,6 @@
   class="row"
   class:sel={selected}
   class:dragging
-  class:before={line === "before"}
-  class:after={line === "after"}
   data-id={id}
   role="option"
   aria-selected={selected}
@@ -81,22 +76,6 @@
   }
   .row.dragging {
     opacity: 0.45;
-  }
-  .row.before::before,
-  .row.after::after {
-    content: "";
-    position: absolute;
-    left: 6px;
-    right: 6px;
-    height: 2px;
-    background: var(--tq-accent);
-    border-radius: 1px;
-  }
-  .row.before::before {
-    top: -1px;
-  }
-  .row.after::after {
-    bottom: -1px;
   }
   .grip {
     touch-action: none;

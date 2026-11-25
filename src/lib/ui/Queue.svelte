@@ -22,7 +22,7 @@
 
   let list: HTMLElement;
   let selected = $state<string | null>(null);
-  let drag = $state<{ id: string; from: number; drop: number } | null>(null);
+  let drag = $state<{ id: string; from: number; drop: number; y: number } | null>(null);
   /** The copy of the dragged line that follows the pointer: position, size and what it shows. */
   let ghost = $state<{ x: number; y: number; w: number; h: number; num: number; title: string } | null>(null);
 
@@ -79,7 +79,7 @@
     const grip = e.currentTarget as HTMLElement;
     grip.setPointerCapture(e.pointerId);
     const from = items.findIndex((it) => it.id === id);
-    drag = { id, from, drop: from };
+    drag = { id, from, drop: from, y: 0 };
     const box = grip.closest<HTMLElement>("[role=option]")?.getBoundingClientRect();
     // The line stays under the pointer where it was grabbed, only moving up and down.
     const grab = box ? e.clientY - box.top : 0;
@@ -92,7 +92,10 @@
         return b.top + b.height / 2;
       });
     const over = (ev: PointerEvent) => {
-      if (drag) drag.drop = dropIndex(ev.clientY, middles());
+      if (drag) {
+        drag.drop = dropIndex(ev.clientY, middles());
+        drag.y = slotY(drag.drop);
+      }
       if (ghost) ghost.y = ev.clientY - grab;
     };
     const end = async (ev: PointerEvent) => {
@@ -111,16 +114,21 @@
     window.addEventListener("pointercancel", end);
   }
 
-  /** Where the drop line goes for row `i`, if the drag would actually move something. */
-  function line(i: number): "before" | "after" | undefined {
-    if (!drag || moveDelta(drag.from, drag.drop) === 0) return undefined;
-    if (drag.drop === i) return "before";
-    if (drag.drop === items.length && i === items.length - 1) return "after";
-    return undefined;
+  /** Height of the gap between rows `drop - 1` and `drop` within the list, where the mark goes. */
+  function slotY(drop: number): number {
+    const all = rows();
+    const top = list.getBoundingClientRect().top;
+    if (all.length === 0) return 0;
+    return drop < all.length
+      ? all[drop].getBoundingClientRect().top - top
+      : all[all.length - 1].getBoundingClientRect().bottom - top;
   }
+
+  /** The drop mark is only shown if the drop would actually move something. */
+  const marked = $derived(drag && moveDelta(drag.from, drag.drop) !== 0 ? drag.y : null);
 </script>
 
-<div role="listbox" tabindex="-1" aria-label={t("Focus")} bind:this={list} {onkeydown}>
+<div class="list" role="listbox" tabindex="-1" aria-label={t("Focus")} bind:this={list} {onkeydown}>
   {#each items as item, i (item.id)}
     <Row
       id={item.id}
@@ -128,7 +136,6 @@
       title={item.title}
       selected={item.id === selected}
       dragging={drag?.id === item.id}
-      line={line(i)}
       onselect={() => (selected = item.id)}
       ongrip={(e) => startDrag(e, item.id)}
     >
@@ -157,6 +164,9 @@
       {/snippet}
     </Row>
   {/each}
+  {#if marked !== null}
+    <div class="slot" style="top:{marked}px" aria-hidden="true"></div>
+  {/if}
 </div>
 
 {#if ghost}
@@ -167,9 +177,44 @@
 {/if}
 
 <style>
+  .list {
+    position: relative;
+    /* Room for the drop mark below the last line. */
+    padding-bottom: 6px;
+  }
+  /* Where the dragged line would land: a thick line with a glow and a round end on each side. It
+     lies over the list, so the rows do not move while dragging. */
+  .slot {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    height: 4px;
+    margin-top: -2px;
+    z-index: 5;
+    border-radius: 2px;
+    background: var(--tq-accent);
+    box-shadow: 0 0 10px 2px color-mix(in srgb, var(--tq-accent) 65%, transparent);
+    pointer-events: none;
+  }
+  .slot::before,
+  .slot::after {
+    content: "";
+    position: absolute;
+    top: -3px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--tq-accent);
+  }
+  .slot::before {
+    left: -4px;
+  }
+  .slot::after {
+    right: -4px;
+  }
   .ghost {
     position: fixed;
-    z-index: 20;
+    z-index: 3;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -181,7 +226,7 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     color: var(--tq-ink);
     pointer-events: none;
-    opacity: 0.95;
+    opacity: 0.8;
   }
   .gnum {
     width: 18px;

@@ -9,6 +9,10 @@ import type { Act, CaptureKey, Captured, Item, QuickEntry, Snapshot } from "./ty
 /** True inside the Tauri webview, false in the browser preview. */
 export const inTauri = (): boolean => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
+/** Ids of the preview's own items: a counter, not the clock, so two in one millisecond differ. */
+let lastId = 0;
+const newId = (prefix: string) => `${prefix}${Date.now()}-${++lastId}`;
+
 /** The browser preview's own little store: sample data, changed by capture and undo. */
 const preview = {
   snapshot: mockSnapshot(),
@@ -87,7 +91,7 @@ export async function capture(text: string, key: CaptureKey): Promise<Captured> 
   const placed: Captured["placed"] = entry.delegate_to ? "delegated" : key;
   const state: Item["state"] = placed === "now" ? "focus" : placed;
   const item: Item = {
-    id: `m${Date.now()}`,
+    id: newId("m"),
     title: entry.title,
     state,
     active: false,
@@ -95,7 +99,7 @@ export async function capture(text: string, key: CaptureKey): Promise<Captured> 
     order: 0,
     note: "",
     checklist: [],
-    resources: entry.resources.map((r, i) => ({ ...r, id: `mr${Date.now()}${i}`, used_at: null })),
+    resources: entry.resources.map((r, i) => ({ ...r, id: newId("mr"), used_at: null })),
     date: entry.date,
     delegated_to: entry.delegate_to,
     delegated_at: entry.delegate_to ? now : null,
@@ -244,7 +248,7 @@ export async function act(change: Act): Promise<void> {
     case "add_check": {
       const text = change.text.trim();
       if (!text) throw new Error("empty name");
-      find(change.id).checklist.push({ id: `mc${Date.now()}`, text, done: false });
+      find(change.id).checklist.push({ id: newId("mc"), text, done: false });
       break;
     }
     case "toggle_check": {
@@ -260,7 +264,7 @@ export async function act(change: Act): Promise<void> {
       if (!found || found.target !== target) throw new Error("not a resource");
       const item = find(change.id);
       if (item.resources.some((r) => r.target === target)) return;
-      item.resources.push({ ...found, id: `mr${Date.now()}`, used_at: null });
+      item.resources.push({ ...found, id: newId("mr"), used_at: null });
       break;
     }
   }
