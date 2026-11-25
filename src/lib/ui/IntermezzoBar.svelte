@@ -31,7 +31,7 @@
   </span>
   <div class="pills">
     {#each shown as item (item.id)}
-      <span class="pill">
+      <span class="pill" data-drop={item.id}>
         <button
           class="pb"
           title={`${label(item)}\n${t("Click: take over now · Middle click: tick off")}`}

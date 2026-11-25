@@ -4,7 +4,8 @@
 //! `$XDG_RUNTIME_DIR/tasqlet/`, named after the data folder. A second start finds the lock taken
 //! and hands its request to the first one instead: `tasqlet --toggle` shows or hides the popover,
 //! plain `tasqlet` shows it. This is what a desktop binds to a key where programs cannot hold
-//! global shortcuts (Wayland, D10). The CLI of plan step 2.5 extends the same socket.
+//! global shortcuts (Wayland, D10). The command line (plan 2.5) sends its commands the same way
+//! and gets the text to print back.
 
 use std::fs::{self, File, OpenOptions, TryLockError};
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -15,15 +16,27 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
+use tasqlet_core::cli::Command;
 
 /// A request to the running instance.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase", tag = "cmd")]
 pub enum Request {
     /// Show the popover (plain second start).
     Show,
     /// Show the popover, or hide it if it is open (`--toggle`).
     Toggle,
+    /// A command of the command line; the answer is the text to print.
+    Run { command: Command },
+}
+
+/// The answer on the socket.
+#[derive(Debug, Serialize, Deserialize)]
+struct Reply {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    out: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
 }
 
 /// Outcome of [`claim`].
@@ -85,7 +98,10 @@ pub fn claim(dir: &Path, key: &str) -> io::Result<Start> {
 
 impl Instance {
     /// Answer requests from now on; `handle` runs on a background thread.
-    pub fn listen(&self, handle: impl Fn(Request) + Send + Sync + 'static) -> io::Result<()> {
+    pub fn listen(
+        &self,
+        handle: impl Fn(Request) -> Result<String, String> + Send + Sync + 'static,
+    ) -> io::Result<()> {
         // Left over from a crash; the lock says it is ours now.
         let _ = fs::remove_file(&self.socket);
         let listener = UnixListener::bind(&self.socket)?;
@@ -107,7 +123,7 @@ impl Drop for Instance {
     }
 }
 
-fn serve(mut stream: UnixStream, handle: &impl Fn(Request)) {
+fn serve(mut stream: UnixStream, handle: &impl Fn(Request) -> Result<String, String>) {
     let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
     let mut text = String::new();
     if (&mut stream)
@@ -118,33 +134,42 @@ fn serve(mut stream: UnixStream, handle: &impl Fn(Request)) {
         return;
     }
     let reply = match serde_json::from_str::<Request>(&text) {
-        Ok(request) => {
-            handle(request);
-            r#"{"ok":true}"#
-        }
-        Err(_) => r#"{"error":"unknown request"}"#,
+        Ok(request) => match handle(request) {
+            Ok(out) => Reply {
+                out: Some(out),
+                error: None,
+            },
+            Err(e) => Reply {
+                out: None,
+                error: Some(e),
+            },
+        },
+        Err(_) => Reply {
+            out: None,
+            error: Some("unknown request (is the running Tasqlet older?)".into()),
+        },
     };
-    let _ = stream.write_all(reply.as_bytes());
+    let _ = stream.write_all(serde_json::to_string(&reply).unwrap_or_default().as_bytes());
 }
 
-/// Hand a request to the running instance. It may still be starting, so a missing socket is
-/// retried for a moment.
-pub fn send(dir: &Path, key: &str, request: Request) -> io::Result<()> {
+/// Hand a request to the running instance and return its answer: the text to print, or what went
+/// wrong (`Ok(Err(…))`). It may still be starting, so a missing socket is retried for a moment.
+pub fn send(dir: &Path, key: &str, request: &Request) -> io::Result<Result<String, String>> {
     let socket = dir.join(format!("{key}.sock"));
     let mut last = None;
     for _ in 0..20 {
         match UnixStream::connect(&socket) {
             Ok(mut stream) => {
                 stream.set_read_timeout(Some(Duration::from_secs(5)))?;
-                stream.write_all(serde_json::to_string(&request)?.as_bytes())?;
+                stream.write_all(serde_json::to_string(request)?.as_bytes())?;
                 stream.shutdown(std::net::Shutdown::Write)?;
                 let mut answer = String::new();
                 stream.read_to_string(&mut answer)?;
-                return if answer.contains("\"ok\"") {
-                    Ok(())
-                } else {
-                    Err(io::Error::other(answer))
-                };
+                let reply: Reply = serde_json::from_str(&answer).map_err(io::Error::other)?;
+                return Ok(match reply.error {
+                    Some(e) => Err(e),
+                    None => Ok(reply.out.unwrap_or_default()),
+                });
             }
             Err(e) => {
                 last = Some(e);
@@ -170,12 +195,29 @@ mod tests {
         let (tx, rx) = mpsc::channel();
         let tx = std::sync::Mutex::new(tx);
         instance
-            .listen(move |r| tx.lock().unwrap().send(r).unwrap())
+            .listen(move |r| {
+                let answer = match &r {
+                    Request::Run { .. } => Err("no store here".to_string()),
+                    _ => Ok("fine".to_string()),
+                };
+                tx.lock().unwrap().send(r).unwrap();
+                answer
+            })
             .unwrap();
 
         assert!(matches!(claim(dir.path(), &key).unwrap(), Start::Running));
-        send(dir.path(), &key, Request::Toggle).unwrap();
-        send(dir.path(), &key, Request::Show).unwrap();
+        assert_eq!(
+            send(dir.path(), &key, &Request::Toggle).unwrap(),
+            Ok("fine".into())
+        );
+        send(dir.path(), &key, &Request::Show).unwrap().unwrap();
+        let run = Request::Run {
+            command: Command::Current { json: false },
+        };
+        assert_eq!(
+            send(dir.path(), &key, &run).unwrap(),
+            Err("no store here".into())
+        );
         assert_eq!(
             rx.recv_timeout(Duration::from_secs(2)).unwrap(),
             Request::Toggle
@@ -184,6 +226,7 @@ mod tests {
             rx.recv_timeout(Duration::from_secs(2)).unwrap(),
             Request::Show
         );
+        assert_eq!(rx.recv_timeout(Duration::from_secs(2)).unwrap(), run);
 
         drop(instance);
         assert!(!dir.path().join(format!("{key}.sock")).exists());

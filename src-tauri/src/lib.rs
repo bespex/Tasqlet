@@ -2,12 +2,14 @@
 //! Domain logic belongs in `tasqlet-core`.
 //!
 //! Start-up: a second start hands its request to the running instance and exits (`tasqlet` shows
-//! the popover, `tasqlet --toggle` shows or hides it). The first start loads the items, puts the
-//! icon into the tray and prepares the popover hidden.
+//! the popover, `tasqlet --toggle` shows or hides it, `tasqlet add …` and the other commands of the
+//! command line run there). The first start loads the items, puts the icon into the tray and
+//! prepares the popover hidden; a command without a running app works on the files and exits.
 
 mod act;
 mod autostart;
 mod capture;
+mod cli;
 mod data;
 mod hotkey;
 mod i18n;
@@ -21,6 +23,7 @@ mod tray;
 
 use instance::{Request, Start};
 use serde_json::Value;
+use tasqlet_core::cli::Parsed;
 use tauri::{AppHandle, Manager, RunEvent};
 
 /// The argument a desktop binds to a key: show or hide the popover (D10).
@@ -41,17 +44,50 @@ fn snapshot(app: AppHandle) -> Value {
 }
 
 pub fn run() {
-    let request = if std::env::args().skip(1).any(|a| a == TOGGLE) {
-        Request::Toggle
-    } else {
-        Request::Show
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let request = match tasqlet_core::cli::parse_args(&args) {
+        Ok(Parsed::App { toggle: true }) => Request::Toggle,
+        Ok(Parsed::App { toggle: false }) => Request::Show,
+        Ok(Parsed::Run(command)) => Request::Run { command },
+        Ok(Parsed::Help) => {
+            print!("{}", tasqlet_core::cli::USAGE);
+            return;
+        }
+        Ok(Parsed::Version) => {
+            println!("tasqlet {}", env!("CARGO_PKG_VERSION"));
+            return;
+        }
+        Err(e) => {
+            eprintln!("tasqlet: {e}\n\n{}", tasqlet_core::cli::USAGE);
+            std::process::exit(2);
+        }
     };
     let data_dir = data::data_dir();
     let (runtime, key) = (instance::runtime_dir(), instance::key(&data_dir));
-    let instance = match instance::claim(&runtime, &key) {
+    let claimed = instance::claim(&runtime, &key);
+    if let Request::Run { command } = &request {
+        // The command line: in the running app, else on the files while holding the lock.
+        let answer = match &claimed {
+            Ok(Start::Running) => instance::send(&runtime, &key, &request)
+                .map_err(|e| format!("the running instance does not answer: {e}"))
+                .and_then(|answer| answer),
+            _ => cli::run_direct(&data_dir, command),
+        };
+        match answer {
+            Ok(out) => print!("{out}"),
+            Err(e) => {
+                eprintln!("tasqlet: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+    let instance = match claimed {
         Ok(Start::First(instance)) => Some(instance),
         Ok(Start::Running) => {
-            if let Err(e) = instance::send(&runtime, &key, request) {
+            if let Err(e) = instance::send(&runtime, &key, &request)
+                .and_then(|a| a.map_err(std::io::Error::other))
+            {
                 eprintln!("tasqlet: the running instance does not answer: {e}");
                 std::process::exit(1);
             }
@@ -87,6 +123,7 @@ pub fn run() {
             snapshot,
             popover::hide_popover,
             popover::set_wide,
+            popover::set_pinned,
             data::restore_backup,
             capture::parse_quick,
             capture::capture,
@@ -117,10 +154,17 @@ pub fn run() {
                 instance.listen(move |request| {
                     let app = handle.clone();
                     // Showing a window waits for the main thread: not on the socket's thread.
-                    let _ = handle.run_on_main_thread(move || match request {
-                        Request::Show => popover::show(&app, None),
-                        Request::Toggle => popover::toggle(&app, None),
-                    });
+                    match request {
+                        Request::Run { command } => cli::run_in_app(&app, &command),
+                        Request::Show => {
+                            let _ = handle.run_on_main_thread(move || popover::show(&app, None));
+                            Ok(String::new())
+                        }
+                        Request::Toggle => {
+                            let _ = handle.run_on_main_thread(move || popover::toggle(&app, None));
+                            Ok(String::new())
+                        }
+                    }
                 })?;
             }
             if show_at_start {

@@ -58,7 +58,7 @@
     {#each groups as g (g.label)}
       <div class="gh">{g.label}</div>
       {#each g.list as it (it.id)}
-        <button class="sl" class:on={it.id === id} onclick={() => onpick(it.id)} title={label(it)}>
+        <button class="sl" class:on={it.id === id} data-drop={it.id} onclick={() => onpick(it.id)} title={label(it)}>
           {label(it)}
         </button>
       {/each}
@@ -68,7 +68,7 @@
       <button class="sl on" title={label(finished)}>{label(finished)}</button>
     {/if}
   </aside>
-  <section class="right">
+  <section class="right" data-drop={item?.id}>
     <div class="top">
       <span class="gt">{t("ELABORATION")}</span>
       <span class="sp"></span>

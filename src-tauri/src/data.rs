@@ -11,10 +11,9 @@ use std::sync::{Mutex, MutexGuard};
 use chrono::Utc;
 use serde_json::{Value, json};
 use tasqlet_core::jira::{self, JiraProjects};
-use tasqlet_core::resources::ranked;
 use tasqlet_core::settings::{SETTINGS_FILE, Settings};
 use tasqlet_core::storage::{self, LoadError, Saver, Storage, Watcher};
-use tasqlet_core::{Action, Error, Item, SCHEMA_VERSION, Session, Store};
+use tasqlet_core::{Action, Error, SCHEMA_VERSION, Session, Store};
 use tauri::{AppHandle, Emitter, Manager};
 
 /// Event to the webview after every change of the items.
@@ -164,6 +163,15 @@ impl Data {
         lock(&self.session)
     }
 
+    /// Work on the session directly (the command line) and save what it changed; the caller tells
+    /// tray and webview with [`changed`].
+    pub fn change<R>(&self, f: impl FnOnce(&mut Session) -> R) -> R {
+        let mut session = self.session();
+        let result = f(&mut session);
+        self.save(session.store());
+        result
+    }
+
     /// A copy of the current store.
     pub fn store(&self) -> Store {
         self.session().store().clone()
@@ -206,19 +214,7 @@ impl Data {
 
 /// An item as the webview gets it: the data file's shape, its resources most important first, each
 /// with the label to show (`shown`) and its fixed `Alt+n` digit (docs/KONZEPT.md 5).
-pub fn item_json(it: &Item) -> Value {
-    let mut value = serde_json::to_value(it).unwrap_or(Value::Null);
-    value["resources"] = ranked(&it.resources)
-        .into_iter()
-        .map(|r| {
-            let mut json = serde_json::to_value(r.resource).unwrap_or(Value::Null);
-            json["shown"] = r.resource.shown_label().into();
-            json["digit"] = r.digit.into();
-            json
-        })
-        .collect();
-    value
-}
+pub use tasqlet_core::cli::item_json;
 
 /// Carry out an action, save it in the background and tell tray and webview.
 pub fn apply(app: &AppHandle, action: Action) -> Result<(), Error> {

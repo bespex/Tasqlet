@@ -25,6 +25,53 @@ pub fn classify(raw: &str) -> Option<ResourceType> {
     is_path.then_some(ResourceType::File)
 }
 
+/// A target as it is kept: an absolute path with spaces (dropped from a file manager, given to the
+/// CLI) becomes a `file://` link with the spaces encoded, because a resource has no whitespace.
+/// Everything else stays as it is.
+pub fn normalize(raw: &str) -> String {
+    let raw = raw.trim();
+    if raw.starts_with('/') && raw.chars().any(char::is_whitespace) {
+        let mut uri = String::from("file://");
+        for c in raw.chars() {
+            match c {
+                '%' | '#' | '?' => uri.push_str(&format!("%{:02X}", c as u32)),
+                c if c.is_whitespace() => {
+                    let mut buf = [0u8; 4];
+                    for b in c.encode_utf8(&mut buf).bytes() {
+                        uri.push_str(&format!("%{b:02X}"));
+                    }
+                }
+                c => uri.push(c),
+            }
+        }
+        return uri;
+    }
+    raw.to_string()
+}
+
+/// The path of a `file://` link, `%XX` decoded; `None` for other targets.
+pub fn file_uri_path(target: &str) -> Option<String> {
+    let rest = target.trim().strip_prefix("file://")?;
+    let rest = rest.strip_prefix("localhost").unwrap_or(rest);
+    let bytes = rest.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        let hex = |b: u8| (b as char).to_digit(16);
+        if bytes[i] == b'%'
+            && i + 2 < bytes.len()
+            && let (Some(h), Some(l)) = (hex(bytes[i + 1]), hex(bytes[i + 2]))
+        {
+            out.push((h * 16 + l) as u8);
+            i += 3;
+        } else {
+            out.push(bytes[i]);
+            i += 1;
+        }
+    }
+    Some(String::from_utf8_lossy(&out).into_owned())
+}
+
 /// The label shown for a target without an own label:
 ///
 /// | target | label |
@@ -40,7 +87,10 @@ pub fn smart_label(target: &str) -> String {
     match classify(target) {
         Some(ResourceType::Url) => url_label(target),
         Some(ResourceType::Mail) => mail_label(target),
-        Some(ResourceType::File) => file_name(target).to_string(),
+        Some(ResourceType::File) => match file_uri_path(target) {
+            Some(path) => file_name(&path).to_string(),
+            None => file_name(target).to_string(),
+        },
         None => target.to_string(),
     }
 }
@@ -165,6 +215,25 @@ mod tests {
     use super::*;
     use chrono::{TimeZone, Utc};
     use ulid::Ulid;
+
+    #[test]
+    fn paths_with_spaces_become_file_links_and_read_back() {
+        let uri = normalize("/home/me/Meine Dateien/Bericht 100%.pdf");
+        assert_eq!(uri, "file:///home/me/Meine%20Dateien/Bericht%20100%25.pdf");
+        assert_eq!(classify(&uri), Some(ResourceType::File));
+        assert_eq!(smart_label(&uri), "Bericht 100%.pdf");
+        assert_eq!(
+            file_uri_path(&uri).unwrap(),
+            "/home/me/Meine Dateien/Bericht 100%.pdf"
+        );
+        assert_eq!(normalize(" /plain/path "), "/plain/path");
+        assert_eq!(normalize("https://x.org/a b"), "https://x.org/a b");
+        assert_eq!(
+            file_uri_path("file://localhost/a%C3%A4"),
+            Some("/aä".into())
+        );
+        assert_eq!(file_uri_path("/no/uri"), None);
+    }
 
     #[test]
     fn smart_labels() {

@@ -33,6 +33,8 @@ pub struct PopoverState {
     center: AtomicBool,
     /// The elaboration is open: wide, and always in the middle of the screen.
     wide: AtomicBool,
+    /// Pinned: stays when it loses the focus, e.g. to drop a file from the file manager (D37).
+    pinned: AtomicBool,
 }
 
 /// Where the popover goes without an icon position (a setting, plan 2.6).
@@ -62,7 +64,7 @@ pub fn setup(app: &AppHandle) {
     w.on_window_event(move |event| match event {
         WindowEvent::Focused(false) => {
             let state = handle.state::<PopoverState>();
-            if !recent(&state.shown_at) {
+            if !recent(&state.shown_at) && !state.pinned.load(Ordering::Relaxed) {
                 *lock(&state.hidden_on_blur) = Some(Instant::now());
                 hide(&handle);
             }
@@ -124,10 +126,10 @@ fn settle(app: &AppHandle, w: &WebviewWindow) {
 
 pub fn hide(app: &AppHandle) {
     if let Some(w) = window(app) {
-        // The next time it opens, it is the normal popover again, not the elaboration.
-        app.state::<PopoverState>()
-            .wide
-            .store(false, Ordering::Relaxed);
+        // The next time it opens, it is the normal popover again, not the elaboration, not pinned.
+        let state = app.state::<PopoverState>();
+        state.wide.store(false, Ordering::Relaxed);
+        state.pinned.store(false, Ordering::Relaxed);
         resize(app, &w, false);
         let _ = w.hide();
         let _ = app.emit_to(LABEL, "popover-hidden", ());
@@ -197,6 +199,14 @@ pub fn set_wide(app: AppHandle, wide: bool) {
     // The window manager applies the size a moment later: place again afterwards.
     place(&app, &w);
     settle(&app, &w);
+}
+
+/// Pin or unpin the popover: pinned, it stays open when another window gets the focus (D37).
+#[tauri::command]
+pub fn set_pinned(app: AppHandle, pinned: bool) {
+    app.state::<PopoverState>()
+        .pinned
+        .store(pinned, Ordering::Relaxed);
 }
 
 #[tauri::command]

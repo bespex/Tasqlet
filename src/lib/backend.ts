@@ -2,6 +2,7 @@
 // browser (`npm run dev`) without Tauri. See docs/PLAN.md, "So läuft jeder Schritt".
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { mockSnapshot } from "./mock-data";
 import { mockParse } from "./mock-quick";
 import { mockRecentlyDone, mockSearch, searchTerms } from "./mock-search";
@@ -83,6 +84,58 @@ export async function watchHidden(onHidden: () => void): Promise<() => void> {
 /** Makes the popover twice as wide for the elaboration, or normal again. No-op in the browser. */
 export async function setWide(wide: boolean): Promise<void> {
   if (inTauri()) await invoke("set_wide", { wide });
+}
+
+/** Pins the popover: it stays open when another window gets the focus (D37). Hiding unpins. */
+export async function setPinned(pinned: boolean): Promise<void> {
+  if (inTauri()) await invoke("set_pinned", { pinned });
+}
+
+/** Dragging files or links over the popover, in CSS pixels of the page. */
+export type DropEvent =
+  | { type: "over"; x: number; y: number }
+  | { type: "drop"; x: number; y: number; targets: string[] }
+  | { type: "leave" };
+
+/** Calls `onDrop` while files or links are dragged over the popover and when they are dropped
+ *  (plan 2.5). In Tauri the shell's drop event brings real paths; in the preview the page's own
+ *  drag and drop stands in, reading `text/uri-list`. */
+export async function watchDrop(onDrop: (e: DropEvent) => void): Promise<() => void> {
+  if (inTauri()) {
+    return getCurrentWebview().onDragDropEvent(({ payload: p }) => {
+      if (p.type === "leave") return onDrop({ type: "leave" });
+      const r = window.devicePixelRatio || 1;
+      const x = p.position.x / r;
+      const y = p.position.y / r;
+      if (p.type === "drop") onDrop({ type: "drop", x, y, targets: p.paths });
+      else onDrop({ type: "over", x, y });
+    });
+  }
+  const over = (e: DragEvent) => {
+    e.preventDefault();
+    onDrop({ type: "over", x: e.clientX, y: e.clientY });
+  };
+  const leave = (e: DragEvent) => {
+    if (!e.relatedTarget) onDrop({ type: "leave" });
+  };
+  const drop = (e: DragEvent) => {
+    e.preventDefault();
+    const list = e.dataTransfer?.getData("text/uri-list") || e.dataTransfer?.getData("text/plain") || "";
+    const targets = list
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith("#"))
+      .map((l) => (l.startsWith("file://") ? decodeURIComponent(l.slice(7)) : l));
+    onDrop({ type: "drop", x: e.clientX, y: e.clientY, targets });
+  };
+  window.addEventListener("dragover", over);
+  window.addEventListener("dragleave", leave);
+  window.addEventListener("drop", drop);
+  return () => {
+    window.removeEventListener("dragover", over);
+    window.removeEventListener("dragleave", leave);
+    window.removeEventListener("drop", drop);
+  };
 }
 
 /** Calls `onShown` whenever the app has just shown the popover, so the UI can refresh. */
@@ -332,7 +385,10 @@ export async function act(change: Act): Promise<void> {
       find(change.id).date = change.date;
       break;
     case "add_resource": {
-      const target = change.target.trim();
+      // Like the core: a path with spaces is kept as a file link.
+      const raw = change.target.trim();
+      const target =
+        raw.startsWith("/") && /\s/.test(raw) ? "file://" + raw.split("/").map(encodeURIComponent).join("/") : raw;
       const entry = mockParse(target);
       const found = entry.resources[0];
       if (!found || found.target !== target) throw new Error("not a resource");

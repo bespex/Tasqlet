@@ -159,7 +159,7 @@
 </script>
 
 {#if onbreak}
-  <section class="card zone-focus pause" aria-live="polite">
+  <section class="card zone-focus pause" aria-live="polite" data-drop={item.id}>
     <Coffee size={22} />
     <p>
       <b>{t("Break.")}</b>
@@ -170,7 +170,7 @@
     </button>
   </section>
 {:else}
-  <section class="card zone-focus" class:active={item.active} class:ready>
+  <section class="card zone-focus" class:active={item.active} class:ready data-drop={item.id}>
     <div class="top">
       {#if renaming}
         <input

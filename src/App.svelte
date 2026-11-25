@@ -15,7 +15,10 @@
     watchChanged,
     watchHidden,
     watchShown,
+    watchDrop,
+    setPinned,
     setWide,
+    type DropEvent,
   } from "./lib/backend";
   import { t } from "./lib/i18n";
   import { MANY_IN_FOCUS } from "./lib/queue";
@@ -38,6 +41,12 @@
   let view = $state("focus");
   let searching = $state(false);
   let settings = $state(false);
+  /** Pinned: the popover stays when another window gets the focus (D37). */
+  let pinned = $state(false);
+  function togglePin() {
+    pinned = !pinned;
+    void setPinned(pinned);
+  }
   /** The item being elaborated (plan 2.4), or null. */
   let elab = $state<string | null>(null);
   const preview = !inTauri();
@@ -111,8 +120,15 @@
     const hidden = () => {
       elab = null;
       settings = false;
+      pinned = false;
     };
-    const stops = [watchShown(shown), watchHidden(hidden), watchChanged(reload), watchCapture(() => quick.focus())];
+    const stops = [
+      watchShown(shown),
+      watchHidden(hidden),
+      watchChanged(reload),
+      watchCapture(() => quick.focus()),
+      watchDrop(onDrop),
+    ];
     return () => stops.forEach((stop) => void stop.then((f) => f()));
   });
 
@@ -148,6 +164,55 @@
       }
     }
     quick.setText(text);
+  }
+
+  // Dropping files or links (plan 2.5): onto an entry they become its resources, elsewhere they go
+  // into the quick entry (D37). While dragging, the entry under the pointer is outlined.
+  let dropOver: Element | null = null;
+  function markDrop(el: Element | null) {
+    if (el === dropOver) return;
+    dropOver?.classList.remove("drop-over");
+    el?.classList.add("drop-over");
+    dropOver = el;
+  }
+  const dropTarget = (x: number, y: number) => document.elementFromPoint(x, y)?.closest("[data-drop]") ?? null;
+  /** A path with spaces as a `file://` link, as the quick entry reads words. */
+  const asWord = (target: string) =>
+    target.startsWith("/") && /\s/.test(target)
+      ? "file://" + target.split("/").map(encodeURIComponent).join("/")
+      : target;
+  async function onDrop(e: DropEvent) {
+    if (e.type === "leave") return markDrop(null);
+    const el = dropTarget(e.x, e.y);
+    if (e.type === "over") return markDrop(el);
+    markDrop(null);
+    const id = el?.getAttribute("data-drop");
+    let added = 0;
+    if (id) {
+      for (const target of e.targets) {
+        try {
+          await act({ kind: "add_resource", id, target });
+          added++;
+        } catch {
+          // Already there, or no link, file or mail.
+        }
+      }
+    }
+    if (added) {
+      showToast({
+        text: added === 1 ? t("Added as resource") : t("{n} added as resources", { n: added }),
+        undo: async () => {
+          for (let i = 0; i < added; i++) await undo().catch(() => {});
+          showToast({ text: t("Undone") });
+        },
+      });
+    } else if (e.targets.length) {
+      settings = false;
+      elab = null;
+      if (searching) searching = false;
+      await tick();
+      quick.setText(e.targets.map(asWord).join(" "));
+    }
   }
 
   /** Carries out a change from the work card; with a message it is shown, with "Undo". */
@@ -263,6 +328,8 @@
       active={searching || settings ? "" : view}
       onselect={selectTab}
       onsearch={openSearch}
+      {pinned}
+      onpin={togglePin}
       onsettings={() => {
         searching = false;
         settings = true;

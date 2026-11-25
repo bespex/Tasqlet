@@ -55,7 +55,7 @@
       <h2>@{group.name} <span class="count">{group.list.length}</span></h2>
       <ul role="list">
         {#each group.list as item (item.id)}
-          <li class="entry">
+          <li class="entry" data-drop={item.id}>
             <div class="top">
               <h3>{item.title || t("Untitled")}</h3>
               <button

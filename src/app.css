@@ -224,3 +224,11 @@ kbd {
     transition: none !important;
   }
 }
+
+/* An entry under files or links being dragged (plan 2.5): dropped there, they become its resources. */
+/* Over the components' own (scoped, more specific) rules: the mark must show on every entry. */
+.drop-over {
+  outline: 2px dashed var(--tq-accent) !important;
+  outline-offset: -6px !important;
+  background-color: var(--tq-accent-soft) !important;
+}

@@ -1,6 +1,6 @@
 <script lang="ts">
   // Reiter: Fokus, Ideen, Delegiert with their counts, the search at the end (docs/KONZEPT.md 6).
-  import { Search, Settings } from "@lucide/svelte";
+  import { Pin, Search, Settings } from "@lucide/svelte";
   import { t } from "../i18n";
   import { withKey } from "../keys";
 
@@ -12,12 +12,16 @@
     onselect,
     onsearch,
     onsettings,
+    pinned = false,
+    onpin,
   }: {
     tabs: Tab[];
     active: string;
     onselect: (id: string) => void;
     onsearch?: () => void;
     onsettings?: () => void;
+    pinned?: boolean;
+    onpin?: () => void;
   } = $props();
 </script>
 
@@ -36,6 +40,18 @@
     </button>
   {/each}
   <span class="sp"></span>
+  {#if onpin}
+    <button
+      class="ib"
+      class:on={pinned}
+      aria-pressed={pinned}
+      title={pinned ? t("Pinned: stays open when you click elsewhere") : t("Pin: stay open when you click elsewhere")}
+      aria-label={t("Pin")}
+      onclick={onpin}
+    >
+      <Pin size={16} />
+    </button>
+  {/if}
   {#if onsearch}
     <button class="ib" title={withKey(t("Search"), "Ctrl+F")} aria-label={t("Search")} onclick={onsearch}>
       <Search size={16} />
@@ -101,5 +117,9 @@
   .ib:hover {
     background: var(--tq-hover);
     color: var(--tq-ink);
+  }
+  .ib.on {
+    color: var(--tq-accent);
+    background: var(--tq-accent-soft);
   }
 </style>

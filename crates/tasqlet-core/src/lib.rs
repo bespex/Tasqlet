@@ -5,6 +5,7 @@
 //! disk in [`storage`] (1.2), the quick-entry parser in [`quick`] and smart labels and rank of the
 //! resources in [`resources`] (1.3). Themes (2.6) follow.
 
+pub mod cli;
 pub mod jira;
 mod model;
 pub mod overview;

@@ -48,7 +48,7 @@
   <ul role="list">
     {#each ideas as item (item.id)}
       {@const p = parts(item)}
-      <li class="idea">
+      <li class="idea" data-drop={item.id}>
         <div class="top">
           <h3>{p.title}</h3>
           <span class="age">{ageLabel(item.created_at)}</span>

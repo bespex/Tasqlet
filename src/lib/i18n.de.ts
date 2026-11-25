@@ -174,4 +174,8 @@ export const de: Record<string, string> = {
     "Diese Taste ist schon belegt, von einem anderen Programm oder dem Desktop. Die bisherige bleibt.",
   "This key cannot be used.": "Diese Taste lässt sich nicht verwenden.",
   "Wayland does not let apps hold global keys.": "Unter Wayland dürfen Apps keine globalen Tasten belegen.",
+  "Pinned: stays open when you click elsewhere": "Angeheftet: bleibt offen, wenn du daneben klickst",
+  "Pin: stay open when you click elsewhere": "Anheften: offen bleiben, wenn du daneben klickst",
+  Pin: "Anheften",
+  "{n} added as resources": "{n} als Arbeitsmittel hinzugefügt",
 };

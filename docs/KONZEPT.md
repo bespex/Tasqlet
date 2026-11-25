@@ -159,8 +159,8 @@ Jedes Speichern meldet sich kurz zurück, mit „Rückgängig“ (z. B. „Als I
 |---|---|---|
 | `Strg+V` ins offene Popover | Über einer Aufgabe (überfahren oder ausgewählt): Link oder Pfad wird angehängt. Ohne Ziel kommt der Inhalt in die Schnelleingabe. Hat ein Textfeld den Fokus, wird normal eingefügt. | MVP 1 |
 | Globaler Hotkey | Öffnet das Popover mit fokussierter Eingabe (`tasqlet --toggle`) | MVP 1 |
-| Ablegen | Dateien und Links aus Dateimanager oder Browser auf eine Aufgabe im Popover ziehen | MVP 2 |
-| CLI | `tasqlet add "…" [--focus|--now|--inter] [--link URL]` | MVP 2 |
+| Ablegen | Dateien und Links aus Dateimanager oder Browser auf eine Aufgabe im Popover ziehen; das 📌 in der Kopfzeile hält das Popover dafür offen. Auf eine freie Stelle: in die Schnelleingabe (D37) | MVP 2 |
+| CLI | `tasqlet add "…" [--now|--focus|--inter|--idea] [--link URL]` (ohne Option ans Ende des Fokus), `open [n]`, `current`, `list` (D37) | MVP 2 |
 | Markierung übernehmen | `tasqlet capture`: markierter Text kommt in die Schnelleingabe (Enter bestätigt), eine markierte URL oder ein Pfad an die aktuelle Aufgabe | MVP 3 |
 
 ### 3.3 KI-Assistenten über MCP

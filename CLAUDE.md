@@ -2,7 +2,7 @@
 
 Persönliches Fokus- und Notiz-Werkzeug im Linux-Tray: einfach erfassen, schnell überblicken, kurze
 Wege zu den Arbeitsmitteln. Tauri 2 (Rust, `src-tauri/`), Domäne in `crates/tasqlet-core/`, Frontend
-Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.10, 2.1 bis 2.4, schlanke Einstellungen und Release 0.1.0 fertig, Alltagstest läuft, bei 1.4 steht die Abnahme am Desktop noch aus.
+Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.10, 2.1 bis 2.5, schlanke Einstellungen und Release 0.1.0 fertig, Alltagstest läuft, bei 1.4 steht die Abnahme am Desktop noch aus.
 
 ## Lesen, bevor gearbeitet wird
 
@@ -91,6 +91,7 @@ Browser-Vorschau prüfen.
 | `crates/tasqlet-core/tests/crash.rs` | Abnahme 1.2: `kill -9` mitten im Schreiben, Daten bleiben ladbar und vollständig |
 | `crates/tasqlet-core/tests/invariants.rs` | `proptest`: beliebige Aktionsfolgen halten alle Invarianten |
 | `crates/tasqlet-core/src/search.rs` | Volltextsuche über alle Einträge (`search`, `recently_done`), Rang je Fundstelle |
+| `crates/tasqlet-core/src/cli.rs`, `src-tauri/src/cli.rs` | Kommandozeile `add`/`open`/`current`/`list`: Argumente und Ausführung im Core; Hülle führt sie in der App (Socket) oder direkt auf den Dateien aus |
 | `crates/tasqlet-core/src/overview.rs` | Stand auf einen Blick (Modus, Zahl, aktuelle und nächste Aufgabe) für das Tray |
 | `src-tauri/src/lib.rs` | Start (Einzelinstanz, `--toggle`), Tauri-Builder, Commands (`schema_version`, `snapshot`) |
 | `src-tauri/src/act.rs` | Befehl `act`: Änderungen an einem Eintrag (Karte) als `Action` an den Core |
@@ -102,7 +103,7 @@ Browser-Vorschau prüfen.
 | `src-tauri/src/data.rs` | `Session` der App, Speichern im Hintergrund, Neuladen bei Änderung von außen, Ereignis `store-changed` |
 | `src-tauri/src/tray.rs` | Tray (`ksni`): Symbol mit Zahl, Punkt, Tasse; Tooltip; Menü |
 | `src-tauri/src/popover.rs` | Popover zeigen/verstecken, Position am Symbol (X11) oder in der Ecke, Schließen bei Fokusverlust |
-| `src-tauri/src/instance.rs` | Einzelinstanz: Sperrdatei und Socket je Datenordner |
+| `src-tauri/src/instance.rs` | Einzelinstanz: Sperrdatei und Socket je Datenordner, Befehle der CLI mit Antwort |
 | `src-tauri/src/platform.rs` | X11 oder Wayland, Fenster aktivieren (`x11rb`), Tray-Host vorhanden? |
 | `src-tauri/src/i18n.rs` | Texte der Hülle (Tray) auf Deutsch und Englisch |
 | `src-tauri/tauri.conf.json` | Fenster `popover` (470 px, rahmenlos), Bundle `.deb`/AppImage, Identifier `eu.spex.tasqlet` |

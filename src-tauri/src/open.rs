@@ -40,8 +40,22 @@ fn launch(target: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Open a resource's target, unless it is a file that is gone: that is told to the user, not handed
+/// to the desktop.
+pub fn launch_checked(kind: ResourceType, target: &str) -> Result<(), String> {
+    if kind == ResourceType::File {
+        let raw =
+            tasqlet_core::resources::file_uri_path(target).unwrap_or_else(|| target.to_string());
+        let path = target_for_open(&raw)?;
+        if !std::path::Path::new(&path).exists() {
+            return Err(format!("not found: {raw}"));
+        }
+    }
+    launch(target)
+}
+
 pub fn open_one(app: &AppHandle, id: Id, resource: Id) -> Result<(), String> {
-    let target = {
+    let (kind, target) = {
         let store = app.state::<Data>().store();
         let item = store.get(id).ok_or("unknown item")?;
         let r = item
@@ -49,16 +63,9 @@ pub fn open_one(app: &AppHandle, id: Id, resource: Id) -> Result<(), String> {
             .iter()
             .find(|r| r.id == resource)
             .ok_or("unknown resource")?;
-        // A file that is gone is told to the user, not handed to the desktop.
-        if r.kind == ResourceType::File {
-            let path = target_for_open(r.target.strip_prefix("file://").unwrap_or(&r.target))?;
-            if !std::path::Path::new(&path).exists() {
-                return Err(format!("not found: {}", r.target));
-            }
-        }
-        r.target.clone()
+        (r.kind, r.target.clone())
     };
-    launch(&target)?;
+    launch_checked(kind, &target)?;
     // Opening is no undo step of its own.
     let _ = data::edit(app, Action::MarkUsed { id, resource });
     Ok(())

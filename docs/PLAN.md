@@ -289,6 +289,8 @@ Konzept: 3.2, 9.
   Datei mit `flock`.
 
 **Abnahme:** Ein Skript legt eine Aufgabe mit Link an, sie erscheint sofort im Popover.
+Stand: gebaut (D37), dazu der Knopf „Anheften“; ohne laufende App hält die CLI die Einzelinstanz-Sperre
+statt eines eigenen `flock`. Abnahme am Desktop steht aus.
 
 ### 2.6 Themen
 

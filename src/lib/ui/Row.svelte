@@ -37,6 +37,7 @@
   class:sel={selected}
   class:dragging
   data-id={id}
+  data-drop={id}
   role="option"
   aria-selected={selected}
   tabindex={selected ? 0 : -1}

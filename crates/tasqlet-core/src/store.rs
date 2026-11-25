@@ -432,7 +432,8 @@ impl Store {
     /// is `Unchanged`.
     pub fn add_resource(&mut self, id: Id, target: &str, now: DateTime<Utc>) -> Result<(), Error> {
         let i = self.index(id)?;
-        let target = target.trim();
+        let target = crate::resources::normalize(target);
+        let target = target.as_str();
         let kind = crate::resources::classify(target).ok_or(Error::NotApplicable)?;
         if self.items[i].resources.iter().any(|r| r.target == target) {
             return Err(Error::Unchanged);
