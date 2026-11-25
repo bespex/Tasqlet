@@ -52,7 +52,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [x] 1.10 Suche
   - [ ] 1.11 Pakete, Autostart, Alltagstest
 - **MVP 2: Drei Geschwindigkeiten, Delegation, Themen**
-  - [ ] 2.1 Zwischendurch-Leiste
+  - [x] 2.1 Zwischendurch-Leiste
   - [x] 2.2 Ideen (vorgezogen vor 1.11, damit der Alltagstest sie hat)
   - [x] 2.3 Delegiert (vorgezogen vor 1.11)
   - [ ] 2.4 Ausarbeitung (Split-View)

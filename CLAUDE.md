@@ -2,7 +2,7 @@
 
 Persönliches Fokus- und Notiz-Werkzeug im Linux-Tray: einfach erfassen, schnell überblicken, kurze
 Wege zu den Arbeitsmitteln. Tauri 2 (Rust, `src-tauri/`), Domäne in `crates/tasqlet-core/`, Frontend
-Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.10, 2.2 und 2.3 fertig, bei 1.4 steht die Abnahme am Desktop noch aus.
+Svelte 5 + TypeScript (`src/`). Stand: Phase 0 und Schritte 1.1–1.10, 2.1, 2.2, 2.3 und schlanke Einstellungen fertig, bei 1.4 steht die Abnahme am Desktop noch aus.
 
 ## Lesen, bevor gearbeitet wird
 
@@ -88,6 +88,7 @@ Browser-Vorschau prüfen.
 | `crates/tasqlet-core/src/overview.rs` | Stand auf einen Blick (Modus, Zahl, aktuelle und nächste Aufgabe) für das Tray |
 | `src-tauri/src/lib.rs` | Start (Einzelinstanz, `--toggle`), Tauri-Builder, Commands (`schema_version`, `snapshot`) |
 | `src-tauri/src/act.rs` | Befehl `act`: Änderungen an einem Eintrag (Karte) als `Action` an den Core |
+| `crates/tasqlet-core/src/settings.rs`, `src-tauri/src/prefs.rs`, `autostart.rs` | `settings.json` (Sprache, Popover-Position), Befehle der Einstellungen, Autostart-Eintrag |
 | `src-tauri/src/open.rs` | Befehle `open_resource`, `open_all`: `xdg-open`, `used_at` setzen (D30) |
 | `src-tauri/src/search.rs` | Befehl `search` (Treffer im Snapshot-Format) |
 | `src-tauri/src/capture.rs` | Befehle `parse_quick`, `capture`, `undo` für die Schnelleingabe |
@@ -108,6 +109,7 @@ Browser-Vorschau prüfen.
 | `src/lib/ui/WorkCard.svelte` | Arbeitskarte #1 nach K2 (D20): runder Knopf, Hover-Knöpfe, Arbeitsmittel, Checkliste, Notiz, Fußleiste, Pausenansicht |
 | `src/lib/ui/SearchView.svelte`, `Mark.svelte`, `src/lib/mock-search.ts` | Suchansicht mit Markierung; vereinfachte Suche nur für die Vorschau |
 | `src/lib/ui/IdeasView.svelte`, `DelegatedView.svelte` | Reiter „Ideen“ (Karten, Brainstorm) und „Delegiert“ (nach Person gruppiert) |
+| `src/lib/ui/IntermezzoBar.svelte`, `SettingsView.svelte` | Zwischendurch-Leiste unten (Pillen); schlanke Einstellungen (Sprache, Popover-Position, Autostart, Jira vergessen) |
 | `src/lib/ui/Queue.svelte`, `src/lib/queue.ts` | Queue #2 … n: Tastatur, Sortieren per Zeiger am Griff, reine Hilfen dazu |
 | `src/lib/ui/QuickEntry.svelte`, `src/lib/mock-quick.ts` | Schnelleingabe mit Live-Erkennung und vier Tasten; vereinfachter Parser nur für die Vorschau |
 | `src/Gallery.svelte` | Bausteinseite, `http://localhost:1430/#bausteine` |

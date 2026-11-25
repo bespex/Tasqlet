@@ -106,3 +106,17 @@ export interface SearchResult {
   recent: boolean;
   items: Item[];
 }
+
+export type Language = "auto" | "de" | "en";
+export type PopoverPosition = "corner" | "center";
+
+/** What the settings dialog shows (shell: `prefs::get_settings`). */
+export interface Settings {
+  language: Language;
+  popover_position: PopoverPosition;
+  autostart: boolean;
+  /** No icon position is known (Wayland): the position setting matters. */
+  wayland: boolean;
+  /** Learned Jira projects with their base URL (D26). */
+  jira: { project: string; base: string }[];
+}

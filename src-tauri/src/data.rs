@@ -12,6 +12,7 @@ use chrono::Utc;
 use serde_json::{Value, json};
 use tasqlet_core::jira::{self, JiraProjects};
 use tasqlet_core::resources::ranked;
+use tasqlet_core::settings::{SETTINGS_FILE, Settings};
 use tasqlet_core::storage::{self, LoadError, Saver, Storage, Watcher};
 use tasqlet_core::{Action, Error, Item, SCHEMA_VERSION, Session, Store};
 use tauri::{AppHandle, Emitter, Manager};
@@ -30,6 +31,9 @@ pub struct Data {
     /// it is not overwritten.
     jira: Mutex<JiraProjects>,
     jira_path: Option<PathBuf>,
+    /// The few settings (`settings.json`); no path if the file was unreadable, so it is not overwritten.
+    settings: Mutex<Settings>,
+    settings_path: Option<PathBuf>,
 }
 
 /// Why the data could not be loaded.
@@ -86,6 +90,15 @@ impl Data {
             }
             None => (JiraProjects::default(), None),
         };
+        let path = jira::config_dir().map(|dir| dir.join(SETTINGS_FILE));
+        let (settings, settings_path) = match path.as_deref().map(Settings::load) {
+            Some(Ok(settings)) => (settings, path),
+            Some(Err(e)) => {
+                eprintln!("tasqlet: settings not readable, using defaults and not saving: {e}");
+                (Settings::default(), None)
+            }
+            None => (Settings::default(), None),
+        };
         Ok(Self {
             session: Mutex::new(Session::new(store)),
             storage,
@@ -94,12 +107,45 @@ impl Data {
             watcher: Mutex::new(None),
             jira: Mutex::new(jira),
             jira_path,
+            settings: Mutex::new(settings),
+            settings_path,
         })
     }
 
     /// A copy of the learned Jira projects.
     pub fn jira(&self) -> JiraProjects {
         lock(&self.jira).clone()
+    }
+
+    /// A copy of the settings.
+    pub fn settings(&self) -> Settings {
+        lock(&self.settings).clone()
+    }
+
+    /// Change the settings and keep them. Fails if the file could not be read at start (it is then
+    /// not overwritten) or not written.
+    pub fn set_settings(&self, settings: Settings) -> Result<(), String> {
+        let path = self
+            .settings_path
+            .as_ref()
+            .ok_or("the settings file is unreadable and stays untouched")?;
+        settings.save(path).map_err(|e| e.to_string())?;
+        *lock(&self.settings) = settings;
+        Ok(())
+    }
+
+    /// Forget a learned Jira project and keep the change. Returns whether it was known.
+    pub fn forget_jira(&self, project: &str) -> Result<bool, String> {
+        let path = self
+            .jira_path
+            .as_ref()
+            .ok_or("the Jira file is unreadable and stays untouched")?;
+        let mut jira = lock(&self.jira);
+        let known = jira.forget(project);
+        if known {
+            jira.save(path).map_err(|e| e.to_string())?;
+        }
+        Ok(known)
     }
 
     /// Learn the Jira projects of these links and keep them if something new was learned.

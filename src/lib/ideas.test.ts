@@ -44,3 +44,48 @@ describe("helpers", () => {
     setLang("de");
   });
 });
+
+describe("the intermezzo bar's actions", () => {
+  const inter = () => mock.snapshot().items.filter((i) => i.state === "intermezzo");
+
+  it("taking a pill over makes it #1 and the old one #2; undo puts it back", async () => {
+    mock.reset();
+    const pill = inter()[1];
+    const before = mock.snapshot().items.find((i) => i.active)!;
+    await act({ kind: "start", id: pill.id });
+    const after = mock
+      .snapshot()
+      .items.filter((i) => i.state === "focus")
+      .sort((a, b) => a.order - b.order);
+    expect(after[0].id).toBe(pill.id);
+    expect(after[0].active).toBe(true);
+    expect(after[1].id).toBe(before.id);
+    expect(after[1].last_active).toBe(true);
+    expect(inter().map((i) => i.order)).toEqual(inter().map((_, k) => k));
+    await undo();
+    expect(inter().some((i) => i.id === pill.id)).toBe(true);
+  });
+
+  it("ticking a pill off finishes it and closes the gap", async () => {
+    mock.reset();
+    const [first, second] = inter();
+    await act({ kind: "finish", id: first.id });
+    expect(inter().map((i) => i.id)).not.toContain(first.id);
+    expect(inter()[0].id).toBe(second.id);
+    expect(inter()[0].order).toBe(0);
+  });
+});
+
+describe("settings in the preview", () => {
+  it("keeps language, position, autostart and forgets a Jira project", async () => {
+    const { getSettings, setSettings, setAutostart, forgetJira } = await import("./backend");
+    const first = await getSettings();
+    expect(first.jira.length).toBeGreaterThan(0);
+    await setSettings("en", "center");
+    await setAutostart(true);
+    await forgetJira(first.jira[0].project);
+    const now = await getSettings();
+    expect([now.language, now.popover_position, now.autostart]).toEqual(["en", "center", true]);
+    expect(now.jira.map((j) => j.project)).not.toContain(first.jira[0].project);
+  });
+});

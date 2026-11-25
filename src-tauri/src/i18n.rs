@@ -9,10 +9,22 @@ pub enum Lang {
     En,
 }
 
-/// The language from `LC_ALL`, `LC_MESSAGES` or `LANG`: German if it starts with `de`.
+static FORCED: OnceLock<Lang> = OnceLock::new();
+
+/// Use this language whatever the system says (the setting). Only counts before the first text is
+/// asked for, so it is called at startup; a change takes effect at the next start.
+pub fn force(lang: Lang) {
+    let _ = FORCED.set(lang);
+}
+
+/// The language: the one set in the settings, else from `LC_ALL`, `LC_MESSAGES` or `LANG` (German if
+/// it starts with `de`).
 pub fn lang() -> Lang {
     static LANG: OnceLock<Lang> = OnceLock::new();
     *LANG.get_or_init(|| {
+        if let Some(forced) = FORCED.get() {
+            return *forced;
+        }
         let var = ["LC_ALL", "LC_MESSAGES", "LANG"]
             .iter()
             .filter_map(|k| std::env::var(k).ok())

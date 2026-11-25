@@ -10,6 +10,7 @@
 //!   right after hiding does not show it again.
 
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewWindow, WindowEvent};
@@ -28,6 +29,15 @@ pub struct PopoverState {
     anchor: Mutex<Option<(i32, i32)>>,
     shown_at: Mutex<Option<Instant>>,
     hidden_on_blur: Mutex<Option<Instant>>,
+    /// Without an icon position: the middle of the screen instead of the top right corner.
+    center: AtomicBool,
+}
+
+/// Where the popover goes without an icon position (a setting, plan 2.6).
+pub fn set_center(app: &AppHandle, center: bool) {
+    app.state::<PopoverState>()
+        .center
+        .store(center, Ordering::Relaxed);
 }
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
@@ -127,6 +137,7 @@ pub fn position(
     anchor: Option<(i32, i32)>,
     area: (i32, i32, i32, i32),
     size: (i32, i32),
+    center: bool,
 ) -> (i32, i32) {
     let (ax, ay, aw, ah) = area;
     let (width, height) = size;
@@ -139,6 +150,7 @@ pub fn position(
                 cy + MARGIN
             },
         ),
+        None if center => (ax + (aw - width) / 2, ay + (ah - height) / 2),
         None => (ax + aw - width - MARGIN, ay + MARGIN),
     };
     // Keep it on screen; a popover larger than the screen sticks to the top left.
@@ -172,6 +184,7 @@ fn place(app: &AppHandle, w: &WebviewWindow) {
             area.size.height as i32,
         ),
         (size.width as i32, size.height as i32),
+        app.state::<PopoverState>().center.load(Ordering::Relaxed),
     );
     let _ = w.set_position(PhysicalPosition::new(x, y));
 }
@@ -207,24 +220,39 @@ mod tests {
 
     #[test]
     fn above_an_icon_in_a_bottom_panel() {
-        assert_eq!(position(Some((1800, 1070)), AREA, SIZE), (1442, 382));
+        assert_eq!(position(Some((1800, 1070)), AREA, SIZE, false), (1442, 382));
     }
 
     #[test]
     fn below_an_icon_in_a_top_panel() {
-        assert_eq!(position(Some((1000, 10)), AREA, SIZE), (765, 18));
+        assert_eq!(position(Some((1000, 10)), AREA, SIZE, false), (765, 18));
     }
 
     #[test]
     fn top_right_corner_without_anchor() {
-        assert_eq!(position(None, AREA, SIZE), (1442, 8));
+        assert_eq!(position(None, AREA, SIZE, false), (1442, 8));
         // Second monitor to the right.
-        assert_eq!(position(None, (1920, 0, 2560, 1440), SIZE), (4002, 8));
+        assert_eq!(
+            position(None, (1920, 0, 2560, 1440), SIZE, false),
+            (4002, 8)
+        );
+    }
+
+    #[test]
+    fn the_middle_of_the_screen_when_asked_for() {
+        assert_eq!(position(None, AREA, SIZE, true), (725, 200));
+        // An icon position still wins.
+        assert_eq!(position(Some((1000, 10)), AREA, SIZE, true), (765, 18));
+        // Small screens: still on screen.
+        assert_eq!(position(None, (0, 0, 400, 600), SIZE, true), (8, 8));
     }
 
     #[test]
     fn stays_on_a_small_screen() {
-        assert_eq!(position(Some((5, 5)), (0, 0, 800, 600), SIZE), (8, 8));
-        assert_eq!(position(None, (0, 0, 400, 600), SIZE), (8, 8));
+        assert_eq!(
+            position(Some((5, 5)), (0, 0, 800, 600), SIZE, false),
+            (8, 8)
+        );
+        assert_eq!(position(None, (0, 0, 400, 600), SIZE, false), (8, 8));
     }
 }

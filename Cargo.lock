@@ -3708,6 +3708,7 @@ name = "tasqlet"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "dirs",
  "ksni",
  "serde",
  "serde_json",

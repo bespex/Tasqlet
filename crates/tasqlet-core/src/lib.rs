@@ -12,6 +12,7 @@ pub mod quick;
 pub mod resources;
 pub mod search;
 mod session;
+pub mod settings;
 pub mod storage;
 mod store;
 

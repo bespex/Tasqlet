@@ -1,6 +1,6 @@
 <script lang="ts">
   // Reiter: Fokus, Ideen, Delegiert with their counts, the search at the end (docs/KONZEPT.md 6).
-  import { Search } from "@lucide/svelte";
+  import { Search, Settings } from "@lucide/svelte";
   import { t } from "../i18n";
 
   type Tab = { id: string; label: string; count: number };
@@ -10,11 +10,13 @@
     active,
     onselect,
     onsearch,
+    onsettings,
   }: {
     tabs: Tab[];
     active: string;
     onselect: (id: string) => void;
     onsearch?: () => void;
+    onsettings?: () => void;
   } = $props();
 </script>
 
@@ -35,6 +37,11 @@
   {#if onsearch}
     <button class="ib" title={`${t("Search")} (Strg+F)`} aria-label={t("Search")} onclick={onsearch}>
       <Search size={16} />
+    </button>
+  {/if}
+  {#if onsettings}
+    <button class="ib" title={t("Settings")} aria-label={t("Settings")} onclick={onsettings}>
+      <Settings size={16} />
     </button>
   {/if}
 </div>

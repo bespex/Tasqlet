@@ -22,7 +22,9 @@
   import Notice from "./lib/ui/Notice.svelte";
   import DelegatedView from "./lib/ui/DelegatedView.svelte";
   import IdeasView from "./lib/ui/IdeasView.svelte";
+  import IntermezzoBar from "./lib/ui/IntermezzoBar.svelte";
   import QuickEntry from "./lib/ui/QuickEntry.svelte";
+  import SettingsView from "./lib/ui/SettingsView.svelte";
   import SearchView from "./lib/ui/SearchView.svelte";
   import Queue from "./lib/ui/Queue.svelte";
   import Tabs from "./lib/ui/Tabs.svelte";
@@ -32,6 +34,8 @@
   let snapshot = $state<Snapshot | null>(null);
   let view = $state("focus");
   let searching = $state(false);
+  let settings = $state(false);
+  let headHeight = $state(48);
   const preview = !inTauri();
 
   const items = $derived(snapshot?.items ?? []);
@@ -50,7 +54,12 @@
   let queue = $state<Queue>();
 
   function openSearch() {
+    settings = false;
     searching = true;
+  }
+  function closeSettings() {
+    settings = false;
+    void tick().then(() => quick.focus());
   }
   function closeSearch() {
     searching = false;
@@ -58,6 +67,7 @@
   }
   function selectTab(id: string) {
     view = id;
+    settings = false;
     if (searching) closeSearch();
   }
 
@@ -163,7 +173,8 @@
       e.preventDefault();
       openSearch();
     } else if (e.key === "Escape") {
-      if (searching) closeSearch();
+      if (settings) closeSettings();
+      else if (searching) closeSearch();
       else void hidePopover();
     } else if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === "z" && !typing(e.target)) {
       e.preventDefault();
@@ -176,7 +187,18 @@
 
 <div class="stage" class:preview>
   <div class="pop">
-    <Tabs {tabs} active={searching ? "" : view} onselect={selectTab} onsearch={openSearch} />
+    <div class="head" bind:clientHeight={headHeight}>
+      <Tabs
+        {tabs}
+        active={searching || settings ? "" : view}
+        onselect={selectTab}
+        onsearch={openSearch}
+        onsettings={() => {
+          searching = false;
+          settings = true;
+        }}
+      />
+    </div>
     <QuickEntry bind:this={quick} ondown={() => queue?.enter()} />
 
     {#if snapshot?.tray_missing}
@@ -235,6 +257,14 @@
       {/if}
     </div>
 
+    <IntermezzoBar {items} {run} />
+
+    {#if settings}
+      <div class="overlay" style:top="{headHeight}px">
+        <SettingsView onclose={closeSettings} />
+      </div>
+    {/if}
+
     <footer class="zone-chrome">
       {preview ? t("Browser preview with sample data") : t("Esc hides the popover")}
     </footer>
@@ -267,6 +297,15 @@
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.38);
+  }
+  .overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    background: var(--tq-bg);
+    overflow-y: auto;
   }
   .body {
     flex: 1;

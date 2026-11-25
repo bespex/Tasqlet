@@ -5,7 +5,18 @@ import { listen } from "@tauri-apps/api/event";
 import { mockSnapshot } from "./mock-data";
 import { mockParse } from "./mock-quick";
 import { mockRecentlyDone, mockSearch, searchTerms } from "./mock-search";
-import type { Act, CaptureKey, Captured, Item, QuickEntry, SearchResult, Snapshot } from "./types";
+import type {
+  Act,
+  CaptureKey,
+  Captured,
+  Item,
+  Language,
+  PopoverPosition,
+  QuickEntry,
+  SearchResult,
+  Settings,
+  Snapshot,
+} from "./types";
 
 /** True inside the Tauri webview, false in the browser preview. */
 export const inTauri = (): boolean => typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -333,4 +344,48 @@ export async function search(query: string): Promise<SearchResult> {
   const items = mock.snapshot().items;
   const recent = searchTerms(query).length === 0;
   return { recent, items: recent ? mockRecentlyDone(items) : mockSearch(items, query) };
+}
+
+/** The preview's settings live in the session, so a reload (language switch) keeps them. */
+let previewMemory: Settings | null = null;
+const previewSettings = (): Settings => {
+  const saved = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("tq-settings") : null;
+  if (saved) return JSON.parse(saved) as Settings;
+  return (
+    previewMemory ?? {
+      language: "auto",
+      popover_position: "corner",
+      autostart: false,
+      wayland: true,
+      jira: [{ project: "CORE", base: "https://jira.example.com" }],
+    }
+  );
+};
+const keepPreview = (s: Settings) => {
+  previewMemory = s;
+  if (typeof sessionStorage !== "undefined") sessionStorage.setItem("tq-settings", JSON.stringify(s));
+};
+
+/** Settings for the dialog: language, popover position, autostart, learned Jira projects. */
+export async function getSettings(): Promise<Settings> {
+  return inTauri() ? invoke<Settings>("get_settings") : previewSettings();
+}
+
+/** Saves language and popover position. A new language shows after a reload (and in the tray after a restart). */
+export async function setSettings(language: Language, popoverPosition: PopoverPosition): Promise<void> {
+  if (inTauri()) return invoke("set_settings", { language, popoverPosition });
+  keepPreview({ ...previewSettings(), language, popover_position: popoverPosition });
+}
+
+/** Switches autostart at login on or off. */
+export async function setAutostart(enabled: boolean): Promise<void> {
+  if (inTauri()) return invoke("set_autostart", { enabled });
+  keepPreview({ ...previewSettings(), autostart: enabled });
+}
+
+/** Forgets a learned Jira project (D26). */
+export async function forgetJira(project: string): Promise<void> {
+  if (inTauri()) return invoke("forget_jira", { project });
+  const s = previewSettings();
+  keepPreview({ ...s, jira: s.jira.filter((j) => j.project !== project) });
 }

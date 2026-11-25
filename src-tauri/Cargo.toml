@@ -19,6 +19,7 @@ tauri-build = { version = "2", features = [] }
 tasqlet-core = { path = "../crates/tasqlet-core" }
 tauri = { version = "2", features = ["image-png"] }
 serde = { version = "1", features = ["derive"] }
+dirs = "7.0.0"
 serde_json = "1"
 ksni = "0.3"
 x11rb = "0.13"

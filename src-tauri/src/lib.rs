@@ -6,6 +6,7 @@
 //! icon into the tray and prepares the popover hidden.
 
 mod act;
+mod autostart;
 mod capture;
 mod data;
 mod i18n;
@@ -13,6 +14,7 @@ mod instance;
 mod open;
 mod platform;
 mod popover;
+mod prefs;
 mod search;
 mod tray;
 
@@ -67,6 +69,12 @@ pub fn run() {
             std::process::exit(1);
         }
     };
+    let settings = data.settings();
+    match settings.language {
+        tasqlet_core::settings::Language::De => i18n::force(i18n::Lang::De),
+        tasqlet_core::settings::Language::En => i18n::force(i18n::Lang::En),
+        tasqlet_core::settings::Language::Auto => {}
+    }
     let show_at_start = request == Request::Toggle;
 
     let app = tauri::Builder::default()
@@ -82,11 +90,19 @@ pub fn run() {
             act::act,
             open::open_resource,
             open::open_all,
-            search::search
+            search::search,
+            prefs::get_settings,
+            prefs::set_settings,
+            prefs::set_autostart,
+            prefs::forget_jira
         ])
         .setup(move |app| {
             let handle = app.handle().clone();
             popover::setup(&handle);
+            popover::set_center(
+                &handle,
+                settings.popover_position == tasqlet_core::settings::PopoverPosition::Center,
+            );
             tray::start(&handle);
             data::watch(&handle);
             if let Some(instance) = &instance {
