@@ -172,6 +172,11 @@ export async function openSettings(): Promise<void> {
   if (inTauri()) await invoke("open_settings");
 }
 
+/** Tells a window built hidden that its page is drawn with its data, so it shows now. */
+export async function windowReady(): Promise<void> {
+  if (inTauri()) await invoke("window_ready");
+}
+
 /** Calls `onChanged` when a setting changed in the settings window (language, appearance). */
 export async function watchSettings(onChanged: () => void): Promise<() => void> {
   if (!inTauri()) return () => {};

@@ -139,6 +139,7 @@ pub fn run() {
             prefs::set_settings,
             prefs::set_appearance,
             settings_window::open_settings,
+            settings_window::window_ready,
             prefs::set_autostart,
             prefs::set_window_form,
             prefs::forget_jira,

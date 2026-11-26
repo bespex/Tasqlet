@@ -21,10 +21,12 @@
   import { AXES_USED, appearanceOf, applyAppearance } from "../theme";
   import type { Language, PopoverPosition, Settings, SidebarSide, ToggleKeyProblem, WindowForm } from "../types";
 
-  // Without `onclose` this is the settings window (D40): the window's own frame closes it.
-  let { onclose }: { onclose?: () => void } = $props();
+  // Without `onclose` this is the settings window (D40): the window's own frame closes it. `initial`
+  // are the settings already read at start, so the first section is filled when first drawn.
+  let { onclose, initial }: { onclose?: () => void; initial?: Settings } = $props();
 
-  let s = $state<Settings | null>(null);
+  // svelte-ignore state_referenced_locally
+  let s = $state<Settings | null>(initial ?? null);
 
   type Section = "general" | "theme" | "jira";
   let section = $state<Section>("general");
@@ -36,7 +38,9 @@
   let problem = $state("");
 
   const load = () => getSettings().then((v) => (s = v));
-  onMount(() => void load());
+  onMount(() => {
+    if (!initial) void load();
+  });
 
   async function guard(job: () => Promise<void>) {
     problem = "";
