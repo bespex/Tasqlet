@@ -1,7 +1,7 @@
 {
   "name": "tasqlet",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Focus and notes in your tray: quick capture, a calm overview, one click to your resources.",
   "type": "module",
   "license": "MIT",
