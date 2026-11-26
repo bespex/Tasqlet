@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import type { Appearance } from "@bespex/themes";
+import { systemLang } from "./i18n";
 import { mockSnapshot } from "./mock-data";
 import { mockParse } from "./mock-quick";
 import { mockRecentlyDone, mockSearch, searchTerms } from "./mock-search";
@@ -31,13 +32,20 @@ const newId = (prefix: string) => `${prefix}${Date.now()}-${++lastId}`;
 
 /** The browser preview's own little store: sample data, changed by capture and undo. */
 const preview = {
-  snapshot: mockSnapshot(),
+  snapshot: mockSnapshot(new Date(), sampleLang()),
   history: [] as Snapshot[],
   listeners: new Set<() => void>(),
   changed() {
     this.listeners.forEach((l) => l());
   },
 };
+
+/** The language of the preview's sample data: the one set in the preview, else the system's. */
+function sampleLang(): "de" | "en" {
+  const saved = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("tq-settings") : null;
+  const language = saved ? (JSON.parse(saved) as Settings).language : "auto";
+  return language === "auto" ? systemLang() : language;
+}
 
 /** Most important resource first (last opened, then order of adding), each with its fixed digit. */
 export function rankResources(items: Item[]): Item[] {
@@ -59,7 +67,7 @@ export const mock = {
   },
   /** Back to the sample data (tests). */
   reset() {
-    preview.snapshot = mockSnapshot();
+    preview.snapshot = mockSnapshot(new Date(), sampleLang());
     preview.history = [];
   },
 };

@@ -115,15 +115,66 @@ const seeds: Seed[] = [
   },
 ];
 
-/** Builds the sample snapshot. Deterministic for a given `now`. */
-export function mockSnapshot(now: Date = new Date()): Snapshot {
+/** The sample texts in English, for the English preview and the screenshots of the website. */
+const english: Record<string, string> = {
+  "CORE-418: Webhook-Authentifizierung umstellen": "CORE-418: Switch webhook authentication",
+  "Alten Token-Flow im Staging prüfen": "Check the old token flow on staging",
+  "Header-Validierung im Gateway anpassen": "Adapt header validation in the gateway",
+  "Deployment-Fenster abstimmen": "Agree on the deployment window",
+  "Staging nutzt noch X-Legacy. Bei Rückfragen an Sarah wenden (ab 14 Uhr erreichbar).":
+    "Staging still uses X-Legacy. Questions go to Sarah (available from 2 pm).",
+  "Release-Notes für v2.4 finalisieren": "Finish the release notes for v2.4",
+  "Changelog aus Git ziehen": "Pull the changelog from Git",
+  "Breaking Changes markieren": "Mark breaking changes",
+  "Upgrade-Hinweise schreiben": "Write upgrade notes",
+  "Review durch Produkt": "Review by product",
+  "Angebot für Kunde X gegenlesen": "Proofread the offer for customer X",
+  "Memory-Leak im Worker-Pool prüfen": "Look into the memory leak in the worker pool",
+  "Heap wächst nur unter Last über 200 req/s.": "The heap only grows under load above 200 req/s.",
+  "TLS-Zertifikat für Staging verlängern": "Renew the TLS certificate for staging",
+  "VPN-Token erneuern": "Renew the VPN token",
+  "Paketschein drucken": "Print the parcel label",
+  "Rückruf Hausverwaltung": "Call back the landlord",
+  "Kaffeemaschine entkalken": "Descale the coffee machine",
+  "CLI-Tool für Log-Analyse bauen": "Build a CLI tool for log analysis",
+  "- evtl. in Rust statt Python wegen Startzeit\n- Filter nach Trace-ID muss per Pipe funktionieren":
+    "- maybe Rust instead of Python, for the start-up time\n- filtering by trace ID has to work in a pipe",
+  "Vorbild: ripgrep": "Model: ripgrep",
+  "Onboarding-Doku für neue Devs vereinfachen": "Simplify the onboarding docs for new devs",
+  "Dark-Mode für Maillet": "Dark mode for Maillet",
+  "- Farben aus dem System-Theme übernehmen\n- Kontrast der Code-Karte prüfen\n- Umschalter in den Einstellungen?\n- Screenshots fürs README neu machen":
+    "- take the colours from the system theme\n- check the contrast of the code card\n- a switch in the settings?\n- new screenshots for the README",
+  "Farbrollen sammeln": "Collect the colour roles",
+  "Backup-Skript prüfen": "Check the backup script",
+  "- läuft seit Oktober nicht mehr?": "- not running since October?",
+  "Tasqlet mit HatRack koppeln: Filter nach Hut": "Couple Tasqlet with HatRack: filter by hat",
+  "Load-Test-Umgebung aufsetzen": "Set up the load test environment",
+  "k6-Skripte übernehmen": "Take over the k6 scripts",
+  "Grafana-Board anlegen": "Create a Grafana board",
+  "Braucht Zugriff auf den Staging-Cluster.": "Needs access to the staging cluster.",
+  "Rechnung Q3 klären": "Sort out the Q3 invoice",
+  Buchhaltung: "Accounting",
+  "Mail: Rechnung 0931": "Mail: Invoice 0931",
+  "~/Mail/rechnung-0931.eml": "~/Mail/invoice-0931.eml",
+  "~/projekte/core/docs/spec.md": "~/projects/core/docs/spec.md",
+  "~/projekte/core/gateway/": "~/projects/core/gateway/",
+  "Nginx-Logrotation korrigieren": "Fix the nginx log rotation",
+  "copytruncate statt create, sonst schreibt der Worker ins Leere.":
+    "copytruncate instead of create, or the worker writes into the void.",
+  "Folien für Architektur-Review": "Slides for the architecture review",
+  "~/Dokumente/arch-review.odp": "~/Documents/arch-review.odp",
+};
+
+/** Builds the sample snapshot, in German or English. Deterministic for a given `now`. */
+export function mockSnapshot(now: Date = new Date(), lang: "de" | "en" = "de"): Snapshot {
+  const tr = (text: string) => (lang === "en" ? (english[text] ?? text) : text);
   let n = 0;
   const id = (p: string) => `${p}${++n}`;
   const at = (msAgo: number) => new Date(now.getTime() - msAgo).toISOString();
   const items: Item[] = seeds.map((s) => {
     const checklist: ChecklistItem[] = (s.checklist ?? []).map(([text, done]) => ({
       id: id("c"),
-      text,
+      text: tr(text),
       done: !!done,
     }));
     // The third value is what the chip shows; only "Mail: …" for a .eml is an own label here,
@@ -131,24 +182,24 @@ export function mockSnapshot(now: Date = new Date()): Snapshot {
     const resources: Resource[] = (s.resources ?? []).map(([type, target, shown]) => ({
       id: id("r"),
       type,
-      target,
-      label: type === "mail" ? shown : null,
+      target: tr(target),
+      label: type === "mail" ? tr(shown) : null,
       used_at: null,
-      shown,
+      shown: tr(shown),
     }));
     const created = at((s.created_hours_ago ?? 48) * 3_600_000);
     return {
       id: id("i"),
-      title: s.title,
+      title: tr(s.title),
       state: s.state ?? "idea",
       active: !!s.active,
       last_active: false,
       order: s.order ?? 0,
-      note: s.note ?? "",
+      note: tr(s.note ?? ""),
       checklist,
       resources,
       date: s.date === undefined ? null : isoDay(s.date, now),
-      delegated_to: s.delegated_to ?? null,
+      delegated_to: s.delegated_to === undefined ? null : tr(s.delegated_to),
       delegated_at: s.delegated_days_ago === undefined ? null : at(s.delegated_days_ago * DAY),
       tags: [],
       created_at: created,
