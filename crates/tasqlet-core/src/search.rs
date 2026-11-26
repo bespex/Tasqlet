@@ -73,6 +73,7 @@ pub fn search<'a>(store: &'a Store, query: &str, limit: usize) -> Vec<&'a Item> 
     let mut hits: Vec<(u32, &Item)> = store
         .items()
         .iter()
+        .map(|item| &**item)
         .filter_map(|item| score(item, &terms).map(|s| (s, item)))
         .collect();
     hits.sort_by_key(|(score, item)| {
@@ -91,6 +92,7 @@ pub fn recently_done(store: &Store, limit: usize) -> Vec<&Item> {
     let mut done: Vec<&Item> = store
         .items()
         .iter()
+        .map(|it| &**it)
         .filter(|it| it.state == State::Done)
         .collect();
     done.sort_by_key(|it| (Reverse(it.done_at), it.id));

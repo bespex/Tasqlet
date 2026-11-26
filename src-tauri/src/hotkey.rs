@@ -33,7 +33,7 @@ pub fn plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
         .with_handler(|app, _shortcut, event| {
             if event.state() == ShortcutState::Pressed {
                 let handle = app.clone();
-                let _ = app.run_on_main_thread(move || popover::toggle(&handle, None));
+                let _ = app.run_on_main_thread(move || popover::toggle_by_key(&handle));
             }
         })
         .build()

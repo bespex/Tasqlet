@@ -112,6 +112,9 @@ export interface SearchResult {
 
 export type Language = "auto" | "de" | "en";
 export type PopoverPosition = "corner" | "center";
+/** How Tasqlet opens, by tray click and key alike (D41). */
+export type WindowForm = "popover" | "sidebar";
+export type SidebarSide = "auto" | "left" | "right";
 
 export type ToggleKeyProblem = "invalid" | "taken" | "unsupported";
 
@@ -119,6 +122,8 @@ export type ToggleKeyProblem = "invalid" | "taken" | "unsupported";
 export interface Settings {
   language: Language;
   popover_position: PopoverPosition;
+  window_form: WindowForm;
+  sidebar_side: SidebarSide;
   /** Colour theme and style (`@bespex/themes`); missing until the user chooses (plan 2.6). */
   appearance?: unknown;
   autostart: boolean;

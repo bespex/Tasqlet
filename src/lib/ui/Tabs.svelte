@@ -1,5 +1,6 @@
 <script lang="ts">
-  // Reiter: Fokus, Ideen, Delegiert with their counts, the search at the end (docs/KONZEPT.md 6).
+  // Header of the popover (D41, kit K9): app mark, tabs Fokus, Ideen, Delegiert with their counts, then
+  // the tools in the order every be spex tray app uses: search, pin, settings.
   import { Pin, Search, Settings } from "@lucide/svelte";
   import { t } from "../i18n";
   import { withKey } from "../keys";
@@ -26,6 +27,18 @@
 </script>
 
 <div class="tabs sx-chrome" role="tablist">
+  <svg class="mark" viewBox="0 0 512 512" aria-hidden="true">
+    <rect x="32" y="32" width="448" height="448" rx="104" fill="#b4410e" />
+    <rect x="120" y="120" width="272" height="272" rx="64" fill="none" stroke="#fff8f2" stroke-width="36" />
+    <path
+      d="M180 262l52 52 104-116"
+      fill="none"
+      stroke="#fff8f2"
+      stroke-width="40"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </svg>
   {#each tabs as tab, i (tab.id)}
     <button
       class="tab"
@@ -40,21 +53,23 @@
     </button>
   {/each}
   <span class="sp"></span>
+  {#if onsearch}
+    <button class="ib" title={withKey(t("Search"), "Ctrl+F")} aria-label={t("Search")} onclick={onsearch}>
+      <Search size={16} />
+    </button>
+  {/if}
   {#if onpin}
     <button
       class="ib"
       class:on={pinned}
       aria-pressed={pinned}
-      title={pinned ? t("Pinned: stays open when you click elsewhere") : t("Pin: stay open when you click elsewhere")}
+      title={pinned
+        ? t("Pinned: stays in front when you click elsewhere")
+        : t("Pin: stay in front when you click elsewhere")}
       aria-label={t("Pin")}
       onclick={onpin}
     >
       <Pin size={16} />
-    </button>
-  {/if}
-  {#if onsearch}
-    <button class="ib" title={withKey(t("Search"), "Ctrl+F")} aria-label={t("Search")} onclick={onsearch}>
-      <Search size={16} />
     </button>
   {/if}
   {#if onsettings}
@@ -71,6 +86,12 @@
     gap: 2px;
     padding: 10px 10px 8px;
     border-bottom: 1px solid var(--sx-chrome-divider);
+  }
+  .mark {
+    width: 22px;
+    height: 22px;
+    flex: none;
+    margin: 0 8px 0 4px;
   }
   .tab {
     display: flex;

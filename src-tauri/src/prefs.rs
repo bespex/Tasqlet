@@ -2,7 +2,7 @@
 //! Jira projects; the global key is in `hotkey`. The rules and the files are the core's; this is the bridge.
 
 use serde_json::{Value, json};
-use tasqlet_core::settings::{Language, PopoverPosition, Settings};
+use tasqlet_core::settings::{Language, PopoverPosition, Settings, SidebarSide, WindowForm};
 use tauri::{AppHandle, Emitter, Manager};
 
 use crate::data::Data;
@@ -16,6 +16,8 @@ pub fn get_settings(app: AppHandle) -> Value {
     let mut value = json!({
         "language": settings.language,
         "popover_position": settings.popover_position,
+        "window_form": settings.window_form,
+        "sidebar_side": settings.sidebar_side,
         "appearance": settings.appearance,
         "autostart": autostart::enabled(),
         "wayland": !crate::platform::is_x11(),
@@ -41,6 +43,25 @@ pub fn set_settings(
         ..data.settings()
     })?;
     popover::set_center(&app, popover_position == PopoverPosition::Center);
+    let _ = app.emit("settings-changed", ());
+    Ok(())
+}
+
+/// Save how Tasqlet opens: popover or sidebar, and the edge of the sidebar (D41). An open window
+/// takes the new form at once.
+#[tauri::command]
+pub fn set_window_form(
+    app: AppHandle,
+    window_form: WindowForm,
+    sidebar_side: SidebarSide,
+) -> Result<(), String> {
+    let data = app.state::<Data>();
+    data.set_settings(Settings {
+        window_form,
+        sidebar_side,
+        ..data.settings()
+    })?;
+    popover::set_form(&app, window_form, sidebar_side);
     let _ = app.emit("settings-changed", ());
     Ok(())
 }

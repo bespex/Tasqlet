@@ -13,7 +13,7 @@ use serde_json::{Value, json};
 use tasqlet_core::jira::{self, JiraProjects};
 use tasqlet_core::settings::{SETTINGS_FILE, Settings};
 use tasqlet_core::storage::{self, LoadError, Saver, Storage, Watcher};
-use tasqlet_core::{Action, Error, SCHEMA_VERSION, Session, Store};
+use tasqlet_core::{Action, Error, Id, SCHEMA_VERSION, Session, State, Store};
 use tauri::{AppHandle, Emitter, Manager};
 
 /// Event to the webview after every change of the items.
@@ -177,12 +177,20 @@ impl Data {
         self.session().store().clone()
     }
 
-    /// The snapshot the webview renders: the data file's shape, each resource with the label to
-    /// show (`shown`, own or smart label from the core), plus the load problem.
-    pub fn snapshot(&self) -> Value {
+    /// The snapshot the webview renders: the open items in the data file's shape, each resource with
+    /// the label to show (`shown`, own or smart label from the core), plus the load problem. Done
+    /// items stay out – they grow with every year and the interface reaches them through the
+    /// search – except `include`, the one the elaboration shows. (Done items carry no recipient:
+    /// finishing ends the delegation, so the suggestions lose nothing.)
+    pub fn snapshot(&self, include: Option<Id>) -> Value {
         let session = self.session();
         let store = session.store();
-        let items: Vec<Value> = store.items().iter().map(item_json).collect();
+        let items: Vec<Value> = store
+            .items()
+            .iter()
+            .filter(|it| it.state != State::Done || Some(it.id) == include)
+            .map(|it| item_json(it))
+            .collect();
         let problem = lock(&self.problem);
         json!({
             "schema": SCHEMA_VERSION,
@@ -336,11 +344,51 @@ mod tests {
                 Utc::now(),
             )
             .unwrap();
-        let snapshot = data.snapshot();
+        let snapshot = data.snapshot(None);
         let resources = &snapshot["items"][0]["resources"];
         assert_eq!(resources[0]["shown"], "PR #42");
         assert_eq!(resources[1]["shown"], "Mail: Ops");
         assert_eq!(snapshot["load_error"], Value::Null);
+    }
+
+    #[test]
+    fn done_items_stay_out_of_the_snapshot_unless_shown() {
+        let dir = tempfile::tempdir().unwrap();
+        let data = Data::open(dir.path().to_path_buf()).unwrap();
+        let open = NewItem::new("offen");
+        let done = NewItem::new("fertig");
+        let done_id = done.id;
+        let mut session = data.session();
+        session
+            .apply(
+                Action::Add {
+                    item: open,
+                    target: Target::Focus,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+        session
+            .apply(
+                Action::Add {
+                    item: done,
+                    target: Target::Focus,
+                },
+                Utc::now(),
+            )
+            .unwrap();
+        session.apply(Action::Finish(done_id), Utc::now()).unwrap();
+        drop(session);
+        let titles = |v: &Value| {
+            v["items"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|it| it["title"].as_str().unwrap().to_string())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(titles(&data.snapshot(None)), ["offen"]);
+        assert_eq!(titles(&data.snapshot(Some(done_id))).len(), 2);
     }
 
     #[test]
@@ -360,7 +408,7 @@ mod tests {
 
         let data = Data::open(dir.path().to_path_buf()).unwrap();
         assert!(lock(&data.saver).is_none(), "read-only");
-        assert_eq!(data.snapshot()["load_error"]["backup"], true);
+        assert_eq!(data.snapshot(None)["load_error"]["backup"], true);
         assert!(data.store().items().is_empty());
     }
 }

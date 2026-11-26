@@ -85,6 +85,41 @@ mod tests {
     }
 
     #[test]
+    fn undo_history_shares_the_items_an_action_did_not_touch() {
+        let mut s = Session::default();
+        let (a, b) = (NewItem::new("a"), NewItem::new("b"));
+        let (ida, idb) = (a.id, b.id);
+        for item in [a, b] {
+            s.apply(
+                Action::Add {
+                    item,
+                    target: Target::Idea,
+                },
+                now(),
+            )
+            .unwrap();
+        }
+        s.apply(
+            Action::Rename {
+                id: ida,
+                title: "A".into(),
+            },
+            now(),
+        )
+        .unwrap();
+        let before = s.history.back().unwrap();
+        let find = |store: &Store, id| store.items().iter().find(|it| it.id == id).unwrap().clone();
+        assert!(
+            std::sync::Arc::ptr_eq(&find(s.store(), idb), &find(before, idb)),
+            "untouched: shared"
+        );
+        assert!(
+            !std::sync::Arc::ptr_eq(&find(s.store(), ida), &find(before, ida)),
+            "renamed: copied"
+        );
+    }
+
+    #[test]
     fn undo_restores_the_state_before_each_action() {
         let mut s = Session::default();
         let a = NewItem::new("a");

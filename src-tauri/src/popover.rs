@@ -8,11 +8,16 @@
 //!   settings, plan 2.6).
 //! - Losing the focus hides it. A click on the tray icon first takes the focus away, so a click
 //!   right after hiding does not show it again.
+//! - Form **sidebar** (setting, D41): 700 px wide, the full height of the work area, at the edge of
+//!   the screen half with the tray icon (or the edge the user picked). It stays when it loses the
+//!   focus, but is kept above other windows only when pinned; tray click, key or `--toggle` bring
+//!   it back to the front. The choice holds for tray click, global key and `--toggle` alike.
 
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
+use tasqlet_core::settings::{SidebarSide, WindowForm};
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewWindow, WindowEvent};
 
 pub const LABEL: &str = "popover";
@@ -35,6 +40,36 @@ pub struct PopoverState {
     wide: AtomicBool,
     /// Pinned: stays when it loses the focus, e.g. to drop a file from the file manager (D37).
     pinned: AtomicBool,
+    /// Form sidebar instead of popover (D41).
+    sidebar: AtomicBool,
+    side: Mutex<SidebarSide>,
+    /// Whether the tray icon was last seen in the left half of its screen.
+    tray_left: Mutex<Option<bool>>,
+    /// The sidebar went behind other windows when it lost the focus, at this moment.
+    lowered: Mutex<Option<Instant>>,
+}
+
+/// Popover or sidebar, and the edge of the sidebar (a setting, D41). An open window changes its form
+/// in place and tells the webview (which offers pinning only in the popover).
+pub fn set_form(app: &AppHandle, form: WindowForm, side: SidebarSide) {
+    let state = app.state::<PopoverState>();
+    state
+        .sidebar
+        .store(form == WindowForm::Sidebar, Ordering::Relaxed);
+    *lock(&state.side) = side;
+    if let Some(w) = window(app).filter(|w| w.is_visible().unwrap_or(false)) {
+        state.pinned.store(false, Ordering::Relaxed);
+        let _ = w.set_always_on_top(form == WindowForm::Popover);
+        let wide = state.wide.load(Ordering::Relaxed);
+        resize(app, &w, wide);
+        place(app, &w);
+        settle(app, &w);
+        let _ = app.emit_to(LABEL, "popover-shown", ());
+    }
+}
+
+fn is_sidebar(app: &AppHandle) -> bool {
+    app.state::<PopoverState>().sidebar.load(Ordering::Relaxed)
 }
 
 /// Where the popover goes without an icon position (a setting, plan 2.6).
@@ -64,14 +99,24 @@ pub fn setup(app: &AppHandle) {
     w.on_window_event(move |event| match event {
         WindowEvent::Focused(false) => {
             let state = handle.state::<PopoverState>();
+            let pinned = state.pinned.load(Ordering::Relaxed);
+            if state.sidebar.load(Ordering::Relaxed) {
+                // The sidebar stays; the window that took the focus may now cover it.
+                if !recent(&state.shown_at) && !pinned {
+                    *lock(&state.lowered) = Some(Instant::now());
+                }
             // Open settings keep it open, so their changes show here at once (D40)
-            if !recent(&state.shown_at)
-                && !state.pinned.load(Ordering::Relaxed)
+            } else if !recent(&state.shown_at)
+                && !pinned
                 && !crate::settings_window::is_open(&handle)
             {
                 *lock(&state.hidden_on_blur) = Some(Instant::now());
                 hide(&handle);
             }
+        }
+        // A click into the sidebar brings it to the front again.
+        WindowEvent::Focused(true) => {
+            lock(&handle.state::<PopoverState>().lowered).take();
         }
         WindowEvent::CloseRequested { api, .. } => {
             api.prevent_close();
@@ -85,11 +130,31 @@ pub fn setup(app: &AppHandle) {
 pub fn toggle(app: &AppHandle, at: Option<(i32, i32)>) {
     let Some(w) = window(app) else { return };
     // Clicking the icon first takes the focus away, which already hid the popover.
-    let just_hidden = recent(&app.state::<PopoverState>().hidden_on_blur);
-    if w.is_visible().unwrap_or(false) {
+    let state = app.state::<PopoverState>();
+    let just_hidden = recent(&state.hidden_on_blur);
+    // A sidebar behind other windows comes to the front; one that was in front a moment ago (this
+    // very click took its focus) hides.
+    let behind = lock(&state.lowered).is_some_and(|t| t.elapsed() >= SAME_CLICK);
+    let visible = w.is_visible().unwrap_or(false);
+    if visible && is_sidebar(app) && behind {
+        show(app, at);
+    } else if visible {
         hide(app);
     } else if !just_hidden {
         show(app, at);
+    }
+}
+
+/// Global key and `--toggle`: like the tray click, except that a pinned sidebar is never hidden by
+/// them, only brought to the front with the focus (it is kept above other windows anyway).
+pub fn toggle_by_key(app: &AppHandle) {
+    let Some(w) = window(app) else { return };
+    let pinned = app.state::<PopoverState>().pinned.load(Ordering::Relaxed);
+    if w.is_visible().unwrap_or(false) && is_sidebar(app) && pinned {
+        let _ = w.set_focus();
+        activate_x11(&w);
+    } else {
+        toggle(app, None);
     }
 }
 
@@ -101,12 +166,16 @@ pub fn show(app: &AppHandle, at: Option<(i32, i32)>) {
         *lock(&state.anchor) = Some(p);
     }
     *lock(&state.shown_at) = Some(Instant::now());
+    *lock(&state.lowered) = None;
+    // The sidebar takes the height of the screen it opens on.
+    resize(app, &w, state.wide.load(Ordering::Relaxed));
     // GTK ignores moves of hidden windows: place, show, place again.
     place(app, &w);
     let _ = w.show();
     place(app, &w);
     settle(app, &w);
-    let _ = w.set_always_on_top(true);
+    // Above other windows: the popover always, the sidebar only when pinned.
+    let _ = w.set_always_on_top(!is_sidebar(app) || state.pinned.load(Ordering::Relaxed));
     let _ = w.set_focus();
     activate_x11(&w);
     let _ = app.emit_to(LABEL, "popover-shown", ());
@@ -180,20 +249,24 @@ pub fn wide_size(work_area: (f64, f64)) -> (f64, f64) {
     (width, height)
 }
 
-/// Resize to the normal popover or the roomy elaboration.
+/// Resize to the normal popover or the roomy elaboration; as a sidebar always the full height.
 fn resize(app: &AppHandle, w: &WebviewWindow, wide: bool) {
-    let size = if wide {
-        monitor_of(app, w).map_or((WIDTH_WIDE, HEIGHT), |m| {
-            let scale = m.scale_factor();
-            let area = m.work_area();
-            wide_size((
-                area.size.width as f64 / scale,
-                area.size.height as f64 / scale,
-            ))
-        })
-    } else {
-        (WIDTH, HEIGHT)
+    let work = monitor_of(app, w).map(|m| {
+        let scale = m.scale_factor();
+        let area = m.work_area();
+        (
+            area.size.width as f64 / scale,
+            area.size.height as f64 / scale,
+        )
+    });
+    let mut size = match (wide, work) {
+        (true, Some(work)) => wide_size(work),
+        (true, None) => (WIDTH_WIDE, HEIGHT),
+        (false, _) => (WIDTH, HEIGHT),
     };
+    if let (true, Some((_, height))) = (is_sidebar(app), work) {
+        size.1 = height;
+    }
     let _ = w.set_size(tauri::LogicalSize::new(size.0, size.1));
 }
 
@@ -217,17 +290,42 @@ pub fn set_wide(app: AppHandle, wide: bool) {
     settle(&app, &w);
 }
 
-/// Pin or unpin the popover: pinned, it stays open when another window gets the focus (D37).
+/// Pin or unpin: pinned, the popover stays open when another window gets the focus (D37) and the
+/// sidebar is kept above other windows (D41); unpinned, other windows may cover the sidebar.
 #[tauri::command]
 pub fn set_pinned(app: AppHandle, pinned: bool) {
-    app.state::<PopoverState>()
-        .pinned
-        .store(pinned, Ordering::Relaxed);
+    let state = app.state::<PopoverState>();
+    state.pinned.store(pinned, Ordering::Relaxed);
+    if is_sidebar(&app) {
+        if pinned {
+            *lock(&state.lowered) = None;
+        }
+        if let Some(w) = window(&app) {
+            let _ = w.set_always_on_top(pinned);
+        }
+    }
 }
 
 #[tauri::command]
 pub fn hide_popover(app: AppHandle) {
     hide(&app);
+}
+
+/// Which edge the sidebar takes: the chosen one, or the half of the screen with the tray icon (last
+/// seen), else the right.
+pub fn sidebar_left(side: SidebarSide, tray_left: Option<bool>) -> bool {
+    match side {
+        SidebarSide::Left => true,
+        SidebarSide::Right => false,
+        SidebarSide::Auto => tray_left.unwrap_or(false),
+    }
+}
+
+/// The sidebar's top left corner: at the left or right edge of the work area, from its top. The
+/// elaboration grows from that edge towards the middle. Physical pixels.
+pub fn sidebar_position(area: (i32, i32, i32, i32), width: i32, left: bool) -> (i32, i32) {
+    let (ax, ay, aw, _) = area;
+    (if left { ax } else { ax + aw - width.min(aw) }, ay)
 }
 
 /// Where the popover goes: next to the anchor if known, else the top right of the work area.
@@ -261,6 +359,9 @@ pub fn position(
 }
 
 fn place(app: &AppHandle, w: &WebviewWindow) {
+    if is_sidebar(app) {
+        return place_sidebar(app, w);
+    }
     let wide = app.state::<PopoverState>().wide.load(Ordering::Relaxed);
     let anchor = if crate::platform::is_x11() && !wide {
         *lock(&app.state::<PopoverState>().anchor)
@@ -286,6 +387,32 @@ fn place(app: &AppHandle, w: &WebviewWindow) {
         (size.width as i32, size.height as i32),
         wide || app.state::<PopoverState>().center.load(Ordering::Relaxed),
     );
+    let _ = w.set_position(PhysicalPosition::new(x, y));
+}
+
+fn place_sidebar(app: &AppHandle, w: &WebviewWindow) {
+    let state = app.state::<PopoverState>();
+    let anchor = *lock(&state.anchor);
+    let point = anchor.or_else(|| app.cursor_position().ok().map(|p| (p.x as i32, p.y as i32)));
+    let monitor = point
+        .and_then(|(x, y)| w.monitor_from_point(x as f64, y as f64).ok().flatten())
+        .or_else(|| w.primary_monitor().ok().flatten());
+    let (Some(monitor), Ok(size)) = (monitor, w.outer_size()) else {
+        return;
+    };
+    let area = monitor.work_area();
+    let area = (
+        area.position.x,
+        area.position.y,
+        area.size.width as i32,
+        area.size.height as i32,
+    );
+    // Seen from a tray click (X11): in which half of its screen the icon sits.
+    if let (true, Some((cx, _))) = (crate::platform::is_x11(), anchor) {
+        *lock(&state.tray_left) = Some(cx < area.0 + area.2 / 2);
+    }
+    let left = sidebar_left(*lock(&state.side), *lock(&state.tray_left));
+    let (x, y) = sidebar_position(area, size.width as i32, left);
     let _ = w.set_position(PhysicalPosition::new(x, y));
 }
 
@@ -317,6 +444,23 @@ mod tests {
 
     const AREA: (i32, i32, i32, i32) = (0, 0, 1920, 1080);
     const SIZE: (i32, i32) = (700, 680);
+
+    #[test]
+    fn the_sidebar_takes_the_chosen_edge_or_the_side_of_the_icon() {
+        assert!(sidebar_left(SidebarSide::Left, Some(false)));
+        assert!(!sidebar_left(SidebarSide::Right, Some(true)));
+        assert!(sidebar_left(SidebarSide::Auto, Some(true)));
+        assert!(!sidebar_left(SidebarSide::Auto, None));
+        assert_eq!(sidebar_position((0, 30, 1920, 1050), 700, true), (0, 30));
+        assert_eq!(
+            sidebar_position((0, 30, 1920, 1050), 700, false),
+            (1220, 30)
+        );
+        assert_eq!(
+            sidebar_position((1920, 0, 1280, 1024), 1400, false),
+            (1920, 0)
+        );
+    }
 
     #[test]
     fn above_an_icon_in_a_bottom_panel() {

@@ -23,6 +23,7 @@
     setWide,
     type DropEvent,
   } from "./lib/backend";
+  import { ArrowUpToLine, Coffee, TriangleAlert } from "@lucide/svelte";
   import { setLang, systemLang, t } from "./lib/i18n";
   import { appearanceOf, applyAppearance } from "./lib/theme";
   import { MANY_IN_FOCUS } from "./lib/queue";
@@ -84,6 +85,15 @@
     elab = null;
     void tick().then(() => quick.focus());
   }
+  // The elaboration of a done item (a search hit): the snapshot leaves done items out, so ask for
+  // this one. Once per id, so an item that is gone does not cause a reload loop.
+  let included: string | null = null;
+  $effect(() => {
+    if (elab && elab !== included && !items.some((i) => i.id === elab)) {
+      included = elab;
+      void reload();
+    }
+  });
   // The popover is twice as wide while elaborating.
   const wide = $derived(elab !== null);
   $effect(() => {
@@ -111,7 +121,7 @@
     if (searching) closeSearch();
   }
 
-  const reload = () => loadSnapshot().then((s) => (snapshot = s));
+  const reload = () => loadSnapshot(elab).then((s) => (snapshot = s));
 
   onMount(() => {
     void reload();
@@ -395,6 +405,9 @@
           openAll={() => void openFor(focus[0].id, null)}
           onelaborate={() => openElab(focus[0].id)}
         />
+        {#if focus.length > 1}
+          <div class="head"><ArrowUpToLine size={14} />{t("Next")}<span class="n">{focus.length - 1}</span></div>
+        {/if}
         <Queue
           bind:this={queue}
           items={focus.slice(1)}
@@ -431,8 +444,18 @@
       </div>
     {/if}
 
+    <!-- Status bar (D41, kit K9): the state of the app on the left, the Esc hint on the right -->
     <footer class="sx-chrome">
-      {preview ? t("Browser preview with sample data") : t("Esc hides the popover")}
+      <span class="state" class:warn={snapshot?.load_error}>
+        {#if preview}
+          {t("Browser preview with sample data")}
+        {:else if snapshot?.load_error}
+          <TriangleAlert size={13} />{t("Read-only")}
+        {:else if snapshot?.on_break}
+          <Coffee size={13} />{t("On a break")}
+        {/if}
+      </span>
+      <span class="hint">{t("Esc hides the popover")}</span>
     </footer>
     <Toast />
   </div>
@@ -508,9 +531,37 @@
     color: var(--sx-ink);
   }
   footer {
-    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 30px;
+    flex: none;
+    padding: 0 14px;
     font-size: 12px;
     border-top: 1px solid var(--sx-chrome-divider);
+    color: var(--sx-ink-3);
+  }
+  footer .state {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+  footer .state.warn {
+    color: var(--sx-warn);
+  }
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 6px 16px 2px;
+    font-size: 12.5px;
+    font-weight: 600;
     color: var(--sx-ink-2);
+  }
+  .head .n {
+    font-weight: 500;
+    color: var(--sx-ink-3);
   }
 </style>

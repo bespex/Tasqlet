@@ -53,7 +53,7 @@ Port 1430). Voraussetzungen: Rust stable, Node.js 22, `libwebkit2gtk-4.1-dev`, `
 
 ```sh
 npm run dev                      # UI im Browser mit Mock-Daten (http://localhost:1430)
-npm run tauri dev                # Desktop-App (danach: tasqlet --toggle zeigt/versteckt das Popover)
+./run.sh                         # Desktop-App mit Hot Reload, --release: optimierter Build (danach: tasqlet --toggle zeigt/versteckt das Popover)
 npm run check                    # svelte-check + prettier --check
 npm test                         # vitest
 npm run format                   # prettier --write
@@ -96,7 +96,7 @@ Browser-Vorschau prüfen.
 | `crates/tasqlet-core/src/overview.rs` | Stand auf einen Blick (Modus, Zahl, aktuelle und nächste Aufgabe) für das Tray |
 | `src-tauri/src/lib.rs` | Start (Einzelinstanz, `--toggle`), Tauri-Builder, Commands (`schema_version`, `snapshot`) |
 | `src-tauri/src/act.rs` | Befehl `act`: Änderungen an einem Eintrag (Karte) als `Action` an den Core |
-| `crates/tasqlet-core/src/settings.rs`, `src-tauri/src/prefs.rs`, `autostart.rs` | `settings.json` (Sprache, Popover-Position, `appearance`), Befehle der Einstellungen, Autostart-Eintrag |
+| `crates/tasqlet-core/src/settings.rs`, `src-tauri/src/prefs.rs`, `autostart.rs` | `settings.json` (Sprache, Popover-Position, Fensterform und Seite, `appearance`), Befehle der Einstellungen, Autostart-Eintrag |
 | `src-tauri/src/hotkey.rs`, `src/lib/keys.ts` | Globale Taste zum Ein-/Ausblenden (X11, D36); Tastenkombinationen aufnehmen und anzeigen |
 | `src-tauri/src/open.rs` | Befehle `open_resource`, `open_all`: `xdg-open`, `used_at` setzen (D30) |
 | `src-tauri/src/search.rs` | Befehl `search` (Treffer im Snapshot-Format) |
@@ -104,7 +104,7 @@ Browser-Vorschau prüfen.
 | `src-tauri/src/data.rs` | `Session` der App, Speichern im Hintergrund, Neuladen bei Änderung von außen, Ereignis `store-changed` |
 | `src-tauri/src/tray.rs` | Tray (`ksni`): Symbol mit Zahl, Punkt, Tasse; Tooltip; Menü |
 | `src-tauri/src/settings_window.rs` | Einstellungen als eigenes Fenster (`?view=settings`, D40): öffnen (`open_settings`, Tray-Menü), `is_open` hält das Popover offen, beim Schließen `popover::refocus` |
-| `src-tauri/src/popover.rs` | Popover zeigen/verstecken, Position am Symbol (X11) oder in der Ecke, Schließen bei Fokusverlust |
+| `src-tauri/src/popover.rs` | Popover oder Seitenleiste (D41) zeigen/verstecken, Position am Symbol (X11), in der Ecke oder am Rand, Schließen bei Fokusverlust, Anheften |
 | `src-tauri/src/instance.rs` | Einzelinstanz: Sperrdatei und Socket je Datenordner, Befehle der CLI mit Antwort |
 | `src-tauri/src/platform.rs` | X11 oder Wayland, Fenster aktivieren (`x11rb`), Tray-Host vorhanden? |
 | `src-tauri/src/i18n.rs` | Texte der Hülle (Tray) auf Deutsch und Englisch |

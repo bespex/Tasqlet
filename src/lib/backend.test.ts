@@ -55,7 +55,9 @@ describe("act in the preview", () => {
     mock.reset();
     const first = (await loadSnapshot()).items.find((i) => i.active)!;
     await act({ kind: "finish", id: first.id });
-    const after = await loadSnapshot();
+    // Done items stay out of the snapshot unless asked for (the elaboration of a search hit).
+    expect((await loadSnapshot()).items.some((i) => i.id === first.id)).toBe(false);
+    const after = await loadSnapshot(first.id);
     expect(after.items.some((i) => i.active)).toBe(false);
     expect(after.items.find((i) => i.id === first.id)!.state).toBe("done");
     await undo();

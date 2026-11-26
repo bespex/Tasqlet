@@ -47,7 +47,7 @@ Requirements: Rust (stable), Node.js 22, and the Tauri system libraries
 ```sh
 npm install
 npm run dev          # UI in the browser with mock data, http://localhost:1430
-npm run tauri dev    # the desktop app
+./run.sh             # the desktop app with hot reload (--release: optimized build)
 npm run check        # svelte-check and prettier
 npm test             # frontend tests
 cargo test --workspace

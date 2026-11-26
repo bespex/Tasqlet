@@ -38,7 +38,11 @@ fn sample() -> (Store, [Id; 7]) {
 }
 
 fn sorted(store: &Store) -> Vec<Item> {
-    let mut items = store.items().to_vec();
+    let mut items = store
+        .items()
+        .iter()
+        .map(|it| (**it).clone())
+        .collect::<Vec<_>>();
     items.sort_by_key(|it| it.id);
     items
 }

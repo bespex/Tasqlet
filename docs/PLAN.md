@@ -59,6 +59,7 @@ Stand 2026-11-24. Vorgabe: `docs/KONZEPT.md`. Zielbild: `docs/click-dummy/`.
   - [ ] 2.5 Ablegen ins Popover, CLI `add`, `open`, `current`, `list`
   - [ ] 2.6 Themen: über das be spex kit (D38); Auswahl gebaut, eigene Theme-Dateien offen
   - [ ] 2.7 MCP-Server für KI-Assistenten
+  - [ ] 2.8 Rahmen der be-spex-Familie (Layout, Popover oder Seitenleiste gebaut; Rest: Kit-Bausteine) (D41, Kit K9)
 - **MVP 3: Linux-Feinschliff**
   - [ ] 3.1 `tasqlet capture` (Markierung übernehmen)
   - [ ] 3.2 Globale Tastenkürzel (X11-Plugin, Portal *GlobalShortcuts*)
@@ -327,6 +328,29 @@ Konzept: 3.3, 9.
 
 **Abnahme:** Ein KI-Assistent liest die aktuelle Aufgabe, zerlegt sie in Schritte und schreibt einen
 Befund in die Notiz; alles erscheint sofort im Popover und lässt sich rückgängig machen.
+
+### 2.8 Rahmen der be-spex-Familie, Popover oder Seitenleiste
+
+Konzept: D41, `../kit/PLAN.md` K9 (später `../kit/docs/popover.md`). Beginnt, wenn das Kit `ui-v0.1.0`
+hat; Maillet folgt mit denselben Regeln (`../Maillet/PLAN.md` P1 und P2).
+
+- Gebaut (2026-11-26): App-Symbol in der Kopfleiste, Werkzeuge in der Reihenfolge Suche · Anheften ·
+  Einstellungen, Statusleiste statt der Hinweiszeile (links Schreibgeschützt oder Pause, rechts der
+  Esc-Hinweis), Abschnittskopf „Danach“ über der Queue.
+- **Statusleiste:** ein Klick auf den Zustand zeigt Details (Datenordner, letzte Speicherung).
+- **Bausteine** auf die Klassen von `@bespex/ui` umstellen (Tabs, Karte, Zeile, Chip, Pille, Toast,
+  Notice, runde Knöpfe); eigene Stile nur noch für Tasqlet-Eigenes.
+- Gebaut (2026-11-26): „Öffnen als“ (Popover, Seitenleiste) und „Seite“ (Seite des Tray-Symbols,
+  links, rechts) unter Allgemein, gespeichert in `settings.json`; gilt für Tray-Klick, Taste und
+  `--toggle`; die Seitenleiste bleibt bei Fokusverlust stehen und liegt nur angeheftet im Vordergrund,
+  die Einstellungen haben Maillets Rahmen (Karten, Navigation mit Symbol), die Ausarbeitung wächst
+  vom Rand zur Mitte.
+- **Popover-Höhe** nach Inhalt in den Grenzen des Kits statt fest 680 px: Ob und wie, klärt der
+  Praxistest.
+
+**Abnahme:** Tasqlet und Maillet nacheinander öffnen; jeden Ablauf aus K9 einmal mit Tastatur und
+einmal mit Maus; Popover und Seitenleiste, Tray links und rechts, auf Cinnamon (X11) und einem
+Wayland-Desktop.
 
 ## MVP 3: Linux-Feinschliff
 

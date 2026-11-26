@@ -35,11 +35,35 @@ pub enum PopoverPosition {
     Center,
 }
 
+/// How Tasqlet opens, by tray click, global key and `--toggle` alike (D41, kit PLAN K9).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WindowForm {
+    /// At the tray icon, hidden when another window gets the focus unless pinned.
+    #[default]
+    Popover,
+    /// Full height at an edge of the screen, stays open until hidden.
+    Sidebar,
+}
+
+/// The edge of the sidebar.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SidebarSide {
+    /// The half of the screen with the tray icon, as last seen on a tray click; else right.
+    #[default]
+    Auto,
+    Left,
+    Right,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
     pub language: Language,
     pub popover_position: PopoverPosition,
+    pub window_form: WindowForm,
+    pub sidebar_side: SidebarSide,
     /// Global key that shows or hides the popover, as `Ctrl+Alt+KeyT`; empty means none (D36).
     pub toggle_key: String,
     /// Colour theme and style, `{"theme": "fjord", "style": "calm"}` (plan 2.6). Kept as it comes:
@@ -85,6 +109,8 @@ mod tests {
         assert_eq!(s.language, Language::De);
         assert_eq!(s.popover_position, PopoverPosition::Corner);
         assert_eq!(s.toggle_key, "");
+        assert_eq!(s.window_form, WindowForm::Popover);
+        assert_eq!(s.sidebar_side, SidebarSide::Auto);
         assert_eq!(s.appearance, None);
         // Keys from a newer version are ignored, not an error.
         std::fs::write(&path, r#"{"theme":"x","popover_position":"center"}"#).unwrap();
@@ -101,6 +127,8 @@ mod tests {
         let s = Settings {
             language: Language::En,
             popover_position: PopoverPosition::Center,
+            window_form: WindowForm::Sidebar,
+            sidebar_side: SidebarSide::Left,
             toggle_key: "Ctrl+Alt+KeyT".into(),
             appearance: Some(serde_json::json!({"theme": "fjord", "style": {"chrome": "raised"}})),
         };

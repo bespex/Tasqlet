@@ -36,10 +36,12 @@ fn schema_version() -> u32 {
     tasqlet_core::SCHEMA_VERSION
 }
 
-/// All items and the global state, plus what the interface must point out (load error, no tray).
+/// The open items and the global state, plus what the interface must point out (load error, no
+/// tray); `include`: a done item the interface shows anyway (the elaboration of a search hit).
 #[tauri::command]
-fn snapshot(app: AppHandle) -> Value {
-    let mut snapshot = app.state::<data::Data>().snapshot();
+fn snapshot(app: AppHandle, include: Option<String>) -> Value {
+    let include = include.and_then(|id| id.parse().ok());
+    let mut snapshot = app.state::<data::Data>().snapshot(include);
     snapshot["tray_missing"] = tray::missing(&app).into();
     snapshot
 }
@@ -138,6 +140,7 @@ pub fn run() {
             prefs::set_appearance,
             settings_window::open_settings,
             prefs::set_autostart,
+            prefs::set_window_form,
             prefs::forget_jira,
             hotkey::set_toggle_key,
             hotkey::suspend_toggle_key
@@ -149,6 +152,7 @@ pub fn run() {
                 &handle,
                 settings.popover_position == tasqlet_core::settings::PopoverPosition::Center,
             );
+            popover::set_form(&handle, settings.window_form, settings.sidebar_side);
             tray::start(&handle);
             hotkey::start(&handle, &toggle_key);
             data::watch(&handle);
@@ -164,7 +168,7 @@ pub fn run() {
                             Ok(String::new())
                         }
                         Request::Toggle => {
-                            let _ = handle.run_on_main_thread(move || popover::toggle(&app, None));
+                            let _ = handle.run_on_main_thread(move || popover::toggle_by_key(&app));
                             Ok(String::new())
                         }
                     }

@@ -6,6 +6,7 @@
 
 use std::collections::HashSet;
 use std::fmt;
+use std::sync::Arc;
 
 use chrono::{DateTime, NaiveDate, Utc};
 
@@ -128,7 +129,9 @@ impl std::error::Error for InvariantViolation {}
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Store {
     on_break: bool,
-    items: Vec<Item>,
+    /// Shared with the undo history: a snapshot copies pointers, a change copies only the item it
+    /// touches ([`Store::at`]). Done items of all years are in here, so this keeps undo cheap.
+    items: Vec<Arc<Item>>,
 }
 
 impl Store {
@@ -139,7 +142,10 @@ impl Store {
 
     /// A store from loaded data, refused if it breaks an invariant.
     pub fn from_parts(on_break: bool, items: Vec<Item>) -> Result<Self, InvariantViolation> {
-        let store = Self { on_break, items };
+        let store = Self {
+            on_break,
+            items: items.into_iter().map(Arc::new).collect(),
+        };
         store.check_invariants()?;
         Ok(store)
     }
@@ -174,16 +180,19 @@ impl Store {
             it.active = Some(it.id) == active;
             it.last_active = Some(it.id) == last_active;
         }
+        let changed_items = items != original;
         let mut store = Self {
             on_break: on_break && active.is_some(),
-            items,
+            items: items.into_iter().map(Arc::new).collect(),
         };
+        let before_order: Vec<u32> = store.items.iter().map(|it| it.order).collect();
         let mut focus: Vec<&Item> = store.list(State::Focus);
         focus.sort_by_key(|it| (!it.active, it.order));
         let focus: Vec<Id> = focus.into_iter().map(|it| it.id).collect();
         store.set_order(&focus);
         store.renumber();
-        let changed = store.on_break != on_break || store.items != original;
+        let reordered = store.items.iter().map(|it| it.order).ne(before_order);
+        let changed = store.on_break != on_break || changed_items || reordered;
         (store, changed)
     }
 
@@ -193,19 +202,29 @@ impl Store {
     }
 
     /// All items, in no particular order.
-    pub fn items(&self) -> &[Item] {
+    pub fn items(&self) -> &[Arc<Item>] {
         &self.items
+    }
+
+    /// The items as plain references.
+    fn iter(&self) -> impl Iterator<Item = &Item> {
+        self.items.iter().map(|it| &**it)
+    }
+
+    /// The item at `i` for a change: copied first if the undo history still shares it.
+    fn at(&mut self, i: usize) -> &mut Item {
+        Arc::make_mut(&mut self.items[i])
     }
 
     /// The item with this id.
     pub fn get(&self, id: Id) -> Option<&Item> {
-        self.items.iter().find(|it| it.id == id)
+        self.iter().find(|it| it.id == id)
     }
 
     /// Items of one state; focus and intermezzo sorted by `order`, ideas newest first, delegated
     /// and done in no particular order.
     pub fn list(&self, state: State) -> Vec<&Item> {
-        let mut list: Vec<&Item> = self.items.iter().filter(|it| it.state == state).collect();
+        let mut list: Vec<&Item> = self.iter().filter(|it| it.state == state).collect();
         if state.is_ordered() {
             list.sort_by_key(|it| it.order);
         } else if state == State::Idea {
@@ -216,7 +235,7 @@ impl Store {
 
     /// The active task, if any.
     pub fn active(&self) -> Option<&Item> {
-        self.items.iter().find(|it| it.active)
+        self.iter().find(|it| it.active)
     }
 
     /// Carry out an action. On `Err` nothing has changed.
@@ -261,7 +280,7 @@ impl Store {
         if self.items[i].active {
             self.on_break = false;
         }
-        let it = &mut self.items[i];
+        let it = self.at(i);
         it.active = false;
         it.last_active = false;
         it.updated_at = now;
@@ -279,8 +298,8 @@ impl Store {
         if self.items[i].title == title {
             return Err(Error::Unchanged);
         }
-        self.items[i].title = title.to_string();
-        self.items[i].updated_at = now;
+        self.at(i).title = title.to_string();
+        self.at(i).updated_at = now;
         Ok(())
     }
 
@@ -290,8 +309,8 @@ impl Store {
         if self.items[i].note == note {
             return Err(Error::Unchanged);
         }
-        self.items[i].note = note;
-        self.items[i].updated_at = now;
+        self.at(i).note = note;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
@@ -302,25 +321,26 @@ impl Store {
         if text.is_empty() {
             return Err(Error::EmptyName);
         }
-        self.items[i].checklist.push(ChecklistItem {
+        self.at(i).checklist.push(ChecklistItem {
             id: Id::generate(),
             text: text.to_string(),
             done: false,
         });
-        self.items[i].updated_at = now;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
     /// Tick or untick a step.
     pub fn toggle_check(&mut self, id: Id, check: Id, now: DateTime<Utc>) -> Result<(), Error> {
         let i = self.index(id)?;
-        let step = self.items[i]
+        let step = self
+            .at(i)
             .checklist
             .iter_mut()
             .find(|c| c.id == check)
             .ok_or(Error::UnknownItem(check))?;
         step.done = !step.done;
-        self.items[i].updated_at = now;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
@@ -337,7 +357,8 @@ impl Store {
         if text.is_empty() {
             return Err(Error::EmptyName);
         }
-        let step = self.items[i]
+        let step = self
+            .at(i)
             .checklist
             .iter_mut()
             .find(|c| c.id == check)
@@ -346,7 +367,7 @@ impl Store {
             return Err(Error::Unchanged);
         }
         step.text = text.to_string();
-        self.items[i].updated_at = now;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
@@ -354,11 +375,11 @@ impl Store {
     pub fn remove_check(&mut self, id: Id, check: Id, now: DateTime<Utc>) -> Result<(), Error> {
         let i = self.index(id)?;
         let before = self.items[i].checklist.len();
-        self.items[i].checklist.retain(|c| c.id != check);
+        self.at(i).checklist.retain(|c| c.id != check);
         if self.items[i].checklist.len() == before {
             return Err(Error::UnknownItem(check));
         }
-        self.items[i].updated_at = now;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
@@ -373,8 +394,8 @@ impl Store {
         if self.items[i].date == date {
             return Err(Error::Unchanged);
         }
-        self.items[i].date = date;
-        self.items[i].updated_at = now;
+        self.at(i).date = date;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
@@ -389,13 +410,13 @@ impl Store {
         if crate::resources::classify(text).is_some() {
             return self.add_resource(id, text, now);
         }
-        let note = &mut self.items[i].note;
+        let note = &mut self.at(i).note;
         if !note.is_empty() && !note.ends_with('\n') {
             note.push('\n');
         }
         note.push_str("- ");
         note.push_str(text);
-        self.items[i].updated_at = now;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
@@ -408,18 +429,19 @@ impl Store {
     ) -> Result<(), Error> {
         let i = self.index(id)?;
         let before = self.items[i].resources.len();
-        self.items[i].resources.retain(|r| r.id != resource);
+        self.at(i).resources.retain(|r| r.id != resource);
         if self.items[i].resources.len() == before {
             return Err(Error::UnknownItem(resource));
         }
-        self.items[i].updated_at = now;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
     /// Note that a resource was opened now, so it ranks first (`docs/KONZEPT.md` 5).
     pub fn mark_used(&mut self, id: Id, resource: Id, now: DateTime<Utc>) -> Result<(), Error> {
         let i = self.index(id)?;
-        let r = self.items[i]
+        let r = self
+            .at(i)
             .resources
             .iter_mut()
             .find(|r| r.id == resource)
@@ -438,14 +460,14 @@ impl Store {
         if self.items[i].resources.iter().any(|r| r.target == target) {
             return Err(Error::Unchanged);
         }
-        self.items[i].resources.push(Resource {
+        self.at(i).resources.push(Resource {
             id: Id::generate(),
             kind,
             target: target.to_string(),
             label: None,
             used_at: None,
         });
-        self.items[i].updated_at = now;
+        self.at(i).updated_at = now;
         Ok(())
     }
 
@@ -469,7 +491,7 @@ impl Store {
         if title.trim().is_empty() && state != State::Idea {
             title = title_from_note(&new.note);
         }
-        self.items.push(Item {
+        self.items.push(Arc::new(Item {
             id,
             title,
             state,
@@ -504,7 +526,7 @@ impl Store {
             created_at: now,
             updated_at: now,
             done_at: None,
-        });
+        }));
         self.renumber();
         if target == Target::Now {
             self.start(id, now)?;
@@ -536,6 +558,7 @@ impl Store {
             for it in &mut self.items {
                 let marked = it.id == left;
                 if it.last_active != marked || it.active {
+                    let it = Arc::make_mut(it);
                     it.last_active = marked;
                     it.active = false;
                     it.updated_at = now;
@@ -543,7 +566,7 @@ impl Store {
             }
         }
         self.change_state(i, State::Focus, now);
-        let it = &mut self.items[i];
+        let it = self.at(i);
         it.active = true;
         it.last_active = false;
         it.updated_at = now;
@@ -607,7 +630,7 @@ impl Store {
             return Err(Error::Unchanged);
         }
         self.change_state(i, State::Done, now);
-        self.items[i].done_at = Some(now);
+        self.at(i).done_at = Some(now);
         self.renumber();
         Ok(())
     }
@@ -622,7 +645,7 @@ impl Store {
             return Err(Error::Unchanged);
         }
         self.change_state(i, State::Delegated, now);
-        let it = &mut self.items[i];
+        let it = self.at(i);
         it.delegated_to = Some(name);
         it.delegated_at = Some(now);
         it.updated_at = now;
@@ -682,11 +705,11 @@ impl Store {
                 return fail(format!("unordered item {} has order {}", it.id, it.order));
             }
         }
-        let active = self.items.iter().filter(|it| it.active).count();
+        let active = self.iter().filter(|it| it.active).count();
         if active > 1 {
             return fail(format!("{active} active items"));
         }
-        let last_active = self.items.iter().filter(|it| it.last_active).count();
+        let last_active = self.iter().filter(|it| it.last_active).count();
         if last_active > 1 {
             return fail(format!("{last_active} last active items"));
         }
@@ -728,8 +751,10 @@ impl Store {
     /// Give the items `order` 0, 1, … in the order of `ids`.
     fn set_order(&mut self, ids: &[Id]) {
         for it in &mut self.items {
-            if let Some(pos) = ids.iter().position(|&id| id == it.id) {
-                it.order = pos as u32;
+            if let Some(pos) = ids.iter().position(|&id| id == it.id)
+                && it.order != pos as u32
+            {
+                Arc::make_mut(it).order = pos as u32;
             }
         }
     }
@@ -745,7 +770,7 @@ impl Store {
     /// Move an item into another state and clean up what belonged to the old one. A new place in
     /// an ordered list is at the end until the caller renumbers or sets the order.
     fn change_state(&mut self, i: usize, state: State, now: DateTime<Utc>) {
-        let it = &mut self.items[i];
+        let it = self.at(i);
         if it.state == state {
             return;
         }
@@ -1139,11 +1164,19 @@ mod tests {
     #[test]
     fn from_parts_refuses_broken_data() {
         let (s, [_, b, ..]) = sample();
-        let mut items = s.items().to_vec();
+        let mut items = s
+            .items()
+            .iter()
+            .map(|it| (**it).clone())
+            .collect::<Vec<_>>();
         items.iter_mut().find(|it| it.id == b).unwrap().active = true;
         assert!(Store::from_parts(false, items).is_err());
         let (s, [a, ..]) = sample();
-        let mut items = s.items().to_vec();
+        let mut items = s
+            .items()
+            .iter()
+            .map(|it| (**it).clone())
+            .collect::<Vec<_>>();
         items.retain(|it| it.id != a);
         assert!(
             Store::from_parts(false, items.clone()).is_err(),

@@ -36,7 +36,7 @@ pub fn open(app: &AppHandle) -> Result<(), String> {
         WebviewUrl::App("index.html?view=settings".into()),
     )
     .title(format!("{} – Tasqlet", t(Key::Settings)))
-    .inner_size(720.0, 620.0)
+    .inner_size(820.0, 720.0)
     .min_inner_size(560.0, 420.0)
     .center()
     .build()

@@ -1,7 +1,8 @@
 <script lang="ts">
-  // Settings (plan 2.6) in tabs with a navigation on the left, as in Maillet: General (language,
-  // popover position without an icon position, the global key, autostart), Theme (the kit's picker,
-  // the same in every be spex app) and the learned Jira projects, forgotten one by one (D26).
+  // Settings (plan 2.6) in the frame shared with Maillet (D41): navigation on the left with app mark
+  // and name, page title, one card per setting. General (language, window form, the global key,
+  // autostart), Theme (the kit's picker, the same in every be spex app) and the learned Jira
+  // projects, forgotten one by one (D26).
   import "@bespex/themes/appearance";
   import type { Appearance } from "@bespex/themes";
   import { onDestroy, onMount } from "svelte";
@@ -13,11 +14,12 @@
     setSettings,
     setToggleKey,
     suspendToggleKey,
+    setWindowForm,
   } from "../backend";
   import { currentLang, setLang, systemLang, t } from "../i18n";
   import { comboFromEvent, keyLabel } from "../keys";
   import { AXES_USED, appearanceOf, applyAppearance } from "../theme";
-  import type { Language, PopoverPosition, Settings, ToggleKeyProblem } from "../types";
+  import type { Language, PopoverPosition, Settings, SidebarSide, ToggleKeyProblem, WindowForm } from "../types";
 
   // Without `onclose` this is the settings window (D40): the window's own frame closes it.
   let { onclose }: { onclose?: () => void } = $props();
@@ -51,6 +53,16 @@
     { value: "de", label: "Deutsch" },
     { value: "en", label: "English" },
   ]);
+  const forms: { value: WindowForm; label: string }[] = $derived([
+    { value: "popover", label: t("Popover") },
+    { value: "sidebar", label: t("Sidebar") },
+  ]);
+  const sides: { value: SidebarSide; label: string }[] = $derived([
+    { value: "auto", label: t("Side of the tray icon") },
+    { value: "left", label: t("Left") },
+    { value: "right", label: t("Right") },
+  ]);
+  const saveForm = (form: WindowForm, side: SidebarSide) => guard(() => setWindowForm(form, side));
   const positions: { value: PopoverPosition; label: string }[] = $derived([
     { value: "corner", label: t("Corner") },
     { value: "center", label: t("Middle") },
@@ -110,29 +122,44 @@
 </script>
 
 <div class="settings" class:settings-window={!onclose}>
-  <header>
-    <h2>{t("Settings")}</h2>
-    {#if onclose}<button class="back" onclick={onclose} title="Esc">{t("Close")}</button>{/if}
-  </header>
-  <div class="cols">
-    <nav aria-label={t("Settings")}>
-      {#each sections as sec (sec.id)}
-        <button
-          class:on={section === sec.id}
-          aria-current={section === sec.id ? "page" : undefined}
-          onclick={() => (section = sec.id)}
-        >
-          {sec.label}
-        </button>
-      {/each}
-    </nav>
-    <div class="content">
-      {#if problem}<p class="problem" role="alert">{problem}</p>{/if}
-      {#if s && section === "general"}
-        <!-- No native <select>: its drop-down is a window of its own, which takes the focus from the
-         popover and so closes it. -->
-        <div class="row" role="group" aria-label={t("Language")}>
-          <span>{t("Language")}</span>
+  <nav aria-label={t("Settings")}>
+    <!-- Same frame as Maillet's settings (D41, kit PLAN K9): app mark and name, sections, page title,
+     one card per setting with the short control at the right of its title. -->
+    <div class="brand">
+      <svg viewBox="0 0 512 512" aria-hidden="true">
+        <rect x="32" y="32" width="448" height="448" rx="104" fill="#b4410e" />
+        <rect x="120" y="120" width="272" height="272" rx="64" fill="none" stroke="#fff8f2" stroke-width="36" />
+        <path
+          d="M180 262l52 52 104-116"
+          fill="none"
+          stroke="#fff8f2"
+          stroke-width="40"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <span>Tasqlet<small>{t("Settings")}</small></span>
+    </div>
+    {#each sections as sec (sec.id)}
+      <button
+        class:on={section === sec.id}
+        aria-current={section === sec.id ? "page" : undefined}
+        onclick={() => (section = sec.id)}
+      >
+        {sec.label}
+      </button>
+    {/each}
+    {#if onclose}<button class="close" onclick={onclose} title="Esc">{t("Close")}</button>{/if}
+  </nav>
+  <main class="content">
+    <h1>{sections.find((x) => x.id === section)?.label}</h1>
+    {#if problem}<p class="problem" role="alert">{problem}</p>{/if}
+    {#if s && section === "general"}
+      <!-- No native <select>: its drop-down is a window of its own, which takes the focus from the
+       popover and so closes it. -->
+      <section class="card">
+        <div class="head" role="group" aria-label={t("Language")}>
+          <h3>{t("Language")}</h3>
           <div class="seg">
             {#each langs as o (o.value)}
               <button
@@ -146,27 +173,70 @@
           </div>
         </div>
         <p class="hint">{t("The tray texts change at the next start.")}</p>
+      </section>
 
-        <div class="row" role="group" aria-label={t("Popover without icon position")}>
-          <span>{t("Popover without icon position")}</span>
+      <section class="card">
+        <div class="head" role="group" aria-label={t("Open as")}>
+          <h3>{t("Open as")}</h3>
           <div class="seg">
-            {#each positions as o (o.value)}
+            {#each forms as o (o.value)}
               <button
-                class:on={s.popover_position === o.value}
-                aria-pressed={s.popover_position === o.value}
-                onclick={() => save(s!.language, o.value)}
+                class:on={s.window_form === o.value}
+                aria-pressed={s.window_form === o.value}
+                onclick={() => saveForm(o.value, s!.sidebar_side)}
               >
                 {o.label}
               </button>
             {/each}
           </div>
         </div>
-        {#if !s.wayland}<p class="hint">
-            {t("On X11 the popover sits at the tray icon; this applies to the key binding.")}
-          </p>{/if}
+        <p class="hint">
+          {s.window_form === "sidebar"
+            ? t(
+                "The sidebar takes the full height of the screen and goes behind other windows when you click elsewhere, unless pinned.",
+              )
+            : t("The popover sits at the tray icon and hides when you click elsewhere, unless pinned.")}
+          {t("This holds for the tray icon and the key alike.")}
+        </p>
+        {#if s.window_form === "sidebar"}
+          <div class="sub" role="group" aria-label={t("Side")}>
+            <span>{t("Side")}</span>
+            <div class="seg">
+              {#each sides as o (o.value)}
+                <button
+                  class:on={s.sidebar_side === o.value}
+                  aria-pressed={s.sidebar_side === o.value}
+                  onclick={() => saveForm(s!.window_form, o.value)}
+                >
+                  {o.label}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {:else}
+          <div class="sub" role="group" aria-label={t("Popover without icon position")}>
+            <span>{t("Popover without icon position")}</span>
+            <div class="seg">
+              {#each positions as o (o.value)}
+                <button
+                  class:on={s.popover_position === o.value}
+                  aria-pressed={s.popover_position === o.value}
+                  onclick={() => save(s!.language, o.value)}
+                >
+                  {o.label}
+                </button>
+              {/each}
+            </div>
+          </div>
+          {#if !s.wayland}<p class="hint">
+              {t("On X11 the popover sits at the tray icon; this applies to the key binding.")}
+            </p>{/if}
+        {/if}
+      </section>
 
-        <div class="row">
-          <span>{t("Key to show or hide")}</span>
+      <section class="card">
+        <div class="head">
+          <h3>{t("Key to show or hide")}</h3>
           {#if s.wayland}
             <span class="hint">{t("Not on Wayland")}</span>
           {:else}
@@ -197,8 +267,10 @@
         {:else}
           <p class="hint">{t("Works everywhere, also when Tasqlet is hidden.")}</p>
         {/if}
+      </section>
 
-        <label class="row check">
+      <section class="card">
+        <label class="check">
           <input
             type="checkbox"
             checked={s.autostart}
@@ -206,16 +278,18 @@
           />
           <span>{t("Start Tasqlet at login")}</span>
         </label>
-      {:else if s && section === "theme"}
-        <p class="hint lead">{t("The same choice as in every be spex app. A click applies it at once.")}</p>
-        <sx-appearance
-          class="appearance"
-          lang={currentLang()}
-          axes={AXES_USED.join(" ")}
-          value={appearanceOf(s.appearance)}
-          onchange={(e: CustomEvent<Appearance>) => choose(e.detail)}
-        ></sx-appearance>
-      {:else if s && section === "jira"}
+      </section>
+    {:else if s && section === "theme"}
+      <p class="hint lead">{t("The same choice as in every be spex app. A click applies it at once.")}</p>
+      <sx-appearance
+        class="appearance"
+        lang={currentLang()}
+        axes={AXES_USED.join(" ")}
+        value={appearanceOf(s.appearance)}
+        onchange={(e: CustomEvent<Appearance>) => choose(e.detail)}
+      ></sx-appearance>
+    {:else if s && section === "jira"}
+      <section class="card">
         {#if s.jira.length === 0}
           <p class="hint">{t("Nothing learned yet. A Jira link in an entry teaches its project.")}</p>
         {:else}
@@ -228,66 +302,103 @@
             {/each}
           </ul>
         {/if}
-      {/if}
-    </div>
-  </div>
+      </section>
+    {/if}
+  </main>
 </div>
 
 <style>
+  /* The settings frame shared with Maillet (D41, kit PLAN K9); values as in Maillet's index.html. */
   .settings {
     height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  header {
-    flex: none;
-    padding: 14px 16px 10px;
-    border-bottom: 1px solid var(--sx-chrome-divider, var(--sx-line));
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  h2 {
-    margin: 0;
-    font-size: 15px;
-  }
-  .cols {
-    flex: 1;
-    min-height: 0;
     display: grid;
-    grid-template-columns: 160px minmax(0, 1fr);
+    grid-template-columns: 200px minmax(0, 1fr);
   }
   nav {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 10px 8px;
+    padding: 16px 10px;
     border-right: 1px solid var(--sx-line);
-    background: var(--sx-panel);
+    background: var(--sx-surface);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 14px;
+    font-size: 16px;
+    font-weight: 650;
+    line-height: 1.2;
+  }
+  .brand svg {
+    width: 28px;
+    height: 28px;
+    flex: none;
+  }
+  .brand small {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 400;
+    color: var(--sx-ink-2);
   }
   nav button {
     text-align: left;
     border: 0;
     background: none;
-    padding: 6px 10px;
+    padding: 8px 10px;
     border-radius: var(--sx-radius-m);
     color: var(--sx-ink-2);
+    font-weight: 550;
   }
   nav button:hover {
-    background: var(--sx-hover);
+    background: var(--sx-field);
     color: var(--sx-ink);
   }
   nav button.on {
     background: var(--sx-accent-soft);
     color: var(--sx-accent-ink);
-    font-weight: 600;
+  }
+  nav .close {
+    margin-top: auto;
+    text-align: center;
+    border: 1px solid var(--sx-line);
   }
   .content {
     overflow-y: auto;
-    padding: 4px 16px 16px;
+    padding: 20px 24px 40px;
+  }
+  h1 {
+    margin: 0 0 14px;
+    font-size: 18px;
+    font-weight: 650;
+  }
+  .card {
+    background: var(--sx-surface);
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-l);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--sx-shadow-1);
+  }
+  .head,
+  .sub {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .sub {
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  h3 {
+    margin: 0;
+    font-size: 14px;
   }
   .lead {
-    margin-top: 12px;
+    margin: -6px 0 4px;
   }
   sx-appearance::part(label) {
     margin: 14px 0 6px;
@@ -295,25 +406,25 @@
     font-weight: 600;
     color: var(--sx-ink-2);
   }
-  .row {
+  .check {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 12px;
-    font-size: 13.5px;
-  }
-  .check {
-    justify-content: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
   }
   button {
     font: inherit;
     font-size: 13px;
+    font-weight: 550;
     color: var(--sx-ink);
     background: var(--sx-field);
-    border: 1px solid var(--sx-line-strong);
-    border-radius: var(--sx-radius-l);
-    padding: 4px 10px;
+    border: 1px solid var(--sx-line);
+    border-radius: var(--sx-radius-m);
+    padding: 6px 12px;
+  }
+  button:hover {
+    border-color: var(--sx-accent);
   }
   .seg {
     display: inline-flex;
@@ -323,11 +434,11 @@
     margin-left: -1px;
   }
   .seg button:first-child {
-    border-radius: var(--sx-radius-l) 0 0 var(--sx-radius-l);
+    border-radius: var(--sx-radius-m) 0 0 var(--sx-radius-m);
     margin-left: 0;
   }
   .seg button:last-child {
-    border-radius: 0 var(--sx-radius-l) var(--sx-radius-l) 0;
+    border-radius: 0 var(--sx-radius-m) var(--sx-radius-m) 0;
   }
   .seg .on {
     background: var(--sx-accent-soft);
@@ -335,15 +446,12 @@
     border-color: var(--sx-accent);
     position: relative;
     z-index: 1;
-    font-weight: 600;
-  }
-  button:hover {
-    border-color: var(--sx-accent);
+    font-weight: 650;
   }
   .hint {
     margin: 4px 0 0;
     font-size: 12px;
-    color: var(--sx-ink-3);
+    color: var(--sx-ink-2);
   }
   .keys {
     display: inline-flex;
@@ -361,7 +469,7 @@
     color: var(--sx-warn, var(--sx-ink));
   }
   .problem {
-    margin: 8px 0 0;
+    margin: 0 0 10px;
     font-size: 12.5px;
     color: var(--sx-warn, var(--sx-ink));
   }

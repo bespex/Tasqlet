@@ -9,15 +9,17 @@ import { mockParse } from "./mock-quick";
 import { mockRecentlyDone, mockSearch, searchTerms } from "./mock-search";
 import type {
   Act,
-  CaptureKey,
   Captured,
+  CaptureKey,
   Item,
   Language,
   PopoverPosition,
   QuickEntry,
   SearchResult,
   Settings,
+  SidebarSide,
   Snapshot,
+  WindowForm,
 } from "./types";
 
 /** True inside the Tauri webview, false in the browser preview. */
@@ -67,8 +69,14 @@ export async function schemaVersion(): Promise<number> {
 }
 
 /** All items plus global state, loaded from the data folder by the core. */
-export async function loadSnapshot(): Promise<Snapshot> {
-  return inTauri() ? invoke<Snapshot>("snapshot") : mock.snapshot();
+/**
+ * The open items (done ones stay out, they are reached through the search) and the global state.
+ * `include`: one done item to deliver anyway, the one the elaboration shows.
+ */
+export async function loadSnapshot(include: string | null = null): Promise<Snapshot> {
+  if (inTauri()) return invoke<Snapshot>("snapshot", { include });
+  const s = mock.snapshot();
+  return { ...s, items: s.items.filter((i) => i.state !== "done" || i.id === include) };
 }
 
 /** Hides the popover; the app keeps running in the background. No-op in the browser. */
@@ -451,6 +459,8 @@ const previewSettings = (): Settings => {
     previewMemory ?? {
       language: "auto",
       popover_position: "corner",
+      window_form: "popover",
+      sidebar_side: "auto",
       autostart: false,
       wayland: false,
       toggle_key: "",
@@ -473,6 +483,12 @@ export async function getSettings(): Promise<Settings> {
 export async function setSettings(language: Language, popoverPosition: PopoverPosition): Promise<void> {
   if (inTauri()) return invoke("set_settings", { language, popoverPosition });
   keepPreview({ ...previewSettings(), language, popover_position: popoverPosition });
+}
+
+/** Saves how Tasqlet opens: popover or sidebar, and the edge of the sidebar (D41). */
+export async function setWindowForm(windowForm: WindowForm, sidebarSide: SidebarSide): Promise<void> {
+  if (inTauri()) return invoke("set_window_form", { windowForm, sidebarSide });
+  keepPreview({ ...previewSettings(), window_form: windowForm, sidebar_side: sidebarSide });
 }
 
 /** Saves colour theme and style (plan 2.6). */
